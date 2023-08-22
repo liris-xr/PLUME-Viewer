@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Packages/fr.liris.plume/Runtime/Resources/UI/Styles/timeline.uss?fileID=7433441132597879392&amp;guid=065e6bcb56164071a2a204af9ea21686&amp;type=3#timeline" />
+    <PLUME.TimelineElement name="timeline__container" minor-tick-color="#6C6C6CFF" major-tick-color="#A1A1A1FF" disabled-tick-color="#484848FF" />
+    <ui:VisualElement name="time-info-panel" class="panel-container-primary">
+        <PLUME.TimeFieldElement name="time-field" />
+    </ui:VisualElement>
+    <ui:ScrollView>
+        <ui:VisualElement name="time-scale" />
+        <ui:VisualElement name="time-cursor" />
+        <ui:VisualElement name="timeline-content-container" />
+    </ui:ScrollView>
+</ui:UXML>

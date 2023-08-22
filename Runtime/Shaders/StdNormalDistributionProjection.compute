@@ -1,0 +1,173 @@
+﻿#include "MeshData.cginc"
+#include "SplitDispatch.cginc"
+#include "Math.cginc"
+
+float n_sigmas;
+Texture2D segmented_object_depth_texture;
+
+float4x4 model_mtx;
+float4x4 view_mtx;
+float4x4 projection_mtx;
+bool is_projection_orthographic;
+
+int object_instance_id;
+
+uint n_triangles;
+RWStructuredBuffer<uint> triangles_resolution_buffer;
+RWStructuredBuffer<uint> triangles_samples_index_offset_buffer;
+RWStructuredBuffer<float> samples_value_buffer;
+
+RWStructuredBuffer<uint> samples_min_value;
+RWStructuredBuffer<uint> samples_max_value;
+
+struct parsed_embedding
+{
+    float depth;
+    int object_instance_id;
+};
+
+float std_normal_distribution(const float x)
+{
+    float val = 1.0f / sqrt_2_pi * exp(-0.5f * x * x); // sigma = 1
+
+    // Ensure that we don't add up very small values
+    if (val <= 0.0009f)
+        val = 0.0;
+
+    return val;
+}
+
+parsed_embedding parse_embedding(const uint2 embedding_uv)
+{
+    float segmented_object_depth_texture_width, segmented_object_depth_texture_height;
+    segmented_object_depth_texture.GetDimensions(segmented_object_depth_texture_width,
+                                                 segmented_object_depth_texture_height);
+
+    parsed_embedding parsed_embedding;
+
+    if (embedding_uv.x >= (uint)segmented_object_depth_texture_width
+        || embedding_uv.y >= (uint)segmented_object_depth_texture_height
+        || embedding_uv.x < 0
+        || embedding_uv.y < 0)
+    {
+        parsed_embedding.depth = 0;
+        parsed_embedding.object_instance_id = 0;
+    }
+    else
+    {
+        const float4 embedding = segmented_object_depth_texture[embedding_uv];
+        parsed_embedding.depth = embedding.r; // in range [0; far]
+        parsed_embedding.object_instance_id = asint(embedding.g);
+    }
+
+    return parsed_embedding;
+}
+
+/*
+ * Compares the sample depth with the depth contained in the embedding (depth rendered by the camera)
+ */
+bool compare_sample_depth(const float sample_depth, const parsed_embedding embedding)
+{
+    const bool matching_instance_id = embedding.object_instance_id == object_instance_id;
+    const bool matching_depth = abs(embedding.depth - sample_depth) <= epsilon;
+    return matching_instance_id && matching_depth;
+}
+
+float3 sample_idx_to_barycentric_weights(const int idx, const int r)
+{
+    const int row = ceil((-3 + sqrt(8.0 * idx + 9.0)) / 2.0);
+    const int col = idx - row * (row + 1) / 2u;
+
+    float w_i = col / (float)r;
+    float w_j = 1 - row / (float)r;
+    float w_k = 1 - (w_i + w_j);
+
+    return float3(w_i, w_j, w_k);
+}
+
+#pragma kernel project_std_normal_distribution
+[numthreads(8, 8, 1)]
+void project_std_normal_distribution(const uint2 id : SV_DispatchThreadID)
+{
+    const uint triangle_index_offset = x_dispatch_index * dispatch_max_thread_group;
+    const uint sample_index_offset = y_dispatch_index * dispatch_max_thread_group;
+
+    const uint triangle_index = id.x + triangle_index_offset;
+    const uint sample_index = id.y + sample_index_offset;
+
+    if (triangle_index >= n_triangles)
+        return;
+
+    const uint triangle_resolution = triangles_resolution_buffer[triangle_index];
+    const uint triangle_n_samples = n_th_triangle_formula(triangle_resolution);
+
+    if (sample_index >= triangle_n_samples)
+        return;
+
+    const uint sample_value_index = triangles_samples_index_offset_buffer[triangle_index] + sample_index;
+
+    const uint3 triangle_indices = load_triangle_indices(triangle_index);
+    const float3 pos0 = load_vertex_position(triangle_indices[0]);
+    const float3 pos1 = load_vertex_position(triangle_indices[1]);
+    const float3 pos2 = load_vertex_position(triangle_indices[2]);
+
+    float3 barycentric_weights = sample_idx_to_barycentric_weights(sample_index, triangle_resolution);
+
+    float3 local_pos =
+        pos0 * barycentric_weights.x +
+        pos1 * barycentric_weights.y +
+        pos2 * barycentric_weights.z;
+
+    const float4 world_pos = mul(model_mtx, float4(local_pos, 1.0f));
+    const float4 camera_pos = mul(view_mtx, world_pos);
+    const float4 clip_pos = mul(projection_mtx, camera_pos);
+
+    const float3 ndc_pos = clip_pos.xyz / clip_pos.w;
+    const float2 sample_uv_pos = (ndc_pos.xy + 1) / 2.0;
+
+    const bool clipped = ndc_pos.x < -1 && ndc_pos.x > 1 && ndc_pos.y < -1 && ndc_pos.y > 1;
+
+    if (clipped)
+        return;
+
+    float sample_depth;
+
+    if (is_projection_orthographic)
+    {
+        sample_depth = (clip_pos.z + 1) / 2.0;
+    }
+    else
+    {
+        const float far = projection_mtx[2][3] / (projection_mtx[2][2] + 1);
+        const float near = projection_mtx[2][3] / (projection_mtx[2][2] - 1);
+        sample_depth = (clip_pos.z + near) / (far + near); // remap from range [-near; far] to [0; 1]
+    }
+
+    float segmented_object_depth_texture_width, segmented_object_depth_texture_height;
+    segmented_object_depth_texture.GetDimensions(segmented_object_depth_texture_width,
+                                                 segmented_object_depth_texture_height);
+    const uint2 embedding_uv = sample_uv_pos * uint2(segmented_object_depth_texture_width,
+                                                     segmented_object_depth_texture_height);
+
+    const float x = (sample_uv_pos.x - 0.5) * 2;
+    const float y = (sample_uv_pos.y - 0.5) * 2;
+    // Distance from the center of the projection. We want the boundary values to correspond to n_sigmas (e.g. 99.99% in the case of 4sigma)
+    const float u = saturate(sqrt(x * x + y * y)) * n_sigmas;
+    const float projected_gaussian_value = saturate(std_normal_distribution(u));
+
+    if (!compare_sample_depth(sample_depth, parse_embedding(embedding_uv))
+        // Due to the discrete nature of the camera depth texture, objects edges might have some artefacts.
+        // We take a look around the central embedding to find a pixel with the same object instance id.
+        && !compare_sample_depth(sample_depth, parse_embedding(embedding_uv + uint2(1, 0)))
+        && !compare_sample_depth(sample_depth, parse_embedding(embedding_uv + uint2(0, 1)))
+        && !compare_sample_depth(sample_depth, parse_embedding(embedding_uv + uint2(-1, 0)))
+        && !compare_sample_depth(sample_depth, parse_embedding(embedding_uv + uint2(0, -1)))
+    )
+    {
+        return;
+    }
+
+    samples_value_buffer[sample_value_index] += projected_gaussian_value;
+    InterlockedMin(samples_min_value[0], asuint(samples_value_buffer[sample_value_index]));
+    InterlockedMax(samples_max_value[0], asuint(samples_value_buffer[sample_value_index]));
+}

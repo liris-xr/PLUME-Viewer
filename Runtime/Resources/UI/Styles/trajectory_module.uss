@@ -1,0 +1,86 @@
+@import url("dark_theme.uss");
+@import url("global.uss");
+
+.result-entry {
+    flex-direction: row;
+    width: 100%;
+    background-color: var(--unity-theme-background-color-9);
+    margin-top: 2px;
+    margin-bottom: 2px;
+    
+    padding: 5px;
+}
+
+.result-index {
+    width: 30px;
+    -unity-text-align: middle-center;
+    color: rgb(125, 125, 125);
+}
+
+.result-controls {
+    align-content: center;
+    justify-content: center;
+}
+
+.result-controls__btn {
+    width: 24px;
+    height: 24px;
+
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.result-controls__btn .img {
+    width: 12px;
+    height: 12px;
+}
+
+.result-controls__btn:hover:enabled .img {
+    -unity-background-image-tint-color: var(--media-controller-btn-hover-color);
+}
+
+#delete-btn {
+    background-color: rgb(211, 34, 34);
+}
+
+#delete-btn:hover {
+    background-color: rgb(234, 55, 55);
+}
+
+#show-btn.toggle-btn--state1 {
+    background-color: rgb(74, 74, 74);
+}
+
+#show-btn.toggle-btn--state1 .img {
+    background-image: resource("UI/Images/hide");
+    -unity-background-image-tint-color: rgb(130, 130, 130);
+}
+
+#show-btn.toggle-btn--state2 .img {
+    background-image: resource("UI/Images/show");
+}
+
+.result-fields {
+    flex-grow: 1;
+}
+
+.result-field {
+    flex-direction: row;
+    margin: 2px 0;
+}
+
+.result-field Label {
+    white-space: normal;
+}
+
+.result-field__label {
+    color: rgb(125, 125, 125);
+    margin-right: 5px;
+    -unity-text-align: middle-left;
+}
+
+.result-field__value {
+    -unity-text-align: middle-left;
+}

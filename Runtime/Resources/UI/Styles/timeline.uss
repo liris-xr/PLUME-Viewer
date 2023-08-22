@@ -1,0 +1,80 @@
+@import url("dark_theme.uss");
+@import url("global.uss");
+
+:root {
+    --time-cursor-width: 11px;
+    --time-cursor-height: 12px;
+    --time-cursor-half-width: 5px;
+}
+
+.timeline {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.timeline ScrollView {
+    flex-grow: 1;
+}
+
+.timeline ScrollView #unity-content-container {
+    height: 100%;
+}
+
+.time-label {
+    color: rgb(208, 208, 208);
+}
+
+#time-scale {
+    padding: 5px var(--time-cursor-half-width);
+    padding-bottom: 0;
+    background-color: var(--unity-colors-window-background);
+    border-color: var(--unity-colors-default-border);
+    border-bottom-width: 1px;
+    overflow: hidden;
+}
+
+#timeline-content-container {
+    flex-grow: 1;
+    flex-direction: column;
+    width: 200px;
+    margin: 0 var(--time-cursor-half-width);
+}
+
+#time-info-panel {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 300px;
+    max-width: 400px;
+}
+
+#time-field {
+    align-self: center;
+    margin-top: 15px;
+    width: 80%;
+}
+
+#time-field #unity-text-input {
+    padding: 10px;
+}
+
+#time-cursor {
+    height: 100%;
+}
+
+#time-cursor__handle {
+    width: var(--time-cursor-width);
+    height: var(--time-cursor-height);
+    background-image: resource("UI/Images/timecursor-handle");
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-background-image-tint-color: rgb(0, 119, 255);
+}
+
+#time-cursor__stem {
+    width: 1px;
+    height: 100%;
+    left: var(--time-cursor-half-width);
+    background-color: rgb(0, 119, 255);
+}

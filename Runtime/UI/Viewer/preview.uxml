@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Template name="media_controller" src="project://database/Packages/fr.liris.plume/Runtime/UI/Player/media_controller.uxml?fileID=9197481963319205126&amp;guid=ce2419b31ea06fe4b811ce3a0dee998d&amp;type=3#media_controller" />
+    <Style src="project://database/Packages/fr.liris.plume/Runtime/Resources/UI/Styles/preview.uss?fileID=7433441132597879392&amp;guid=aae19869823c7c94cb5fd0a5f4f6137e&amp;type=3#preview" />
+    <Style src="project://database/Packages/fr.liris.plume/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global" />
+    <ui:VisualElement name="preview" focusable="true">
+        <ui:VisualElement name="render-container" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0);">
+            <PLUME.AspectRatioContainerElement name="render" class="panel-container-primary">
+                <ui:VisualElement name="render" focusable="true" style="flex-grow: 1; background-color: rgb(0, 0, 0); height: 100%; max-height: 100%; max-width: 100%; min-width: 100%; align-self: flex-start; top: 0; min-height: 100%; width: 100%; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; padding-left: 0; padding-right: 0; position: relative; left: 0; right: 0; bottom: 0; margin-left: 0; margin-right: 0; visibility: visible; background-image: url(&apos;project://database/Packages/fr.liris.plume/Runtime/UI/Player/FreeCameraOutput.renderTexture?fileID=8400000&amp;guid=2ce710396c20e2b48ab0ed12a0780651&amp;type=2#FreeCameraOutput&apos;);" />
+            </PLUME.AspectRatioContainerElement>
+        </ui:VisualElement>
+        <ui:Instance template="media_controller" name="media-controller" />
+    </ui:VisualElement>
+</ui:UXML>

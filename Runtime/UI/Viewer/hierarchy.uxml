@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Packages/fr.liris.plume/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global" />
+    <ui:VisualElement style="flex-grow: 1;">
+        <ui:VisualElement name="header" class="panel-header">
+            <ui:Label text="Hierarchy" display-tooltip-when-elided="true" class="panel-header__title" />
+        </ui:VisualElement>
+        <ui:TreeView view-data-key="unity-tree-view" name="hierarchy-tree" />
+    </ui:VisualElement>
+</ui:UXML>

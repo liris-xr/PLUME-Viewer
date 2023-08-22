@@ -1,0 +1,57 @@
+﻿:root {
+    --collapse-bar-width: 8px;
+    --collapse-bar-btn-font-size: 5px;
+    --collapse-bar-btn-height: 50px;
+}
+
+.collapse-bar {
+    background-color: var(--unity-colors-app_toolbar-background);
+    justify-content: center;
+}
+
+.collapse-bar--vertical,
+.collapse-bar--reversed-vertical {
+    width: var(--collapse-bar-width);
+    height: 100%;
+    flex-direction: column;
+}
+
+.collapse-bar--horizontal,
+.collapse-bar--reversed-horizontal {
+    height: var(--collapse-bar-width);
+    width: 100%;
+    flex-direction: row;
+}
+
+.collapse-bar__btn {
+    background-image: none;
+    background-color: var(--unity-colors-button-background);
+    border-width: 0;
+    border-radius: 0;
+    margin: 0;
+    padding: 0;
+    
+    font-size: var(--collapse-bar-btn-font-size);
+    color: var(--unity-colors-label-text);
+}
+
+.collapse-bar__btn:active {
+    background-color: var(--unity-colors-button-background-pressed);
+}
+
+.collapse-bar__btn:hover {
+    background-color: var(--unity-colors-button-background-hover);
+    color: var(--unity-colors-button-text);
+}
+
+.collapse-bar--horizontal .collapse-bar__btn,
+.collapse-bar--reversed-horizontal .collapse-bar__btn {
+    height: 100%;
+    width: var(--collapse-bar-btn-height);
+}
+
+.collapse-bar--vertical .collapse-bar__btn,
+.collapse-bar--reversed-vertical .collapse-bar__btn {
+    width: 100%;
+    height: var(--collapse-bar-btn-height);
+}

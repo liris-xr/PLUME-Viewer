@@ -1,0 +1,69 @@
+﻿#include "MeshData.cginc"
+#include "SplitDispatch.cginc"
+#include "Math.cginc"
+
+uint n_triangles;
+uint n_samples;
+RWStructuredBuffer<uint> total_samples_count_buffer;
+RWStructuredBuffer<uint> triangles_resolution_buffer;
+RWStructuredBuffer<uint> triangles_max_resolution_buffer;
+RWStructuredBuffer<uint> triangles_samples_index_offset_buffer;
+RWStructuredBuffer<float> samples_value_buffer;
+
+float samples_density; // Number of samples per square meter
+
+#pragma kernel clear_samples_value
+[numthreads(64,1,1)]
+void clear_samples_value(const uint id : SV_DispatchThreadID)
+{
+    if(id.x >= n_samples)
+        return;
+
+    samples_value_buffer[id.x] = 0;
+}
+
+#pragma kernel compute_triangles_resolution
+[numthreads(64,1,1)]
+void compute_triangles_resolution(const uint id : SV_DispatchThreadID)
+{
+    const uint triangle_index_offset = x_dispatch_index * dispatch_max_thread_group;
+    const uint triangle_index = id.x + triangle_index_offset;
+
+    if (triangle_index >= n_triangles)
+        return;
+        
+    const uint3 triangle_indices = load_triangle_indices(triangle_index);
+    const float3 pos0 = load_vertex_position(triangle_indices[0]);
+    const float3 pos1 = load_vertex_position(triangle_indices[1]);
+    const float3 pos2 = load_vertex_position(triangle_indices[2]);
+
+    const float triangle_area = length(cross(pos1 - pos0, pos2 - pos0)) / 2.0;
+
+    /*
+     * Solving the system of equations for r:
+     * (1) #s = samples_density * triangle_area
+     * (2) #s = (r + 1) * (r + 2) / 2
+     */
+    const float delta = 1 + 8 * samples_density * triangle_area;
+    const uint resolution = max(1, ceil((-3 + sqrt(delta)) / 2.0));
+
+    triangles_resolution_buffer[triangle_index] = resolution;
+    InterlockedMax(triangles_max_resolution_buffer[0], resolution);
+    InterlockedAdd(total_samples_count_buffer[0], n_th_triangle_formula(resolution));
+}
+
+// #pragma kernel compute_triangles_samples_index_offset
+// [numthreads(1, 1, 1)]
+// void compute_triangles_samples_index_offset() {
+//
+//     // This sequential algorithm is a dumb thing to do on a GPU but prevents a I/O to CPU.
+//     // TODO: The parallel prefix sum can be used instead but needs to be adapted.
+//     
+//     triangles_samples_index_offset_buffer[0] = 0;
+//     
+//     // [unroll]
+//     for(uint i = 1; i < n_triangles; ++i)
+//     {
+//         triangles_samples_index_offset_buffer[i] = triangles_samples_index_offset_buffer[i - 1] + n_th_triangle_formula(triangles_resolution_buffer[i - 1]);
+//     }
+// }

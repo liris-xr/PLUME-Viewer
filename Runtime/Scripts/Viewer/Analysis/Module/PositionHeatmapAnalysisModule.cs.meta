@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: cbe78adbc514426da7f1d28316a5605b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - segmentedObjectDepthShader: {fileID: 4800000, guid: 8a8e86676da12f4459f2967ab39fdfa0, type: 3}
+  - projectionShader: {fileID: 7200000, guid: ee558b7851a9c454086973b669398af2, type: 3}
+  - samplesHeatmapShader: {fileID: 4800000, guid: 9f834e0c181e8484faf4258906512e0d, type: 3}
+  - defaultHeatmapShader: {fileID: 4800000, guid: 32cdfffc30ca45f4480587813a9aa447, type: 3}
+  - meshSampler: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
