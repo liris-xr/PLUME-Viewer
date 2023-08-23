@@ -15,11 +15,6 @@ namespace PLUME.UI
                     ctx.GetOrCreateComponentByIdentifier<TextMeshProUGUI>(tmpTextCreate.Id);
                     break;
                 }
-                case TMPTextDestroy tmpTextDestroy:
-                {
-                    ctx.TryDestroyComponentByIdentifier(tmpTextDestroy.Id);
-                    break;
-                }
                 case TMPTextUpdateColor tmpTextUpdateColor:
                 {
                     var t = ctx.GetOrCreateComponentByIdentifier<TextMeshProUGUI>(tmpTextUpdateColor.Id);

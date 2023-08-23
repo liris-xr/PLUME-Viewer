@@ -16,11 +16,6 @@ namespace PLUME
                     ctx.GetOrCreateComponentByIdentifier<SkinnedMeshRenderer>(skinnedMeshRendererCreate.Id);
                     break;
                 }
-                case SkinnedMeshRendererDestroy skinnedMeshRendererDestroy:
-                {
-                    ctx.TryDestroyComponentByIdentifier(skinnedMeshRendererDestroy.Id);
-                    break;
-                }
                 case SkinnedMeshRendererUpdateEnabled skinnedMeshRendererUpdateEnabled:
                 {
                     var skinnedMeshRenderer =

@@ -29,11 +29,6 @@ namespace PLUME.UI
                     ctx.TryAddAssetIdentifierCorrespondence(imageUpdateSprite.SpriteId, i.sprite);
                     break;
                 }
-                case ImageDestroy imageDestroy:
-                {
-                    ctx.TryDestroyComponentByIdentifier(imageDestroy.Id);
-                    break;
-                }
             }
         }
     }

@@ -16,11 +16,6 @@ namespace PLUME
                     ctx.GetOrCreateComponentByIdentifier<MeshRenderer>(meshRendererCreate.Id);
                     break;
                 }
-                case MeshRendererDestroy meshRendererDestroy:
-                {
-                    ctx.TryDestroyComponentByIdentifier(meshRendererDestroy.Id);
-                    break;
-                }
                 case MeshRendererUpdateEnabled meshRendererUpdateEnabled:
                 {
                     var meshRenderer = ctx.GetOrCreateComponentByIdentifier<MeshRenderer>(meshRendererUpdateEnabled.Id);

@@ -16,11 +16,6 @@ namespace PLUME.UI
                     ctx.GetOrCreateComponentByIdentifier<Text>(textCreate.Id);
                     break;
                 }
-                case TextDestroy textDestroy:
-                {
-                    ctx.TryDestroyComponentByIdentifier(textDestroy.Id);
-                    break;
-                }
                 case TextUpdateColor textUpdateColor:
                 {
                     var t = ctx.GetOrCreateComponentByIdentifier<Text>(textUpdateColor.Id);

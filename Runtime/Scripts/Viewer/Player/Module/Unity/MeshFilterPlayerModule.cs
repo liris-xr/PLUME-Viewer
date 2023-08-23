@@ -15,11 +15,6 @@ namespace PLUME
                     ctx.GetOrCreateComponentByIdentifier<MeshFilter>(meshFilterCreate.Id);
                     break;
                 }
-                case MeshFilterDestroy meshFilterDestroy:
-                {
-                    ctx.TryDestroyComponentByIdentifier(meshFilterDestroy.Id);
-                    break;
-                }
                 case MeshFilterUpdateMesh meshFilterUpdateMesh:
                 {
                     var meshFilter = ctx.GetOrCreateComponentByIdentifier<MeshFilter>(meshFilterUpdateMesh.Id);

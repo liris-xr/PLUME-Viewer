@@ -22,11 +22,6 @@ namespace PLUME.UI
                     cs.referencePixelsPerUnit = canvasScalerUpdatePixelsPerUnit.ReferencePixelsPerUnit;
                     break;
                 }
-                case CanvasScalerDestroy canvasScalerDestroy:
-                {
-                    ctx.TryDestroyComponentByIdentifier(canvasScalerDestroy.Id);
-                    break;
-                }
             }
         }
     }

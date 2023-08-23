@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf;
 using PLUME.Sample;
+using UnityEngine;
 
 namespace PLUME
 {
@@ -101,14 +102,15 @@ namespace PLUME
             {
                 throw new Exception("Header can't be null.");
             }
-            
+
             if (item.Payload == null)
             {
                 throw new Exception("Payload can't be null.");
             }
 
-            if (item.Header.Time < lastItem?.Header.Time)
+            if (lastItem != null && item.Header.Time < lastItem.Header.Time)
             {
+                Debug.Log(item.Payload + " | " + lastItem.Payload);
                 throw new Exception("Can't add a sample with a time smaller than the last sample's time in the list.");
             }
 
@@ -151,12 +153,12 @@ namespace PLUME
             {
                 throw new Exception("Header can't be null.");
             }
-            
+
             if (item.Payload == null)
             {
                 throw new Exception("Payload can't be null.");
             }
-            
+
             if (index > 0 && _samples[index - 1].Header.Time > item.Header.Time ||
                 index < Count - 1 && _samples[index + 1].Header.Time < item.Header.Time)
             {
@@ -188,7 +190,7 @@ namespace PLUME
                     throw new Exception(
                         "Can't insert a sample with a time smaller than the previous sample's time or greater than the next sample's time in the list.");
                 }
-                
+
                 _samples[index] = value;
             }
         }

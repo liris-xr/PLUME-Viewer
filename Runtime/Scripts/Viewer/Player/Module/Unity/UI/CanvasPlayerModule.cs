@@ -21,11 +21,6 @@ namespace PLUME.UI
                     c.renderMode = (RenderMode) canvasUpdateRenderMode.RenderMode;
                     break;
                 }
-                case CanvasDestroy canvasDestroy:
-                {
-                    ctx.TryDestroyComponentByIdentifier(canvasDestroy.Id);
-                    break;
-                }
             }
         }
     }

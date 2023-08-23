@@ -474,7 +474,7 @@ namespace PLUME
             return true;
         }
 
-        public bool TryDestroyComponentByIdentifier(ComponentIdentifier identifier)
+        public bool TryDestroyComponentByIdentifier(ComponentDestroyIdentifier identifier)
         {
             var componentReplayInstanceId = GetReplayInstanceId(identifier.Id);
 

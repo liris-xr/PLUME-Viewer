@@ -16,11 +16,6 @@ namespace PLUME
                     ctx.GetOrCreateComponentByIdentifier<Light>(lightCreate.Id);
                     break;
                 }
-                case LightDestroy lightDestroy:
-                {
-                    ctx.TryDestroyComponentByIdentifier(lightDestroy.Id);
-                    break;
-                }
                 case LightUpdateEnabled lightUpdateEnabled:
                 {
                     var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateEnabled.Id);
