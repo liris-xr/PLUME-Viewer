@@ -143,6 +143,7 @@ namespace PLUME
                 var endTime = currentTime + projectionSamplingInterval;
                 yield return PlaySamplesInTimeRange(loader, ctx, startTime, endTime);
                 
+                // TODO: also project onto children
                 var replayProjectionCasterId = ctx.GetReplayInstanceId(projectionCasterIdentifier);
                 var replayProjectionReceiversIds = projectionReceiversIdentifiers.Select(ctx.GetReplayInstanceId)
                     .Where(id => id.HasValue)
