@@ -106,6 +106,8 @@ void project_std_normal_distribution(const uint2 id : SV_DispatchThreadID)
 
     const uint sample_value_index = triangles_samples_index_offset_buffer[triangle_index] + sample_index;
 
+    // TODO: Apply bone deformation to vertex position https://forum.unity.com/threads/diy-skinned-mesh-rendering.125755/
+    
     const uint3 triangle_indices = load_triangle_indices(triangle_index);
     const float3 pos0 = load_vertex_position(triangle_indices[0]);
     const float3 pos1 = load_vertex_position(triangle_indices[1]);

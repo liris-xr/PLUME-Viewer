@@ -4,8 +4,7 @@ using UnityEngine.UIElements;
 
 namespace PLUME.UI.Analysis
 {
-    public class PositionHeatmapAnalysisModuleUI : AnalysisModuleWithResultsUI<PositionHeatmapAnalysisModule,
-        PositionHeatmapAnalysisResult>
+    public class PositionHeatmapAnalysisModuleUI : AnalysisModuleWithResultsUI<PositionHeatmapAnalysisModule, PositionHeatmapAnalysisResult>
     {
         public Player player;
 

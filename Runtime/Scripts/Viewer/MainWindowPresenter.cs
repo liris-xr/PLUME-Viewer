@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
 namespace PLUME.UI
@@ -8,7 +9,8 @@ namespace PLUME.UI
     public class MainWindowPresenter : MonoBehaviour
     {
         public Player player;
-
+        public FreeCamera freeCamera;
+        
         private MainWindowUI _mainWindowUI;
 
         private void Awake()
@@ -21,7 +23,11 @@ namespace PLUME.UI
             _mainWindowUI.PreviewRender.RegisterCallback<FocusInEvent>(OnPreviewRenderFocused);
             _mainWindowUI.PreviewRender.RegisterCallback<FocusOutEvent>(OnPreviewRenderUnfocused);
             _mainWindowUI.PreviewRender.RegisterCallback<NavigationMoveEvent>(OnPreviewRenderNavigationMove);
+            _mainWindowUI.PreviewRender.RegisterCallback<KeyDownEvent>(OnPreviewRenderKeyDown);
 
+            _mainWindowUI.Timeline.RegisterCallback<KeyDownEvent>(OnPlayPauseKeyDown);
+            _mainWindowUI.PlayPauseButton.RegisterCallback<KeyDownEvent>(OnPlayPauseKeyDown);
+            
             _mainWindowUI.PlayPauseButton.toggled += OnTogglePlayPause;
             _mainWindowUI.TimeIndicator.timeChanged += OnTimeIndicatorChanged;
             _mainWindowUI.TimeScale.dragged += OnTimeScaleDragged;
@@ -37,6 +43,9 @@ namespace PLUME.UI
             _mainWindowUI.RefreshPlayPauseButton();
             _mainWindowUI.RefreshSpeed();
 
+            _mainWindowUI.Timeline.focusable = true;
+            _mainWindowUI.Timeline.Focus();
+            
             player.GetPlayerContext().updatedHierarchy += OnHierarchyUpdateEvent;
         }
 
@@ -96,6 +105,24 @@ namespace PLUME.UI
             player.JumpToTime(Math.Clamp(time, 0, player.GetRecordDurationInNanoseconds()));
         }
 
+        private void OnPlayPauseKeyDown(KeyDownEvent evt)
+        {
+            if (evt.keyCode == KeyCode.Space)
+            {
+                player.TogglePlaying();
+                _mainWindowUI.RefreshPlayPauseButton();
+            }
+        }
+
+        private void OnPreviewRenderKeyDown(KeyDownEvent evt)
+        {
+            if (evt.keyCode == KeyCode.Escape)
+            {
+                _mainWindowUI.PreviewRender.Blur();
+                _mainWindowUI.Timeline.Focus();
+            }
+        }
+        
         private void OnPreviewRenderNavigationMove(NavigationMoveEvent evt)
         {
             // Prevent navigation keys to change focus to another pane (WASD, arrows, joystick, ...)
@@ -104,9 +131,7 @@ namespace PLUME.UI
 
         private void OnPreviewRenderFocused(FocusInEvent evt)
         {
-            var freeCameras = FindObjectsOfType<FreeCamera>();
-
-            foreach (var freeCamera in freeCameras)
+            if (freeCamera != null)
             {
                 freeCamera.disabled = false;
             }
@@ -114,9 +139,7 @@ namespace PLUME.UI
 
         private void OnPreviewRenderUnfocused(FocusOutEvent evt)
         {
-            var freeCameras = FindObjectsOfType<FreeCamera>();
-
-            foreach (var freeCamera in freeCameras)
+            if (freeCamera != null)
             {
                 freeCamera.disabled = true;
             }

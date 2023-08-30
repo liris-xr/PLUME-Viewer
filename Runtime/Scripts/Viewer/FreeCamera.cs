@@ -1,10 +1,6 @@
-﻿#if ENABLE_INPUT_SYSTEM && ENABLE_INPUT_SYSTEM_PACKAGE
-#define USE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
-
-using System.Collections.Generic;
+﻿#define USE_INPUT_SYSTEM
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 
 namespace PLUME
@@ -14,67 +10,57 @@ namespace PLUME
     /// </summary>
     public class FreeCamera : MonoBehaviour
     {
+        [HideInInspector]
         public bool disabled = true;
-        
-        const float k_MouseSensitivityMultiplier = 0.01f;
 
-        /// <summary>
-        /// Rotation speed when using a controller.
-        /// </summary>
-        public float m_LookSpeedController = 120f;
+        private const float MouseSensitivityMultiplier = 0.01f;
+
         /// <summary>
         /// Rotation speed when using the mouse.
         /// </summary>
-        public float m_LookSpeedMouse = 4.0f;
+        public float lookSpeedMouse = 4.0f;
+
         /// <summary>
         /// Movement speed.
         /// </summary>
-        public float m_MoveSpeed = 10.0f;
+        public float moveSpeed = 10.0f;
+
         /// <summary>
         /// Value added to the speed when incrementing.
         /// </summary>
-        public float m_MoveSpeedIncrement = 2.5f;
+        public float moveSpeedIncrement = 2.5f;
+
         /// <summary>
         /// Scale factor of the turbo mode.
         /// </summary>
-        public float m_Turbo = 10.0f;
+        public float turbo = 10.0f;
 
-#if !USE_INPUT_SYSTEM
-        private static string kMouseX = "Mouse X";
-        private static string kMouseY = "Mouse Y";
-        private static string kRightStickX = "Controller Right Stick X";
-        private static string kRightStickY = "Controller Right Stick Y";
-        private static string kVertical = "Vertical";
-        private static string kHorizontal = "Horizontal";
+        private InputAction _lookAction;
+        private InputAction _moveAction;
+        private InputAction _speedAction;
+        private InputAction _yMoveAction;
 
-        private static string kYAxis = "YAxis";
-        private static string kSpeedAxis = "Speed Axis";
-#endif
+        private float _inputRotateAxisX, _inputRotateAxisY;
+        private float _inputChangeSpeed;
+        private float _inputVertical, _inputHorizontal, _inputYAxis;
+        private bool _leftShiftBoost, _leftShift, _fire1;
 
-#if USE_INPUT_SYSTEM
-        InputAction lookAction;
-        InputAction moveAction;
-        InputAction speedAction;
-        InputAction yMoveAction;
-#endif
-
-        void OnEnable()
+        private void OnEnable()
         {
             RegisterInputs();
         }
 
-        void RegisterInputs()
+        private void RegisterInputs()
         {
-#if USE_INPUT_SYSTEM
             var map = new InputActionMap("Free Camera");
 
-            lookAction = map.AddAction("look", binding: "<Mouse>/delta");
-            moveAction = map.AddAction("move", binding: "<Gamepad>/leftStick");
-            speedAction = map.AddAction("speed", binding: "<Gamepad>/dpad");
-            yMoveAction = map.AddAction("yMove");
+            _lookAction = map.AddAction("look", binding: "<Mouse>/delta");
+            _moveAction = map.AddAction("move", binding: "<Gamepad>/leftStick");
+            _speedAction = map.AddAction("speed", binding: "<Gamepad>/dpad");
+            _yMoveAction = map.AddAction("yMove");
 
-            lookAction.AddBinding("<Gamepad>/rightStick").WithProcessor("scaleVector2(x=15, y=15)");
-            moveAction.AddCompositeBinding("Dpad")
+            _lookAction.AddBinding("<Gamepad>/rightStick").WithProcessor("scaleVector2(x=15, y=15)");
+            _moveAction.AddCompositeBinding("Dpad")
                 .With("Up", "<Keyboard>/w")
                 .With("Up", "<Keyboard>/upArrow")
                 .With("Down", "<Keyboard>/s")
@@ -83,10 +69,10 @@ namespace PLUME
                 .With("Left", "<Keyboard>/leftArrow")
                 .With("Right", "<Keyboard>/d")
                 .With("Right", "<Keyboard>/rightArrow");
-            speedAction.AddCompositeBinding("Dpad")
+            _speedAction.AddCompositeBinding("Dpad")
                 .With("Up", "<Keyboard>/home")
                 .With("Down", "<Keyboard>/end");
-            yMoveAction.AddCompositeBinding("Dpad")
+            _yMoveAction.AddCompositeBinding("Dpad")
                 .With("Up", "<Keyboard>/pageUp")
                 .With("Down", "<Keyboard>/pageDown")
                 .With("Up", "<Keyboard>/e")
@@ -94,77 +80,35 @@ namespace PLUME
                 .With("Up", "<Gamepad>/rightshoulder")
                 .With("Down", "<Gamepad>/leftshoulder");
 
-            moveAction.Enable();
-            lookAction.Enable();
-            speedAction.Enable();
-            yMoveAction.Enable();
-#endif
-
-#if UNITY_EDITOR && !USE_INPUT_SYSTEM
-            List<InputManagerEntry> inputEntries = new List<InputManagerEntry>();
-
-            // Add new bindings
-            inputEntries.Add(new InputManagerEntry { name = kRightStickX, kind = InputManagerEntry.Kind.Axis, axis = InputManagerEntry.Axis.Fourth, sensitivity = 1.0f, gravity = 1.0f, deadZone = 0.2f });
-            inputEntries.Add(new InputManagerEntry { name = kRightStickY, kind = InputManagerEntry.Kind.Axis, axis = InputManagerEntry.Axis.Fifth, sensitivity = 1.0f, gravity = 1.0f, deadZone = 0.2f, invert = true });
-
-            inputEntries.Add(new InputManagerEntry { name = kYAxis, kind = InputManagerEntry.Kind.KeyOrButton, btnPositive = "page up", altBtnPositive = "joystick button 5", btnNegative = "page down", altBtnNegative = "joystick button 4", gravity = 1000.0f, deadZone = 0.001f, sensitivity = 1000.0f });
-            inputEntries.Add(new InputManagerEntry { name = kYAxis, kind = InputManagerEntry.Kind.KeyOrButton, btnPositive = "q", btnNegative = "e", gravity = 1000.0f, deadZone = 0.001f, sensitivity = 1000.0f });
-
-            inputEntries.Add(new InputManagerEntry { name = kSpeedAxis, kind = InputManagerEntry.Kind.KeyOrButton, btnPositive = "home", btnNegative = "end", gravity = 1000.0f, deadZone = 0.001f, sensitivity = 1000.0f });
-            inputEntries.Add(new InputManagerEntry { name = kSpeedAxis, kind = InputManagerEntry.Kind.Axis, axis = InputManagerEntry.Axis.Seventh, gravity = 1000.0f, deadZone = 0.001f, sensitivity = 1000.0f });
-
-            InputRegistering.RegisterInputs(inputEntries);
-#endif
+            _moveAction.Enable();
+            _lookAction.Enable();
+            _speedAction.Enable();
+            _yMoveAction.Enable();
         }
 
-        float inputRotateAxisX, inputRotateAxisY;
-        float inputChangeSpeed;
-        float inputVertical, inputHorizontal, inputYAxis;
-        bool leftShiftBoost, leftShift, fire1;
-
-        void UpdateInputs()
+        private void UpdateInputs()
         {
-            inputRotateAxisX = 0.0f;
-            inputRotateAxisY = 0.0f;
-            leftShiftBoost = false;
-            fire1 = false;
+            _inputRotateAxisX = 0.0f;
+            _inputRotateAxisY = 0.0f;
+            _leftShiftBoost = false;
+            _fire1 = false;
 
-#if USE_INPUT_SYSTEM
-            var lookDelta = lookAction.ReadValue<Vector2>();
-            inputRotateAxisX = lookDelta.x * m_LookSpeedMouse * k_MouseSensitivityMultiplier;
-            inputRotateAxisY = lookDelta.y * m_LookSpeedMouse * k_MouseSensitivityMultiplier;
+            var lookDelta = _lookAction.ReadValue<Vector2>();
+            _inputRotateAxisX = lookDelta.x * lookSpeedMouse * MouseSensitivityMultiplier;
+            _inputRotateAxisY = lookDelta.y * lookSpeedMouse * MouseSensitivityMultiplier;
 
-            leftShift = Keyboard.current?.leftShiftKey?.isPressed ?? false;
-            fire1 = Mouse.current?.leftButton?.isPressed == true || Gamepad.current?.xButton?.isPressed == true;
+            _leftShift = Keyboard.current?.leftShiftKey?.isPressed ?? false;
+            _fire1 = Mouse.current?.leftButton?.isPressed == true || Gamepad.current?.xButton?.isPressed == true;
 
-            inputChangeSpeed = speedAction.ReadValue<Vector2>().y;
+            _inputChangeSpeed = _speedAction.ReadValue<Vector2>().y;
 
-            var moveDelta = moveAction.ReadValue<Vector2>();
-            inputVertical = moveDelta.y;
-            inputHorizontal = moveDelta.x;
-            inputYAxis = yMoveAction.ReadValue<Vector2>().y;
-#else
-            if (Input.GetMouseButton(1))
-            {
-                leftShiftBoost = true;
-                inputRotateAxisX = Input.GetAxis(kMouseX) * m_LookSpeedMouse;
-                inputRotateAxisY = Input.GetAxis(kMouseY) * m_LookSpeedMouse;
-            }
-            inputRotateAxisX += (Input.GetAxis(kRightStickX) * m_LookSpeedController * k_MouseSensitivityMultiplier);
-            inputRotateAxisY += (Input.GetAxis(kRightStickY) * m_LookSpeedController * k_MouseSensitivityMultiplier);
-
-            leftShift = Input.GetKey(KeyCode.LeftShift);
-            fire1 = Input.GetAxis("Fire1") > 0.0f;
-
-            inputChangeSpeed = Input.GetAxis(kSpeedAxis);
-
-            inputVertical = Input.GetAxis(kVertical);
-            inputHorizontal = Input.GetAxis(kHorizontal);
-            inputYAxis = Input.GetAxis(kYAxis);
-#endif
+            var moveDelta = _moveAction.ReadValue<Vector2>();
+            _inputVertical = moveDelta.y;
+            _inputHorizontal = moveDelta.x;
+            _inputYAxis = _yMoveAction.ReadValue<Vector2>().y;
         }
 
-        void Update()
+        private void Update()
         {
             // If the debug menu is running, we don't want to conflict with its inputs.
             if (DebugManager.instance.displayRuntimeUI)
@@ -175,33 +119,39 @@ namespace PLUME
 
             UpdateInputs();
 
-            if (inputChangeSpeed != 0.0f)
+            if (_inputChangeSpeed != 0.0f)
             {
-                m_MoveSpeed += inputChangeSpeed * m_MoveSpeedIncrement;
-                if (m_MoveSpeed < m_MoveSpeedIncrement) m_MoveSpeed = m_MoveSpeedIncrement;
+                moveSpeed += _inputChangeSpeed * moveSpeedIncrement;
+                if (moveSpeed < moveSpeedIncrement) moveSpeed = moveSpeedIncrement;
             }
 
-            bool moved = inputRotateAxisX != 0.0f || inputRotateAxisY != 0.0f || inputVertical != 0.0f || inputHorizontal != 0.0f || inputYAxis != 0.0f;
+            var moved = _inputRotateAxisX != 0.0f || _inputRotateAxisY != 0.0f || _inputVertical != 0.0f ||
+                        _inputHorizontal != 0.0f || _inputYAxis != 0.0f;
             if (moved)
             {
-                float rotationX = transform.localEulerAngles.x;
-                float newRotationY = transform.localEulerAngles.y + inputRotateAxisX;
+                var localEulerAngles = transform.localEulerAngles;
+                var rotationX = localEulerAngles.x;
+                var newRotationY = localEulerAngles.y + _inputRotateAxisX;
 
                 // Weird clamping code due to weird Euler angle mapping...
-                float newRotationX = (rotationX - inputRotateAxisY);
+                var newRotationX = (rotationX - _inputRotateAxisY);
                 if (rotationX <= 90.0f && newRotationX >= 0.0f)
                     newRotationX = Mathf.Clamp(newRotationX, 0.0f, 90.0f);
                 if (rotationX >= 270.0f)
                     newRotationX = Mathf.Clamp(newRotationX, 270.0f, 360.0f);
 
-                transform.localRotation = Quaternion.Euler(newRotationX, newRotationY, transform.localEulerAngles.z);
+                var t = transform;
+                t.localRotation = Quaternion.Euler(newRotationX, newRotationY, t.localEulerAngles.z);
 
-                float moveSpeed = Time.deltaTime * m_MoveSpeed;
-                if (fire1 || leftShiftBoost && leftShift)
-                    moveSpeed *= m_Turbo;
-                transform.position += transform.forward * moveSpeed * inputVertical;
-                transform.position += transform.right * moveSpeed * inputHorizontal;
-                transform.position += Vector3.up * moveSpeed * inputYAxis;
+                var speed = Time.deltaTime * this.moveSpeed;
+                if (_fire1 || _leftShiftBoost && _leftShift)
+                    speed *= turbo;
+
+                var position = t.position;
+                position += t.forward * (speed * _inputVertical);
+                position += t.right * (speed * _inputHorizontal);
+                position += Vector3.up * (speed * _inputYAxis);
+                t.position = position;
             }
         }
     }

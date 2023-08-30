@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -50,7 +51,7 @@ namespace PLUME
             {
                 if (asset is Mesh mesh)
                 {
-                    mesh.UploadMeshData(false);
+                    mesh.UploadMeshData(true);
                 }
                 
                 if (!_assetsRegistry.TryAdd(hash, asset))

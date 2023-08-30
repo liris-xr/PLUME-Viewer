@@ -9,6 +9,49 @@ namespace PLUME
     {
         public ComputeShader meshSamplingShader;
 
+        public static Mesh MakeReadableMeshCopy(Mesh nonReadableMesh)
+        {
+            // We were forced to do this because the Stanford Bunny model would disappear when changing the graphics buffer targets.
+            // This is probably due to the fact that they are not readable when loading from the asset bundle.
+            // TODO: find a way to make all mesh readable in the asset bundle
+            var meshCopy = new Mesh();
+            meshCopy.indexFormat = nonReadableMesh.indexFormat;
+ 
+            // Handle vertices
+            var verticesBuffer = nonReadableMesh.GetVertexBuffer(0);
+            var totalSize = verticesBuffer.stride * verticesBuffer.count;
+            var data = new byte[totalSize];
+            verticesBuffer.GetData(data);
+            meshCopy.SetVertexBufferParams(nonReadableMesh.vertexCount, nonReadableMesh.GetVertexAttributes());
+            meshCopy.SetVertexBufferData(data, 0, 0, totalSize);
+            verticesBuffer.Release();
+ 
+            // Handle triangles
+            meshCopy.subMeshCount = nonReadableMesh.subMeshCount;
+            var indexesBuffer = nonReadableMesh.GetIndexBuffer();
+            var tot = indexesBuffer.stride * indexesBuffer.count;
+            var indexesData = new byte[tot];
+            indexesBuffer.GetData(indexesData);
+            meshCopy.SetIndexBufferParams(indexesBuffer.count, nonReadableMesh.indexFormat);
+            meshCopy.SetIndexBufferData(indexesData, 0, 0, tot);
+            indexesBuffer.Release();
+ 
+            // Restore submesh structure
+            uint currentIndexOffset = 0;
+            for (var i = 0; i < meshCopy.subMeshCount; i++)
+            {
+                var subMeshIndexCount = nonReadableMesh.GetIndexCount(i);
+                meshCopy.SetSubMesh(i, new SubMeshDescriptor((int)currentIndexOffset, (int)subMeshIndexCount));
+                currentIndexOffset += subMeshIndexCount;
+            }
+ 
+            // Recalculate normals and bounds
+            meshCopy.RecalculateNormals();
+            meshCopy.RecalculateBounds();
+ 
+            return meshCopy;
+        }
+
         /// <summary>
         /// Generate quasi-uniform sampling for the given mesh <paramref name="mesh"/>.
         /// </summary>
@@ -29,13 +72,14 @@ namespace PLUME
             using var totalSamplesCountBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
             using var trianglesMaxResolutionBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
 
-            mesh.indexBufferTarget = GraphicsBuffer.Target.Index | GraphicsBuffer.Target.Raw;
-            mesh.vertexBufferTarget = GraphicsBuffer.Target.Vertex | GraphicsBuffer.Target.Raw;
-            
-            var vertexBuffer = mesh.GetVertexBuffer(0);
+            var readableMeshCopy = MakeReadableMeshCopy(mesh);
+            readableMeshCopy.indexBufferTarget |= GraphicsBuffer.Target.Raw;
+            readableMeshCopy.vertexBufferTarget |= GraphicsBuffer.Target.Raw;
+
+            var vertexBuffer = readableMeshCopy.GetVertexBuffer(0);
             var vertexBufferStride = vertexBuffer.stride;
-            var vertexBufferPositionOffset = mesh.GetVertexAttributeOffset(VertexAttribute.Position);
-            var indexBuffer = mesh.GetIndexBuffer();
+            var vertexBufferPositionOffset = readableMeshCopy.GetVertexAttributeOffset(VertexAttribute.Position);
+            var indexBuffer = readableMeshCopy.GetIndexBuffer();
             var indexBufferStride = indexBuffer.stride;
 
             var nTriangles = (uint) (indexBuffer.count / 3);
@@ -85,7 +129,7 @@ namespace PLUME
                 vertexBufferPositionOffset, sampleValuesBuffer,
                 trianglesResolutionBuffer,
                 trianglesSamplesIndexOffsetBuffer);
-
+            
             ClearMeshSamplerResult(sampledMesh, meshSamplingShader);
             return sampledMesh;
         }
@@ -102,7 +146,7 @@ namespace PLUME
             shader.SetBuffer(kernel, "samples_value_buffer", result.SampleValuesBuffer);
             shader.GetKernelThreadGroupSizes(kernel, out var threadGroupSize, out _, out _);
             var totalNumberOfGroupsX = Mathf.CeilToInt(result.NSamples / (float) threadGroupSize);
-            shader.SplitDispatch( kernel, totalNumberOfGroupsX, 1);
+            shader.SplitDispatch(kernel, totalNumberOfGroupsX, 1);
         }
 
         private static void ComputeTrianglesResolution(

@@ -450,23 +450,41 @@ namespace PLUME
                 Object.DestroyImmediate(go);
             }
 
-            var gameObjectsEntriesToRemove = _gameObjectsByInstanceId.Where(pair => pair.Value == null);
-            var transformsEntriesToRemove = _transformsByInstanceId.Where(pair => pair.Value == null);
-            var componentsEntriesToRemove = _componentByInstanceId.Where(pair => pair.Value == null);
+            var gameObjectsToRemove = new List<int>();
+            var transformsToRemove = new List<int>();
+            var componentsToRemove = new List<int>();
 
-            foreach (var entry in gameObjectsEntriesToRemove)
+            foreach (var (instanceId, gameObject) in _gameObjectsByInstanceId)
             {
-                _gameObjectsByInstanceId.Remove(entry.Key);
+                if(gameObject == null)
+                    gameObjectsToRemove.Add(instanceId);
+            }
+            
+            foreach (var (instanceId, transform) in _transformsByInstanceId)
+            {
+                if(transform == null)
+                    transformsToRemove.Add(instanceId);
+            }
+            
+            foreach (var (instanceId, component) in _componentByInstanceId)
+            {
+                if(component == null)
+                    componentsToRemove.Add(instanceId);
+            }
+            
+            foreach (var gameObjectInstanceId in gameObjectsToRemove)
+            {
+                _gameObjectsByInstanceId.Remove(gameObjectInstanceId);
             }
 
-            foreach (var entry in transformsEntriesToRemove)
+            foreach (var transformInstanceId in transformsToRemove)
             {
-                _transformsByInstanceId.Remove(entry.Key);
+                _transformsByInstanceId.Remove(transformInstanceId);
             }
 
-            foreach (var entry in componentsEntriesToRemove)
+            foreach (var componentInstanceId in componentsToRemove)
             {
-                _componentByInstanceId.Remove(entry.Key);
+                _componentByInstanceId.Remove(componentInstanceId);
             }
 
             RemoveIdentifierCorrespondence(identifier.GameObjectId);

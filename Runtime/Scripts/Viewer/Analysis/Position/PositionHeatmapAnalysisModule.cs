@@ -61,14 +61,13 @@ namespace PLUME
         private Material _defaultHeatmapMaterial;
 
         private PositionHeatmapAnalysisResult _visibleResult;
-        private readonly Dictionary<PositionHeatmapAnalysisResult, MaterialPropertyBlock> _cachedPropertyBlocks = new();
+        private readonly Dictionary<MeshSamplerResult, MaterialPropertyBlock> _cachedPropertyBlocks = new();
 
         private void Awake()
         {
             SetupProjectionCamera(segmentedObjectDepthTextureResolution, radius * 2, 0.3f, 1000.0f);
             _sampleHeatmapMaterial = new Material(samplesHeatmapShader);
             _defaultHeatmapMaterial = new Material(defaultHeatmapShader);
-            // Camera.onPreRender += OnPreRenderCamera;
         }
 
         private void SetupProjectionCamera(int res, float size, float nearClipPlane, float farClipPlane)
@@ -404,14 +403,13 @@ namespace PLUME
                 return;
 
             goRenderer.sharedMaterial = _sampleHeatmapMaterial;
-            var propertyBlock = GetOrCreateResultPropertyBlock(_visibleResult, meshSamplerResult);
+            var propertyBlock = GetOrCreateResultPropertyBlock(meshSamplerResult);
             goRenderer.SetPropertyBlock(propertyBlock);
         }
 
-        private MaterialPropertyBlock GetOrCreateResultPropertyBlock(PositionHeatmapAnalysisResult result,
-            MeshSamplerResult meshSamplerResult)
+        private MaterialPropertyBlock GetOrCreateResultPropertyBlock(MeshSamplerResult meshSamplerResult)
         {
-            if (_cachedPropertyBlocks.TryGetValue(result, out var propertyBlock))
+            if (_cachedPropertyBlocks.TryGetValue(meshSamplerResult, out var propertyBlock))
             {
                 return propertyBlock;
             }
@@ -429,7 +427,7 @@ namespace PLUME
             newPropertyBlock.SetBuffer(trianglesSamplesIndexOffsetBuffer,
                 meshSamplerResult.TrianglesSamplesIndexOffsetBuffer);
             newPropertyBlock.SetBuffer(samplesValueBuffer, meshSamplerResult.SampleValuesBuffer);
-            _cachedPropertyBlocks.Add(result, newPropertyBlock);
+            _cachedPropertyBlocks.Add(meshSamplerResult, newPropertyBlock);
             return newPropertyBlock;
         }
 
@@ -439,10 +437,9 @@ namespace PLUME
 
             if (result == _visibleResult)
             {
+                _cachedPropertyBlocks.Clear();
                 SetVisibleResult(null);
             }
-
-            _cachedPropertyBlocks.Remove(result);
         }
 
         private void OnDestroy()

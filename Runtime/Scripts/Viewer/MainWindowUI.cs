@@ -12,7 +12,7 @@ namespace PLUME.UI
         public Player player;
 
         public UIDocument document;
-
+        
         public TimelineElement Timeline { get; private set; }
         public TimeFieldElement TimeIndicator { get; private set; }
         public TimeScaleElement TimeScale { get; private set; }
@@ -26,7 +26,8 @@ namespace PLUME.UI
         public TextField SpeedTextField { get; private set; }
 
         public ToggleButton ToggleMaximizePreviewButton { get; private set; }
-        public VisualElement PreviewRender { get; private set; }
+        public VisualElement Preview { get; private set; }
+        public AspectRatioContainerElement PreviewRender { get; private set; }
         
         public TreeView HierarchyTree { get; private set; }
 
@@ -54,7 +55,8 @@ namespace PLUME.UI
             SpeedTextField = MediaController.Q<TextField>("speed-textfield");
 
             ToggleMaximizePreviewButton = MediaController.Q<ToggleButton>("toggle-maximize-preview-btn");
-            PreviewRender = root.Q("preview").Q("render");
+            Preview = root.Q("preview");
+            PreviewRender = root.Q("preview").Q<AspectRatioContainerElement>("render");
             
             HierarchyTree = root.Q<TreeView>("hierarchy-tree");
             HierarchyTree.SetRootItems(new List<TreeViewItemData<Transform>>());
