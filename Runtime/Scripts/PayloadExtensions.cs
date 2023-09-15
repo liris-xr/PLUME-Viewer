@@ -10,7 +10,6 @@ using LightShadows = PLUME.Sample.Unity.LightShadows;
 using LightShape = PLUME.Sample.Unity.LightShape;
 using LightType = PLUME.Sample.Unity.LightType;
 using Matrix4x4 = PLUME.Sample.Common.Matrix4x4;
-using Object = UnityEngine.Object;
 using Quaternion = PLUME.Sample.Common.Quaternion;
 using Vector2 = PLUME.Sample.Common.Vector2;
 using Vector3 = PLUME.Sample.Common.Vector3;
@@ -20,54 +19,12 @@ namespace PLUME
 {
     public static class PayloadExtensions
     {
-        public static AssetIdentifier ToAssetIdentifierPayload(this Object obj)
-        {
-            return new AssetIdentifier
-            {
-                Id = obj.GetHashCode().ToString(),
-                Hash = obj.GetRecorderHash(),
-            };
-        }
-
-        public static ComponentIdentifier ToIdentifierPayload(this Component component)
-        {
-            return new ComponentIdentifier
-            {
-                Id = component.GetHashCode().ToString(),
-                ParentId = new TransformGameObjectIdentifier
-                {
-                    TransformId = component.transform.GetHashCode().ToString(),
-                    GameObjectId = component.gameObject.GetHashCode().ToString()
-                }
-            };
-        }
-
-        public static TransformGameObjectIdentifier ToIdentifierPayload(this GameObject go)
-        {
-            return new TransformGameObjectIdentifier
-            {
-                // We use GetHashCode because it returns m_InstanceID directly without checking if on main thread which is slow
-                // TODO: If GetHashCode is overriden, this might cause issue. Find a better way for this?
-                TransformId = go.transform.GetHashCode().ToString(),
-                GameObjectId = go.GetHashCode().ToString()
-            };
-        }
-
         public static TransformGameObjectIdentifier ToIdentifierPayload(this Transform t)
         {
             return new TransformGameObjectIdentifier
             {
                 TransformId = t.GetHashCode().ToString(),
                 GameObjectId = t.gameObject.GetHashCode().ToString()
-            };
-        }
-        
-        public static Vector2 ToPayload(this UnityEngine.Vector2 vec)
-        {
-            return new Vector2
-            {
-                X = vec.x,
-                Y = vec.y,
             };
         }
 
@@ -77,16 +34,6 @@ namespace PLUME
             {
                 x = vec.X,
                 y = vec.Y,
-            };
-        }
-
-        public static Vector3 ToPayload(this UnityEngine.Vector3 vec)
-        {
-            return new Vector3
-            {
-                X = vec.x,
-                Y = vec.y,
-                Z = vec.z,
             };
         }
 
@@ -100,17 +47,6 @@ namespace PLUME
             };
         }
 
-        public static Vector4 ToPayload(this UnityEngine.Vector4 vec)
-        {
-            return new Vector4
-            {
-                X = vec.x,
-                Y = vec.y,
-                Z = vec.z,
-                W = vec.w
-            };
-        }
-
         public static UnityEngine.Vector4 ToEngineType(this Vector4 vec)
         {
             return new UnityEngine.Vector4
@@ -119,17 +55,6 @@ namespace PLUME
                 y = vec.Y,
                 z = vec.Z,
                 w = vec.W
-            };
-        }
-        
-        public static Quaternion ToPayload(this UnityEngine.Quaternion vec)
-        {
-            return new Quaternion
-            {
-                X = vec.x,
-                Y = vec.y,
-                Z = vec.z,
-                W = vec.w
             };
         }
 
@@ -144,17 +69,6 @@ namespace PLUME
             };
         }
 
-        public static Color ToPayload(this UnityEngine.Color color)
-        {
-            return new Color
-            {
-                R = color.r,
-                G = color.g,
-                B = color.b,
-                A = color.a
-            };
-        }
-
         public static UnityEngine.Color ToEngineType(this Color color)
         {
             return new UnityEngine.Color
@@ -163,41 +77,6 @@ namespace PLUME
                 g = color.G,
                 b = color.B,
                 a = color.A
-            };
-        }
-
-        public static SphericalHarmonicsL2 ToPayload(
-            this UnityEngine.Rendering.SphericalHarmonicsL2 sphericalHarmonicsL2)
-        {
-            return new SphericalHarmonicsL2
-            {
-                Shr0 = sphericalHarmonicsL2[0, 0],
-                Shr1 = sphericalHarmonicsL2[0, 1],
-                Shr2 = sphericalHarmonicsL2[0, 2],
-                Shr3 = sphericalHarmonicsL2[0, 3],
-                Shr4 = sphericalHarmonicsL2[0, 4],
-                Shr5 = sphericalHarmonicsL2[0, 5],
-                Shr6 = sphericalHarmonicsL2[0, 6],
-                Shr7 = sphericalHarmonicsL2[0, 7],
-                Shr8 = sphericalHarmonicsL2[0, 8],
-                Shg0 = sphericalHarmonicsL2[0, 9],
-                Shg1 = sphericalHarmonicsL2[0, 10],
-                Shg2 = sphericalHarmonicsL2[0, 11],
-                Shg3 = sphericalHarmonicsL2[0, 12],
-                Shg4 = sphericalHarmonicsL2[0, 13],
-                Shg5 = sphericalHarmonicsL2[0, 14],
-                Shg6 = sphericalHarmonicsL2[0, 15],
-                Shg7 = sphericalHarmonicsL2[0, 16],
-                Shg8 = sphericalHarmonicsL2[0, 17],
-                Shb0 = sphericalHarmonicsL2[0, 18],
-                Shb1 = sphericalHarmonicsL2[0, 19],
-                Shb2 = sphericalHarmonicsL2[0, 20],
-                Shb3 = sphericalHarmonicsL2[0, 21],
-                Shb4 = sphericalHarmonicsL2[0, 22],
-                Shb5 = sphericalHarmonicsL2[0, 23],
-                Shb6 = sphericalHarmonicsL2[0, 24],
-                Shb7 = sphericalHarmonicsL2[0, 25],
-                Shb8 = sphericalHarmonicsL2[0, 26]
             };
         }
 
@@ -237,19 +116,6 @@ namespace PLUME
             return shl2;
         }
 
-        public static LightType ToPayload(this UnityEngine.LightType lightType)
-        {
-            return lightType switch
-            {
-                UnityEngine.LightType.Point => LightType.Point,
-                UnityEngine.LightType.Directional => LightType.Directional,
-                UnityEngine.LightType.Spot => LightType.Spot,
-                UnityEngine.LightType.Rectangle => LightType.Rectangle,
-                UnityEngine.LightType.Disc => LightType.Disc,
-                _ => throw new ArgumentOutOfRangeException(nameof(lightType), lightType, null)
-            };
-        }
-
         public static UnityEngine.LightType ToEngineType(this LightType lightType)
         {
             return lightType switch
@@ -264,17 +130,6 @@ namespace PLUME
             };
         }
 
-        public static LightShape ToPayload(this UnityEngine.LightShape lightShape)
-        {
-            return lightShape switch
-            {
-                UnityEngine.LightShape.Cone => LightShape.Cone,
-                UnityEngine.LightShape.Pyramid => LightShape.Pyramid,
-                UnityEngine.LightShape.Box => LightShape.Box,
-                _ => throw new ArgumentOutOfRangeException(nameof(lightShape), lightShape, null)
-            };
-        }
-
         public static UnityEngine.LightShape ToEngineType(this LightShape lightShape)
         {
             return lightShape switch
@@ -286,17 +141,6 @@ namespace PLUME
             };
         }
 
-        public static LightShadows ToPayload(this UnityEngine.LightShadows lightShadows)
-        {
-            return lightShadows switch
-            {
-                UnityEngine.LightShadows.None => LightShadows.None,
-                UnityEngine.LightShadows.Hard => LightShadows.Hard,
-                UnityEngine.LightShadows.Soft => LightShadows.Soft,
-                _ => throw new ArgumentOutOfRangeException(nameof(lightShadows), lightShadows, null)
-            };
-        }
-
         public static UnityEngine.LightShadows ToEngineType(this LightShadows lightShadows)
         {
             return lightShadows switch
@@ -305,21 +149,6 @@ namespace PLUME
                 LightShadows.Hard => UnityEngine.LightShadows.Hard,
                 LightShadows.Soft => UnityEngine.LightShadows.Soft,
                 _ => throw new ArgumentOutOfRangeException(nameof(lightShadows), lightShadows, null)
-            };
-        }
-
-        public static LightShadowResolution ToPayload(
-            this UnityEngine.Rendering.LightShadowResolution lightShadowResolution)
-        {
-            return lightShadowResolution switch
-            {
-                UnityEngine.Rendering.LightShadowResolution.FromQualitySettings => LightShadowResolution
-                    .FromQualitySettings,
-                UnityEngine.Rendering.LightShadowResolution.Low => LightShadowResolution.Low,
-                UnityEngine.Rendering.LightShadowResolution.Medium => LightShadowResolution.Medium,
-                UnityEngine.Rendering.LightShadowResolution.High => LightShadowResolution.High,
-                UnityEngine.Rendering.LightShadowResolution.VeryHigh => LightShadowResolution.VeryHigh,
-                _ => throw new ArgumentOutOfRangeException(nameof(lightShadowResolution), lightShadowResolution, null)
             };
         }
 
@@ -338,17 +167,6 @@ namespace PLUME
             };
         }
 
-        public static LightShadowCasterMode ToPayload(this UnityEngine.LightShadowCasterMode lightShadowCasterMode)
-        {
-            return lightShadowCasterMode switch
-            {
-                UnityEngine.LightShadowCasterMode.Default => LightShadowCasterMode.Default,
-                UnityEngine.LightShadowCasterMode.NonLightmappedOnly => LightShadowCasterMode.NonLightmappedOnly,
-                UnityEngine.LightShadowCasterMode.Everything => LightShadowCasterMode.Everything,
-                _ => throw new ArgumentOutOfRangeException(nameof(lightShadowCasterMode), lightShadowCasterMode, null)
-            };
-        }
-
         public static UnityEngine.LightShadowCasterMode ToEngineType(this LightShadowCasterMode lightShadowCasterMode)
         {
             return lightShadowCasterMode switch
@@ -357,17 +175,6 @@ namespace PLUME
                 LightShadowCasterMode.NonLightmappedOnly => UnityEngine.LightShadowCasterMode.NonLightmappedOnly,
                 LightShadowCasterMode.Everything => UnityEngine.LightShadowCasterMode.Everything,
                 _ => throw new ArgumentOutOfRangeException(nameof(lightShadowCasterMode), lightShadowCasterMode, null)
-            };
-        }
-
-        public static FogMode ToPayload(this UnityEngine.FogMode fogMode)
-        {
-            return fogMode switch
-            {
-                UnityEngine.FogMode.Linear => FogMode.Linear,
-                UnityEngine.FogMode.Exponential => FogMode.Exponential,
-                UnityEngine.FogMode.ExponentialSquared => FogMode.ExponentialSquared,
-                _ => throw new ArgumentOutOfRangeException(nameof(fogMode), fogMode, null)
             };
         }
 
@@ -382,17 +189,6 @@ namespace PLUME
             };
         }
 
-        public static DefaultReflectionMode ToPayload(
-            this UnityEngine.Rendering.DefaultReflectionMode defaultReflectionMode)
-        {
-            return defaultReflectionMode switch
-            {
-                UnityEngine.Rendering.DefaultReflectionMode.Skybox => DefaultReflectionMode.Skybox,
-                UnityEngine.Rendering.DefaultReflectionMode.Custom => DefaultReflectionMode.Custom,
-                _ => throw new ArgumentOutOfRangeException(nameof(defaultReflectionMode), defaultReflectionMode, null)
-            };
-        }
-
         public static UnityEngine.Rendering.DefaultReflectionMode ToEngineType(
             this DefaultReflectionMode defaultReflectionMode)
         {
@@ -401,18 +197,6 @@ namespace PLUME
                 DefaultReflectionMode.Skybox => UnityEngine.Rendering.DefaultReflectionMode.Skybox,
                 DefaultReflectionMode.Custom => UnityEngine.Rendering.DefaultReflectionMode.Custom,
                 _ => throw new ArgumentOutOfRangeException(nameof(defaultReflectionMode), defaultReflectionMode, null)
-            };
-        }
-
-        public static AmbientMode ToPayload(this UnityEngine.Rendering.AmbientMode ambientMode)
-        {
-            return ambientMode switch
-            {
-                UnityEngine.Rendering.AmbientMode.Skybox => AmbientMode.Skybox,
-                UnityEngine.Rendering.AmbientMode.Trilight => AmbientMode.Trilight,
-                UnityEngine.Rendering.AmbientMode.Flat => AmbientMode.Flat,
-                UnityEngine.Rendering.AmbientMode.Custom => AmbientMode.Custom,
-                _ => throw new ArgumentOutOfRangeException(nameof(ambientMode), ambientMode, null)
             };
         }
 
@@ -427,45 +211,13 @@ namespace PLUME
                 _ => throw new ArgumentOutOfRangeException(nameof(ambientMode), ambientMode, null)
             };
         }
-
-        public static Bounds ToPayload(this UnityEngine.Bounds bounds)
-        {
-            return new Bounds
-            {
-                Center = bounds.center.ToPayload(),
-                Extents = bounds.extents.ToPayload()
-            };
-        }
-
+        
         public static UnityEngine.Bounds ToEngineType(this Bounds bounds)
         {
             return new UnityEngine.Bounds
             {
                 center = bounds.Center.ToEngineType(),
                 extents = bounds.Extents.ToEngineType()
-            };
-        }
-
-        public static Matrix4x4 ToPayload(this UnityEngine.Matrix4x4 mtx)
-        {
-            return new Matrix4x4
-            {
-                M00 = mtx.m00,
-                M10 = mtx.m10,
-                M20 = mtx.m20,
-                M30 = mtx.m30,
-                M01 = mtx.m01,
-                M11 = mtx.m11,
-                M21 = mtx.m21,
-                M31 = mtx.m31,
-                M02 = mtx.m02,
-                M12 = mtx.m12,
-                M22 = mtx.m22,
-                M32 = mtx.m32,
-                M03 = mtx.m03,
-                M13 = mtx.m13,
-                M23 = mtx.m23,
-                M33 = mtx.m33
             };
         }
 
