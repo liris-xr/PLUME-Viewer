@@ -43,6 +43,9 @@ namespace PLUME
         /// <returns></returns>
         public int FirstIndexAfterOrAtTime(ulong time)
         {
+            if (_samples.Count == 0)
+                return -1;
+            
             var left = 0;
             var right = _samples.Count - 1;
 

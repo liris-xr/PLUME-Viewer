@@ -374,12 +374,7 @@ namespace PLUME
 
         public T GetOrDefaultAssetByIdentifier<T>(AssetIdentifier identifier) where T : Object
         {
-            if (identifier == null)
-            {
-                return null;
-            }
-
-            return _assets.FindAssetByHash<T>(identifier.Hash);
+            return _assets.GetOrDefaultAssetByIdentifier<T>(identifier);
         }
 
         public T GetOrCreateComponentByIdentifier<T>(ComponentIdentifier identifier) where T : Component

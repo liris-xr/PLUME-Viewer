@@ -40,8 +40,10 @@ namespace PLUME.UI.Analysis
                 ui.RefreshResults();
             });
 
-            StartCoroutine(module.GenerateHeatmap(player.GetRecordLoader(), player.GetPlayerAssets(),
-                projectionCasterId, projectionReceiversIds, startTime, endTime, onFinishCallback));
+            // StartCoroutine(module.GenerateHeatmap(player.GetRecordLoader(), player.GetPlayerAssets(),
+            //     projectionCasterId, projectionReceiversIds, startTime, endTime, onFinishCallback));
+            module.GenerateHeatmap(player.GetRecordLoader(), player.GetPlayerAssets(),
+                projectionCasterId, projectionReceiversIds, startTime, endTime, onFinishCallback);
         }
 
         private void OnClickDeleteResult(PositionHeatmapAnalysisResult result)

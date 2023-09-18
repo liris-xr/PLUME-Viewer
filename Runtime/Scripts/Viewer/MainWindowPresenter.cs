@@ -133,7 +133,7 @@ namespace PLUME.UI
         {
             if (freeCamera != null)
             {
-                freeCamera.disabled = false;
+                freeCamera.Disabled = false;
             }
         }
 
@@ -141,7 +141,7 @@ namespace PLUME.UI
         {
             if (freeCamera != null)
             {
-                freeCamera.disabled = true;
+                freeCamera.Disabled = true;
             }
         }
 
@@ -184,6 +184,11 @@ namespace PLUME.UI
             if (!_mainWindowUI.IsTimeIndicatorFocused())
             {
                 _mainWindowUI.RefreshTimelineTimeIndicator();
+            }
+
+            if (player.IsPlaying() != _mainWindowUI.PlayPauseButton.GetState())
+            {
+                _mainWindowUI.RefreshPlayPauseButton();
             }
 
             _mainWindowUI.RefreshTimelineCursor();

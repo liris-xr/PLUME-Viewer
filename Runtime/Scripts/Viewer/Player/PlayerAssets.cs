@@ -1,70 +1,67 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using UnityEditor;
+using System.Linq;
+using System.Reflection;
+using PLUME.Sample.Unity;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace PLUME
 {
-    // TODO: only load assets when needed.
-    // For this we need to keep a correspondence between asset ID/GUID and name (can be built in the editor once along with the asset bundle)
     public class PlayerAssets
     {
-        // TODO: move this to a different class
-        // TODO: add one dictionary for each asset type to lower the risks of collisions?
-        private readonly Dictionary<int, Object> _assetsRegistry = new();
+        private readonly AssetBundle _assetBundle;
 
-        public void RegisterBuiltinAssets()
+        public PlayerAssets(string assetBundlePath)
         {
-            // Add builtin resources manually as we can't add them in the asset bundle during export
-            // TODO: export a custom builtin asset bundle to make sure those are not stripped from the build
-            RegisterAsset(Resources.GetBuiltinResource<Mesh>("Cube.fbx"));
-            RegisterAsset(Resources.GetBuiltinResource<Mesh>("New-Sphere.fbx"));
-            RegisterAsset(Resources.GetBuiltinResource<Mesh>("New-Plane.fbx"));
-            RegisterAsset(Resources.GetBuiltinResource<Mesh>("New-Capsule.fbx"));
-            RegisterAsset(Resources.GetBuiltinResource<Mesh>("New-Cylinder.fbx"));
-            RegisterAsset(Resources.GetBuiltinResource<Mesh>("Quad.fbx"));
-            RegisterAsset(new Material(Shader.Find("Legacy Shaders/Diffuse")) { name = "Default-Diffuse" });
-            RegisterAsset(new Material(Shader.Find("Standard")) { name = "Default-Material" });
-            RegisterAsset(new Material(Shader.Find("Skybox/Procedural")) { name = "Default-Skybox" });
+            _assetBundle = AssetBundle.LoadFromFile(assetBundlePath);
         }
 
-        public void RegisterAllAssetsFromBundle(string assetBundlePath)
+        public T GetOrDefaultAssetByIdentifier<T>(AssetIdentifier identifier) where T : Object
         {
-            if (!File.Exists(assetBundlePath)) throw new Exception($"Asset bundle '{assetBundlePath}' not found.");
+            if (identifier == null)
+                return null;
 
-            var assetBundle = AssetBundle.LoadFromFile(assetBundlePath);
-            var assets = assetBundle.LoadAllAssets();
+            var splitAssetIdentifier = identifier.Path.Split(":", 4);
 
-            foreach (var asset in assets)
+            var assetSource = splitAssetIdentifier[0];
+            var assetType = splitAssetIdentifier[1];
+            var assetPath = splitAssetIdentifier[2];
+            var assetName = splitAssetIdentifier[3];
+
+            var type = Assembly.GetAssembly(typeof(Object)).GetType(assetType);
+
+            var asset = assetSource switch
             {
-                RegisterAsset(asset);
-            }
+                "Custom" => LoadCustomAsset(type, assetPath, assetName),
+                "Builtin" => LoadBuiltinAsset(type, assetName),
+                _ => null
+            } as T;
+
+            return asset;
         }
 
-        public void RegisterAsset(Object asset)
+        private Object LoadCustomAsset(Type type, string assetPath, string assetName)
         {
-            var hash = asset.GetRecorderHash();
-            
-            if (hash != 0)
+            var assets = _assetBundle.LoadAssetWithSubAssets(assetPath, type);
+            return assets.FirstOrDefault(asset => asset.name == assetName);
+        }
+
+        private Object LoadBuiltinAsset(Type type, string assetName)
+        {
+            // TODO: embed resources in the asset bundle
+            return assetName switch
             {
-                if (asset is Mesh mesh)
-                {
-                    mesh.UploadMeshData(true);
-                }
-                
-                if (!_assetsRegistry.TryAdd(hash, asset))
-                {
-                    Debug.LogWarning($"Hash collision detected for {asset}.");
-                }
-            }
-        }
-
-        public T FindAssetByHash<T>(int assetReferenceHash) where T : Object
-        {
-            _assetsRegistry.TryGetValue(assetReferenceHash, out var obj);
-            return (T)obj;
+                "Default-Skybox" => new Material(Shader.Find("Skybox/Procedural")) { name = "Default-Skybox" },
+                "Default-Material" => new Material(Shader.Find("Standard")) { name = "Default-Material" },
+                "Default-Diffuse" => new Material(Shader.Find("Legacy Shaders/Diffuse")) { name = "Default-Diffuse" },
+                "Cube" => Resources.GetBuiltinResource(type, "Cube.fbx"),
+                "Sphere" => Resources.GetBuiltinResource(type, "New-Sphere.fbx"),
+                "Plane" => Resources.GetBuiltinResource(type, "New-Plane.fbx"),
+                "Capsule" => Resources.GetBuiltinResource(type, "New-Capsule.fbx"),
+                "Cylinder" => Resources.GetBuiltinResource(type, "New-Cylinder.fbx"),
+                "Quad" => Resources.GetBuiltinResource(type, "Quad.fbx"),
+                _ => null
+            };
         }
     }
 }

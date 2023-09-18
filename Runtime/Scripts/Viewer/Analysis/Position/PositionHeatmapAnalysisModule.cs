@@ -89,7 +89,8 @@ namespace PLUME
             _segmentedObjectDepthCamera.targetTexture = segmentedObjectDepthTexture;
         }
 
-        public IEnumerator GenerateHeatmap(BufferedAsyncRecordLoader loader, PlayerAssets assets,
+        // public IEnumerator GenerateHeatmap(BufferedAsyncRecordLoader loader, PlayerAssets assets,
+        public IEnumerator GenerateHeatmap(RecordLoader loader, PlayerAssets assets,
             string projectionCasterIdentifier, string[] projectionReceiversIdentifiers,
             ulong projectionStartTime, ulong projectionEndTime,
             Action<PositionHeatmapAnalysisResult> finishCallback)
@@ -131,7 +132,8 @@ namespace PLUME
 
             if (projectionStartTime > 0)
             {
-                yield return PlaySamplesInTimeRange(loader, ctx, 0, projectionStartTime - 1u);
+                PlaySamplesInTimeRange(loader, ctx, 0, projectionStartTime - 1u);
+                // yield return PlaySamplesInTimeRange(loader, ctx, 0, projectionStartTime - 1u);
             }
 
             var currentTime = projectionStartTime;
@@ -140,7 +142,8 @@ namespace PLUME
             {
                 var startTime = currentTime;
                 var endTime = currentTime + projectionSamplingInterval;
-                yield return PlaySamplesInTimeRange(loader, ctx, startTime, endTime);
+                PlaySamplesInTimeRange(loader, ctx, startTime, endTime);
+                // yield return PlaySamplesInTimeRange(loader, ctx, startTime, endTime);
                 
                 // TODO: also project onto children
                 var replayProjectionCasterId = ctx.GetReplayInstanceId(projectionCasterIdentifier);
@@ -289,13 +292,16 @@ namespace PLUME
             return meshSamplerResult;
         }
 
-        private IEnumerator PlaySamplesInTimeRange(BufferedAsyncRecordLoader loader, PlayerContext ctx,
+        // private IEnumerator PlaySamplesInTimeRange(BufferedAsyncRecordLoader loader, PlayerContext ctx,
+        private void PlaySamplesInTimeRange(RecordLoader loader, PlayerContext ctx,
             ulong startTime,
             ulong endTime)
         {
-            var samplesLoadingTask = loader.SamplesInTimeRangeAsync(startTime, endTime);
-            yield return new WaitUntil(() => samplesLoadingTask.IsCompleted);
-            ctx.PlaySamples(player.PlayerModules, samplesLoadingTask.Result);
+            // var samplesLoadingTask = loader.SamplesInTimeRangeAsync(startTime, endTime);
+            // yield return new WaitUntil(() => samplesLoadingTask.IsCompleted);
+            // ctx.PlaySamples(player.PlayerModules, samplesLoadingTask.Result);
+            var samples = loader.SamplesInTimeRange(startTime, endTime);
+            ctx.PlaySamples(player.PlayerModules, samples);
         }
 
         private void PrepareProjectionShader(ComputeBuffer samplesMinValueBuffer, ComputeBuffer samplesMaxValueBuffer,
@@ -360,8 +366,10 @@ namespace PLUME
                 goRenderer.SetSharedMaterials(new List<Material>());
             }
 
-            var samples = player.GetRecordLoader().SamplesInTimeRangeAsync(0, player.GetCurrentPlayTimeInNanoseconds());
-            foreach (var sample in samples.Result)
+            // var samples = player.GetRecordLoader().SamplesInTimeRangeAsync(0, player.GetCurrentPlayTimeInNanoseconds());
+            // foreach (var sample in samples.Result)
+            var samples = player.GetRecordLoader().SamplesInTimeRange(0, player.GetCurrentPlayTimeInNanoseconds());
+            foreach (var sample in samples)
             {
                 if (sample.Payload is MeshRendererUpdateMaterials or SkinnedMeshRendererUpdateMaterials)
                 {

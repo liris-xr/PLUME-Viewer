@@ -7,6 +7,9 @@ namespace PLUME
 {
     public class RecordReader : IDisposable
     {
+        public const string PlumeRawSignature = "PLUME_RAW";
+        public const string PlumeOrderedSignature = "PLUME_ORD";
+        
         private readonly Stream _stream;
 
         private bool _closed;
@@ -19,21 +22,23 @@ namespace PLUME
         public RecordReader(string recordPath, bool isRecordCompressed)
         {
             if (isRecordCompressed)
-                _stream = new GZipStream(new FileStream(recordPath, FileMode.Open, FileAccess.Read), CompressionMode.Decompress, false);
+                _stream = new GZipStream(new FileStream(recordPath, FileMode.Open, FileAccess.Read),
+                    CompressionMode.Decompress, false);
             else
                 _stream = new FileStream(recordPath, FileMode.Open, FileAccess.Read);
         }
 
-        public RecordHeader ReadHeader()
+        public string ReadFileSignature()
         {
-            try
+            var signature = new byte[9];
+            var read = _stream.Read(signature, 0, signature.Length);
+
+            if (read < 9)
             {
-                return IsEndOfStream() ? null : RecordHeader.Parser.ParseDelimitedFrom(_stream);
+                throw new Exception("Not enough bytes to read file signature.");
             }
-            catch (EndOfStreamException)
-            {
-                return null;
-            }
+
+            return System.Text.Encoding.ASCII.GetString(signature);
         }
 
         public PackedSample ReadNextSample()
@@ -72,12 +77,12 @@ namespace PLUME
         {
             if (_closed)
                 return;
-            
+
             _stream.Close();
 
             _closed = true;
         }
-        
+
         public void Dispose()
         {
             Close();

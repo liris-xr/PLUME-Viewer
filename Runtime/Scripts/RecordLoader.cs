@@ -5,22 +5,28 @@ using PLUME.Sample;
 
 namespace PLUME
 {
-    public class FilteredRecordLoader : IDisposable
+    public class RecordLoader : IDisposable
     {
         private readonly RecordReader _reader;
         private readonly TypeRegistry _typeRegistry;
-
         private readonly OrderedSamplesList _loadedSamples;
-        private readonly Func<PackedSample, bool> _filter;
+
+        public ulong Duration => _duration;
 
         private int _sampleCount;
-        private bool _loaded;
-        private bool _closed;
+        private ulong _duration;
 
-        public FilteredRecordLoader(RecordReader reader, Func<PackedSample, bool> filter, TypeRegistry typeRegistry)
+        private bool _closed;
+        private bool _loaded;
+
+        public RecordLoader(RecordReader reader, MessageDescriptor[] descriptors) :
+            this(reader, TypeRegistry.FromMessages(descriptors))
+        {
+        }
+
+        public RecordLoader(RecordReader reader, TypeRegistry typeRegistry)
         {
             _reader = reader;
-            _filter = filter;
             _loadedSamples = new OrderedSamplesList();
             _typeRegistry = typeRegistry;
         }
@@ -38,14 +44,32 @@ namespace PLUME
             {
                 sample = _reader.ReadNextSample();
 
-                if (sample == null || !_filter.Invoke(sample)) continue;
+                if (sample == null) continue;
 
                 // Unpack the sample
                 var payload = sample.Payload.Unpack(_typeRegistry);
                 var unpackedSample = UnpackedSample.InstantiateUnpackedSample(sample.Header, payload);
-                var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Header.Time);
-                _loadedSamples.Insert(idx, unpackedSample);
+
+                if (_loadedSamples.Count > 0)
+                {
+                    var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Header.Time);
+
+                    if (idx == -1)
+                    {
+                        _loadedSamples.Add(unpackedSample);
+                    }
+                    else
+                    {
+                        _loadedSamples.Insert(idx + 1, unpackedSample);
+                    }
+                }
+                else
+                {
+                    _loadedSamples.Add(unpackedSample);
+                }
+
                 _sampleCount++;
+                _duration = Math.Max(_duration, sample.Header.Time);
             } while (sample != null);
 
             _loaded = true;
@@ -79,6 +103,9 @@ namespace PLUME
 
         public IEnumerable<UnpackedSample> SamplesInTimeRange(ulong startTime, ulong endTime)
         {
+            if (!_loaded)
+                Load();
+
             var startIdx = FirstSampleIndexAfterOrAtTime(startTime);
 
             if (startIdx < 0)
@@ -103,6 +130,8 @@ namespace PLUME
 
         public void Close()
         {
+            _reader.Close();
+            
             if (_closed)
                 return;
 

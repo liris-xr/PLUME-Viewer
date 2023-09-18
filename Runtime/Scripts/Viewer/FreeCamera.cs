@@ -1,4 +1,5 @@
 ﻿#define USE_INPUT_SYSTEM
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
@@ -10,8 +11,8 @@ namespace PLUME
     /// </summary>
     public class FreeCamera : MonoBehaviour
     {
-        [HideInInspector]
-        public bool disabled = true;
+        [NonSerialized]
+        public bool Disabled = true;
 
         private const float MouseSensitivityMultiplier = 0.01f;
 
@@ -114,7 +115,7 @@ namespace PLUME
             if (DebugManager.instance.displayRuntimeUI)
                 return;
 
-            if (disabled)
+            if (Disabled)
                 return;
 
             UpdateInputs();

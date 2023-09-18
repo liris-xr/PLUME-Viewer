@@ -143,7 +143,6 @@ namespace PLUME.UI
 
         public void RefreshPlayPauseButton()
         {
-        
             PlayPauseButton.SetStateWithoutNotify(player.IsPlaying());
         }
 
