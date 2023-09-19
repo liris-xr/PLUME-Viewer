@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Google.Protobuf.Reflection;
 using PLUME.Sample;
+using UnityEngine;
 
 namespace PLUME
 {
@@ -30,8 +31,8 @@ namespace PLUME
             if (_loaded)
                 return;
 
-            _reader.ReadFileSignature();
-
+            Debug.Log("Record metadata: " + _reader.GetMetadata());
+            
             PackedSample sample;
 
             do
@@ -42,6 +43,13 @@ namespace PLUME
 
                 // Unpack the sample
                 var payload = sample.Payload.Unpack(_typeRegistry);
+
+                if (payload == null)
+                {
+                    Debug.LogWarning($"Could not load payload with type {sample.Payload.TypeUrl}");
+                    continue;
+                }
+
                 var unpackedSample = UnpackedSample.InstantiateUnpackedSample(sample.Header, payload);
                 var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Header.Time);
                 _loadedSamples.Insert(idx, unpackedSample);

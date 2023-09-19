@@ -1,23 +1,18 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
+using System.Text;
 using PLUME.Sample;
 
 namespace PLUME
 {
     public class RecordReader : IDisposable
     {
-        public const string PlumeRawSignature = "PLUME_RAW";
-        public const string PlumeOrderedSignature = "PLUME_ORD";
-        
         private readonly Stream _stream;
 
         private bool _closed;
 
-        public RecordReader(Stream stream)
-        {
-            _stream = stream;
-        }
+        private readonly RecordMetadata _metadata;
 
         public RecordReader(string recordPath, bool isRecordCompressed)
         {
@@ -26,19 +21,20 @@ namespace PLUME
                     CompressionMode.Decompress, false);
             else
                 _stream = new FileStream(recordPath, FileMode.Open, FileAccess.Read);
+
+            _metadata = ReadMetadata();
         }
 
-        public string ReadFileSignature()
+        private RecordMetadata ReadMetadata()
         {
-            var signature = new byte[9];
-            var read = _stream.Read(signature, 0, signature.Length);
-
-            if (read < 9)
+            try
             {
-                throw new Exception("Not enough bytes to read file signature.");
+                return IsEndOfStream() ? null : RecordMetadata.Parser.ParseDelimitedFrom(_stream);
             }
-
-            return System.Text.Encoding.ASCII.GetString(signature);
+            catch (EndOfStreamException)
+            {
+                return null;
+            }
         }
 
         public PackedSample ReadNextSample()
@@ -71,6 +67,11 @@ namespace PLUME
             }
 
             return false;
+        }
+
+        public RecordMetadata GetMetadata()
+        {
+            return _metadata;
         }
 
         public void Close()

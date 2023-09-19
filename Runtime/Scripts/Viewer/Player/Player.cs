@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using PLUME.Sample.Common;
 using UnityEngine;
@@ -37,6 +39,14 @@ namespace PLUME
         public Camera topViewCamera;
         public Camera sceneMainCamera;
 
+        [RuntimeInitializeOnLoadMethod]
+        public static void OnInitialize()
+        {
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+        }
+        
         private void Awake()
         {
             PlayerModules = FindObjectsOfType<PlayerModule>(true);

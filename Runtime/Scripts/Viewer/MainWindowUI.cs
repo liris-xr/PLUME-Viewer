@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using UnityEngine;
-using UnityEngine.Profiling;
 using UnityEngine.UIElements;
 
 namespace PLUME.UI
@@ -62,16 +62,9 @@ namespace PLUME.UI
             HierarchyTree.SetRootItems(new List<TreeViewItemData<Transform>>());
             HierarchyTree.makeItem = () =>
             {
-                Profiler.BeginSample("Make item");
                 var container = new VisualElement();
                 container.style.flexDirection = FlexDirection.Row;
                 container.Add(new Label {name = "name"});
-
-                var recordIdLabel = new Label {name = "record-id"};
-                recordIdLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
-                recordIdLabel.style.color = new StyleColor(Color.gray);
-                container.Add(recordIdLabel);
-                Profiler.EndSample();
                 return container;
             };
             HierarchyTree.bindItem = (element, i) =>
@@ -79,11 +72,18 @@ namespace PLUME.UI
                 var t = HierarchyTree.GetItemDataForIndex<Transform>(i);
                 if (t == null)
                     return;
-                var recordIdentifier = player.GetPlayerContext().GetRecordIdentifier(t.gameObject.GetInstanceID());
                 element.Q<Label>("name").text = t.gameObject.name;
                 element.Q<Label>("name").style.color = t.gameObject.activeInHierarchy ? new StyleColor(Color.white) : new StyleColor(Color.gray);
-                element.Q<Label>("record-id").text = recordIdentifier ?? "N/A";
             };
+            
+            HierarchyTree.RegisterCallback<KeyDownEvent>(evt =>
+            {
+                if (evt.ctrlKey && evt.keyCode == KeyCode.C)
+                {
+                    var selectedItems = HierarchyTree.GetSelectedItems<Transform>();
+                    GUIUtility.systemCopyBuffer = string.Join(",", selectedItems.Select(t => player.GetPlayerContext().GetRecordIdentifier(t.data.gameObject.GetInstanceID())));
+                }
+            });
 
             RecordsCollapseBar = root.Q<CollapseBarElement>("records-collapse-bar");
             TimelineCollapseBar = root.Q<CollapseBarElement>("timeline-collapse-bar");

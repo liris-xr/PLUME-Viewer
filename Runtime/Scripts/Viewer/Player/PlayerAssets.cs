@@ -21,6 +21,9 @@ namespace PLUME
             if (identifier == null)
                 return null;
 
+            if (string.IsNullOrEmpty(identifier.Path))
+                return null;
+            
             var splitAssetIdentifier = identifier.Path.Split(":", 4);
 
             var assetSource = splitAssetIdentifier[0];

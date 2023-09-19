@@ -58,6 +58,16 @@ namespace PLUME
                     }
                     break;
                 }
+                case SkinnedMeshRendererUpdateLightmap skinnedMeshRendererUpdateLightmap:
+                {
+                    var meshRenderer =
+                        ctx.GetOrCreateComponentByIdentifier<SkinnedMeshRenderer>(skinnedMeshRendererUpdateLightmap.Id);
+                    meshRenderer.lightmapIndex = skinnedMeshRendererUpdateLightmap.LightmapIndex;
+                    meshRenderer.lightmapScaleOffset = skinnedMeshRendererUpdateLightmap.LightmapScaleOffset.ToEngineType();
+                    meshRenderer.realtimeLightmapIndex = skinnedMeshRendererUpdateLightmap.RealtimeLightmapIndex;
+                    meshRenderer.realtimeLightmapScaleOffset = skinnedMeshRendererUpdateLightmap.RealtimeLightmapScaleOffset.ToEngineType();
+                    break;
+                }
             }
         }
     }
