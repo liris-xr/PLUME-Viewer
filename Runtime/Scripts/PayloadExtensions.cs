@@ -16,6 +16,8 @@ using ReflectionProbeClearFlags = UnityEngine.Rendering.ReflectionProbeClearFlag
 using ReflectionProbeMode = UnityEngine.Rendering.ReflectionProbeMode;
 using ReflectionProbeRefreshMode = UnityEngine.Rendering.ReflectionProbeRefreshMode;
 using ReflectionProbeTimeSlicingMode = UnityEngine.Rendering.ReflectionProbeTimeSlicingMode;
+using ReflectionProbeUsage = PLUME.Sample.Unity.ReflectionProbeUsage;
+using ShadowCastingMode = PLUME.Sample.Unity.ShadowCastingMode;
 
 namespace PLUME
 {
@@ -296,6 +298,32 @@ namespace PLUME
                 Sample.Unity.LightmapsMode.NonDirectional => LightmapsMode.NonDirectional,
                 Sample.Unity.LightmapsMode.CombinedDirectional => LightmapsMode.CombinedDirectional,
                 _ => throw new ArgumentOutOfRangeException(nameof(lightmapsMode), lightmapsMode, null)
+            };
+        }
+        
+        public static UnityEngine.Rendering.ShadowCastingMode ToEngineType(this ShadowCastingMode shadowCastingMode)
+        {
+            return shadowCastingMode switch
+            {
+                ShadowCastingMode.Off => UnityEngine.Rendering.ShadowCastingMode.Off,
+                ShadowCastingMode.On => UnityEngine.Rendering.ShadowCastingMode.On,
+                ShadowCastingMode.ShadowsOnly => UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly,
+                ShadowCastingMode.TwoSided => UnityEngine.Rendering.ShadowCastingMode.TwoSided,
+                _ => throw new ArgumentOutOfRangeException(nameof(shadowCastingMode), shadowCastingMode,
+                    null)
+            };
+        }
+        
+        public static UnityEngine.Rendering.ReflectionProbeUsage ToEngineType(this ReflectionProbeUsage reflectionProbeUsage)
+        {
+            return reflectionProbeUsage switch
+            {
+                ReflectionProbeUsage.Off => UnityEngine.Rendering.ReflectionProbeUsage.Off,
+                ReflectionProbeUsage.BlendProbes => UnityEngine.Rendering.ReflectionProbeUsage.BlendProbes,
+                ReflectionProbeUsage.BlendProbesAndSkybox => UnityEngine.Rendering.ReflectionProbeUsage.BlendProbesAndSkybox,
+                ReflectionProbeUsage.Simple => UnityEngine.Rendering.ReflectionProbeUsage.Simple,
+                _ => throw new ArgumentOutOfRangeException(nameof(reflectionProbeUsage), reflectionProbeUsage,
+                    null)
             };
         }
     }

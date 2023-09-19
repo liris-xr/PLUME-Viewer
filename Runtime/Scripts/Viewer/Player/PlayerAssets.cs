@@ -31,7 +31,7 @@ namespace PLUME
             var assetPath = splitAssetIdentifier[2];
             var assetName = splitAssetIdentifier[3];
 
-            var type = Assembly.GetAssembly(typeof(Object)).GetType(assetType);
+            var type = Type.GetType(assetType) ?? typeof(Object);
 
             var asset = assetSource switch
             {
@@ -57,6 +57,7 @@ namespace PLUME
                 "Default-Skybox" => new Material(Shader.Find("Skybox/Procedural")) { name = "Default-Skybox" },
                 "Default-Material" => new Material(Shader.Find("Standard")) { name = "Default-Material" },
                 "Default-Diffuse" => new Material(Shader.Find("Legacy Shaders/Diffuse")) { name = "Default-Diffuse" },
+                "Default-Terrain-Standard" => new Material(Shader.Find("Nature/Terrain/Standard")) { name = "Default-Terrain-Standard" },
                 "Cube" => Resources.GetBuiltinResource(type, "Cube.fbx"),
                 "Sphere" => Resources.GetBuiltinResource(type, "New-Sphere.fbx"),
                 "Plane" => Resources.GetBuiltinResource(type, "New-Plane.fbx"),
