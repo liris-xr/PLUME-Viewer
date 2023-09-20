@@ -111,10 +111,6 @@ namespace PLUME
 
         private void Update()
         {
-            // If the debug menu is running, we don't want to conflict with its inputs.
-            if (DebugManager.instance.displayRuntimeUI)
-                return;
-
             if (Disabled)
                 return;
 
