@@ -58,12 +58,12 @@ namespace PLUME
                 "Default-Material" => new Material(Shader.Find("Standard")) { name = "Default-Material" },
                 "Default-Diffuse" => new Material(Shader.Find("Legacy Shaders/Diffuse")) { name = "Default-Diffuse" },
                 "Default-Terrain-Standard" => new Material(Shader.Find("Nature/Terrain/Standard")) { name = "Default-Terrain-Standard" },
-                "Cube" => Resources.GetBuiltinResource(type, "Cube.fbx"),
-                "Sphere" => Resources.GetBuiltinResource(type, "New-Sphere.fbx"),
-                "Plane" => Resources.GetBuiltinResource(type, "New-Plane.fbx"),
-                "Capsule" => Resources.GetBuiltinResource(type, "New-Capsule.fbx"),
-                "Cylinder" => Resources.GetBuiltinResource(type, "New-Cylinder.fbx"),
-                "Quad" => Resources.GetBuiltinResource(type, "Quad.fbx"),
+                "Cube" => Resources.GetBuiltinResource<Mesh>("Cube.fbx"),
+                "Sphere" => Resources.GetBuiltinResource<Mesh>("New-Sphere.fbx"),
+                "Plane" => Resources.GetBuiltinResource<Mesh>("New-Plane.fbx"),
+                "Capsule" => Resources.GetBuiltinResource<Mesh>("New-Capsule.fbx"),
+                "Cylinder" => Resources.GetBuiltinResource<Mesh>("New-Cylinder.fbx"),
+                "Quad" => Resources.GetBuiltinResource<Mesh>("Quad.fbx"),
                 _ => null
             };
         }
