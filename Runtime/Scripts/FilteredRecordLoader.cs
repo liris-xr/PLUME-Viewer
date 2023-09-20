@@ -51,8 +51,25 @@ namespace PLUME
                 }
 
                 var unpackedSample = UnpackedSample.InstantiateUnpackedSample(sample.Header, payload);
-                var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Header.Time);
-                _loadedSamples.Insert(idx, unpackedSample);
+
+                if (_loadedSamples.Count > 0)
+                {
+                    var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Header.Time);
+
+                    if (idx == -1)
+                    {
+                        _loadedSamples.Add(unpackedSample);
+                    }
+                    else
+                    {
+                        _loadedSamples.Insert(idx + 1, unpackedSample);
+                    }
+                }
+                else
+                {
+                    _loadedSamples.Add(unpackedSample);
+                }
+
                 _sampleCount++;
             } while (sample != null);
 
