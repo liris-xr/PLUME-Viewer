@@ -43,7 +43,8 @@ namespace PLUME
 
                 // Unpack the sample
                 var payload = sample.Payload.Unpack(_typeRegistry);
-
+                
+                // Unpacking might fail if the message descriptor is not found in the type registry.
                 if (payload == null)
                 {
                     Debug.LogWarning($"Could not load payload with type {sample.Payload.TypeUrl}");
@@ -55,18 +56,20 @@ namespace PLUME
                 if (_loadedSamples.Count > 0)
                 {
                     var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Header.Time);
-
+                    
+                    // No samples after or at the current sample's timestamp, inserting at the end
                     if (idx == -1)
                     {
                         _loadedSamples.Add(unpackedSample);
                     }
                     else
                     {
-                        _loadedSamples.Insert(idx + 1, unpackedSample);
+                        _loadedSamples.Insert(idx, unpackedSample);
                     }
                 }
                 else
                 {
+                    // No samples, inserting at the beginning
                     _loadedSamples.Add(unpackedSample);
                 }
 

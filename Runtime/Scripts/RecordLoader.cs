@@ -58,17 +58,19 @@ namespace PLUME
                 {
                     var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Header.Time);
 
+                    // No samples after or at the current sample's timestamp, inserting at the end
                     if (idx == -1)
                     {
                         _loadedSamples.Add(unpackedSample);
                     }
                     else
                     {
-                        _loadedSamples.Insert(idx + 1, unpackedSample);
+                        _loadedSamples.Insert(idx, unpackedSample);
                     }
                 }
                 else
                 {
+                    // No samples, inserting at the beginning
                     _loadedSamples.Add(unpackedSample);
                 }
 
