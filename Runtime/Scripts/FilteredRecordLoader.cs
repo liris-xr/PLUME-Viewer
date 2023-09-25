@@ -131,6 +131,8 @@ namespace PLUME
 
         public void Close()
         {
+            _reader.Close();
+            
             if (_closed)
                 return;
 

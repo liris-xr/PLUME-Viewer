@@ -1,72 +1,45 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
+using Google.Protobuf;
 using PLUME.Sample;
 
 namespace PLUME
 {
     public class RecordReader : IDisposable
     {
-        private readonly Stream _stream;
+        private readonly Stream _fileStream;
+        private readonly Stream _samplesStream;
 
         private bool _closed;
 
         private readonly RecordMetadata _metadata;
 
-        public RecordReader(string recordPath, bool isRecordCompressed)
+        public RecordReader(string recordPath)
         {
-            if (isRecordCompressed)
-                _stream = new GZipStream(new FileStream(recordPath, FileMode.Open, FileAccess.Read),
-                    CompressionMode.Decompress, false);
-            else
-                _stream = new FileStream(recordPath, FileMode.Open, FileAccess.Read);
+            _fileStream = File.Open(recordPath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-            _metadata = ReadMetadata();
-        }
+            var archive = new ZipArchive(_fileStream, ZipArchiveMode.Read);
+            _samplesStream = archive.GetEntry("samples")!.Open();
 
-        private RecordMetadata ReadMetadata()
-        {
-            try
-            {
-                return IsEndOfStream() ? null : RecordMetadata.Parser.ParseDelimitedFrom(_stream);
-            }
-            catch (EndOfStreamException)
-            {
-                return null;
-            }
+            using var metadataStream = archive.GetEntry("metadata")!.Open();
+            _metadata = RecordMetadata.Parser.ParseDelimitedFrom(metadataStream);
         }
 
         public PackedSample ReadNextSample()
         {
             try
             {
-                return IsEndOfStream() ? null : PackedSample.Parser.ParseDelimitedFrom(_stream);
+                return PackedSample.Parser.ParseDelimitedFrom(_samplesStream);
             }
             catch (EndOfStreamException)
             {
                 return null;
             }
-        }
-
-        private bool IsEndOfStream()
-        {
-            if (_stream is GZipStream gZipStream)
+            catch (InvalidProtocolBufferException)
             {
-                if (gZipStream.BaseStream.Position == gZipStream.BaseStream.Length)
-                {
-                    return true;
-                }
+                return null;
             }
-            else
-            {
-                if (_stream.Position == _stream.Length)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         public RecordMetadata GetMetadata()
@@ -79,7 +52,7 @@ namespace PLUME
             if (_closed)
                 return;
 
-            _stream.Close();
+            _fileStream.Close();
 
             _closed = true;
         }

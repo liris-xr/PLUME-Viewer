@@ -52,9 +52,9 @@ namespace PLUME
             PlayerModules = FindObjectsOfType<PlayerModule>(true);
 
             _assets = new PlayerAssets(Path.Combine(Application.streamingAssetsPath, "plume_asset_bundle_windows"));
-            _markersLoader = new FilteredRecordLoader(new RecordReader(recordPath, true),
+            _markersLoader = new FilteredRecordLoader(new RecordReader(recordPath),
                 sample => sample.Payload.Is(Marker.Descriptor), typeRegistryProvider.GetTypeRegistry());
-            _recordLoader = new RecordLoader(new RecordReader(recordPath, true),
+            _recordLoader = new RecordLoader(new RecordReader(recordPath),
                 typeRegistryProvider.GetTypeRegistry());
 
             _markersLoader.Load();
