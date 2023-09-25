@@ -1,37 +1,46 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
+using Google.Protobuf;
 using PLUME.Sample;
+using UnityEngine;
 
 namespace PLUME
 {
     public class RecordReader : IDisposable
     {
-        private readonly Stream _stream;
+        private readonly string _recordPath;
+        private readonly Stream _samplesStream;
 
         private bool _closed;
 
-        private readonly RecordMetadata _metadata;
-
-        public RecordReader(string recordPath, bool isRecordCompressed)
+        public RecordReader(string recordPath)
         {
-            if (isRecordCompressed)
-                _stream = new GZipStream(new FileStream(recordPath, FileMode.Open, FileAccess.Read),
-                    CompressionMode.Decompress, false);
-            else
-                _stream = new FileStream(recordPath, FileMode.Open, FileAccess.Read);
-
-            _metadata = ReadMetadata();
+            _recordPath = recordPath;
+            _samplesStream = new GZipStream(File.Open(recordPath, FileMode.Open, FileAccess.Read, FileShare.Read), CompressionMode.Decompress);
         }
 
-        private RecordMetadata ReadMetadata()
+        public RecordMetadata ReadMetadata()
         {
+            var recordMetadataPath = _recordPath + ".meta";
+
+            if (!File.Exists(recordMetadataPath))
+            {
+                Debug.LogWarning($"Metadata file not found '{recordMetadataPath}'");
+                return null;
+            }
+                
+            using var metadataStream = new GZipStream(File.Open(recordMetadataPath, FileMode.Open, FileAccess.Read, FileShare.Read), CompressionMode.Decompress);
+
             try
             {
-                return IsEndOfStream() ? null : RecordMetadata.Parser.ParseDelimitedFrom(_stream);
+                return RecordMetadata.Parser.ParseDelimitedFrom(metadataStream);
             }
             catch (EndOfStreamException)
+            {
+                return null;
+            }
+            catch (InvalidProtocolBufferException)
             {
                 return null;
             }
@@ -41,37 +50,16 @@ namespace PLUME
         {
             try
             {
-                return IsEndOfStream() ? null : PackedSample.Parser.ParseDelimitedFrom(_stream);
+                return PackedSample.Parser.ParseDelimitedFrom(_samplesStream);
             }
             catch (EndOfStreamException)
             {
                 return null;
             }
-        }
-
-        private bool IsEndOfStream()
-        {
-            if (_stream is GZipStream gZipStream)
+            catch (InvalidProtocolBufferException)
             {
-                if (gZipStream.BaseStream.Position == gZipStream.BaseStream.Length)
-                {
-                    return true;
-                }
+                return null;
             }
-            else
-            {
-                if (_stream.Position == _stream.Length)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        public RecordMetadata GetMetadata()
-        {
-            return _metadata;
         }
 
         public void Close()
@@ -79,7 +67,7 @@ namespace PLUME
             if (_closed)
                 return;
 
-            _stream.Close();
+            _samplesStream.Close();
 
             _closed = true;
         }

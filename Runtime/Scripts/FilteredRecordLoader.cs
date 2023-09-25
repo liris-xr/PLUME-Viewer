@@ -30,8 +30,6 @@ namespace PLUME
         {
             if (_loaded)
                 return;
-
-            Debug.Log("Record metadata: " + _reader.GetMetadata());
             
             PackedSample sample;
 
@@ -131,6 +129,8 @@ namespace PLUME
 
         public void Close()
         {
+            _reader.Close();
+            
             if (_closed)
                 return;
 

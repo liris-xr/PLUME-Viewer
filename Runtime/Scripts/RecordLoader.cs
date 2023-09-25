@@ -11,11 +11,9 @@ namespace PLUME
         private readonly RecordReader _reader;
         private readonly TypeRegistry _typeRegistry;
         private readonly OrderedSamplesList _loadedSamples;
-
-        public ulong Duration => _duration;
-
-        private int _sampleCount;
-        private ulong _duration;
+        
+        public ulong Duration { get; private set; }
+        public ulong SampleCount { get; private set; }
 
         private bool _closed;
         private bool _loaded;
@@ -37,8 +35,6 @@ namespace PLUME
             if (_loaded)
                 return;
 
-            Debug.Log("Record metadata: " + _reader.GetMetadata());
-            
             PackedSample sample;
 
             while((sample = _reader.ReadNextSample()) != null)
@@ -74,8 +70,8 @@ namespace PLUME
                     _loadedSamples.Add(unpackedSample);
                 }
 
-                _sampleCount++;
-                _duration = Math.Max(_duration, sample.Header.Time);
+                SampleCount++;
+                Duration = Math.Max(Duration, sample.Header.Time);
             }
 
             _loaded = true;
@@ -86,7 +82,7 @@ namespace PLUME
             if (!_loaded)
                 Load();
 
-            if (index < 0 || index >= _sampleCount)
+            if (index < 0 || index >= (int)SampleCount)
             {
                 return null;
             }
