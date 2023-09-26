@@ -1,0 +1,34 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Template name="timeline_track" src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Uxml/timeline_track.uxml?fileID=9197481963319205126&amp;guid=22119076b2977074a99a3a006c65e034&amp;type=3#timeline_track" />
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global" />
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&amp;guid=028e63fb930a6f74997dbdd7944d219b&amp;type=3#dark_theme" />
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/timeline.uss?fileID=7433441132597879392&amp;guid=065e6bcb56164071a2a204af9ea21686&amp;type=3#timeline" />
+    <ui:VisualElement name="timeline" class="timeline" style="flex-grow: 1; flex-direction: column;">
+        <ui:VisualElement name="timeline-content-container" style="flex-grow: 0;" />
+        <ui:VisualElement name="time-cursor" style="flex-grow: 0; height: 0;" />
+        <ui:VisualElement name="header" class="panel-container-primary" style="flex-grow: 0; flex-direction: row; border-left-width: 0; border-right-width: 0;">
+            <ui:VisualElement name="time-info-panel" style="flex-grow: 0; height: 100%; align-items: center; justify-content: center; flex-shrink: 0; max-width: none; min-width: auto; width: 400px; background-color: rgb(48, 48, 48); border-right-width: 1px; border-left-color: rgb(35, 35, 35); border-right-color: rgb(35, 35, 35); border-top-color: rgb(35, 35, 35); border-bottom-color: rgb(35, 35, 35);">
+                <PLUME.TimeFieldElement name="time-field" />
+            </ui:VisualElement>
+            <ui:ScrollView horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" name="time-scale-scroll-view">
+                <PLUME.TimeScaleElement name="time-scale" ticks-per-division="19" style="flex-grow: 1;" />
+            </ui:ScrollView>
+            <ui:VisualElement style="flex-grow: 0; width: 13px; flex-shrink: 0; background-color: rgb(48, 48, 48); border-right-width: 0; border-left-width: 1px; border-left-color: rgb(35, 35, 35); border-right-color: rgb(35, 35, 35); border-top-color: rgb(35, 35, 35); border-bottom-color: rgb(35, 35, 35);" />
+        </ui:VisualElement>
+        <ui:VisualElement name="tracks" style="flex-grow: 1;">
+            <ui:VisualElement name="tracks-placeholder" style="flex-grow: 1; background-color: rgb(60, 60, 60); align-items: center; justify-content: center; align-self: auto; flex-direction: row;">
+                <ui:VisualElement style="flex-grow: 0; height: 100%; background-color: rgb(56, 56, 56); width: 400px; flex-shrink: 0;" />
+                <ui:VisualElement style="flex-grow: 1; align-items: center; justify-content: center;">
+                    <ui:Label tabindex="-1" text="No physiological tracks to display." parse-escape-sequences="true" display-tooltip-when-elided="true" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:ScrollView name="tracks-container" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="AlwaysVisible" class="panel-container-secondary" style="min-width: auto; visibility: visible; display: none;">
+                <ui:Instance template="timeline_track" name="timeline_track" />
+            </ui:ScrollView>
+        </ui:VisualElement>
+        <ui:VisualElement name="footer" class="panel-footer" style="flex-grow: 0; flex-shrink: 0; height: 20px; flex-direction: row; background-color: rgb(48, 48, 48); align-items: center; justify-content: center; align-self: center;">
+            <ui:VisualElement name="spacer" style="flex-grow: 0; flex-shrink: 0; width: 400px;" />
+            <ui:Scroller high-value="10" direction="Horizontal" value="5" name="horizontal-scroller" style="flex-grow: 1; height: 100%; width: 100%; align-self: center; align-items: center; justify-content: center;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

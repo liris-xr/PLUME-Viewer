@@ -1,14 +1,15 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <ui:Template name="records" src="project://database/Packages/fr.liris.plume/Runtime/UI/Player/records.uxml?fileID=9197481963319205126&amp;guid=ed544dd71343ec54ea9057732c6f2213&amp;type=3#records" />
-    <ui:Template name="hierarchy" src="project://database/Packages/fr.liris.plume/Runtime/UI/Player/hierarchy.uxml?fileID=9197481963319205126&amp;guid=954e19379a558ad4ca91738bf94c5b22&amp;type=3#hierarchy" />
-    <ui:Template name="preview" src="project://database/Packages/fr.liris.plume/Runtime/UI/Player/preview.uxml?fileID=9197481963319205126&amp;guid=860e01cc5e48fbe4b991a3272a040c86&amp;type=3#preview" />
-    <ui:Template name="analysis" src="project://database/Packages/fr.liris.plume/Runtime/UI/Player/analysis.uxml?fileID=9197481963319205126&amp;guid=6bf90045dcb2b4a479a1c618c4af01a3&amp;type=3#analysis" />
-    <Style src="project://database/Packages/fr.liris.plume/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global" />
+    <ui:Template name="records" src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Uxml/records.uxml?fileID=9197481963319205126&amp;guid=ed544dd71343ec54ea9057732c6f2213&amp;type=3#records" />
+    <ui:Template name="hierarchy" src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Uxml/hierarchy.uxml?fileID=9197481963319205126&amp;guid=954e19379a558ad4ca91738bf94c5b22&amp;type=3#hierarchy" />
+    <ui:Template name="preview" src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Uxml/preview.uxml?fileID=9197481963319205126&amp;guid=860e01cc5e48fbe4b991a3272a040c86&amp;type=3#preview" />
+    <ui:Template name="analysis" src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Uxml/analysis.uxml?fileID=9197481963319205126&amp;guid=6bf90045dcb2b4a479a1c618c4af01a3&amp;type=3#analysis" />
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&amp;guid=028e63fb930a6f74997dbdd7944d219b&amp;type=3#dark_theme" />
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global" />
     <ui:VisualElement style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); justify-content: flex-start; flex-basis: 100%; width: 100%; height: 100%;">
         <ui:VisualElement name="navbar" style="flex-grow: 0;">
             <ui:VisualElement name="logo" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); height: 100%; max-height: 100%; min-height: 100%; align-items: flex-start; width: 80px; padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px;">
                 <PLUME.AspectRatioContainerElement aspect-ratio-width="418" aspect-ratio-height="119" style="width: 100%; max-width: 100%; min-width: 100%; height: 100%; max-height: 100%; min-height: 100%;">
-                    <ui:VisualElement name="Image" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); background-image: url(&apos;project://database/Packages/fr.liris.plume/Runtime/Resources/UI/Images/logo-dark.png?fileID=2800000&amp;guid=8a27b2be8237e7647a8ce439f4a16f56&amp;type=3#logo-dark&apos;); max-width: 100%; max-height: 100%; left: auto; height: 100%; min-height: 100%; width: 100%; min-width: 100%; align-items: center; justify-content: center; align-self: center;" />
+                    <ui:VisualElement name="Image" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); background-image: url(&apos;project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Images/logo-dark.png?fileID=2800000&amp;guid=8a27b2be8237e7647a8ce439f4a16f56&amp;type=3#logo-dark&apos;); max-width: 100%; max-height: 100%; left: auto; height: 100%; min-height: 100%; width: 100%; min-width: 100%; align-items: center; justify-content: center; align-self: center;" />
                 </PLUME.AspectRatioContainerElement>
             </ui:VisualElement>
         </ui:VisualElement>
@@ -35,10 +36,10 @@
                 </ui:TwoPaneSplitView>
             </ui:VisualElement>
             <ui:VisualElement name="timeline-container" style="min-height: 200px;">
-                <Style src="project://database/Packages/fr.liris.plume/Runtime/Resources/UI/Styles/timeline.uss?fileID=7433441132597879392&amp;guid=065e6bcb56164071a2a204af9ea21686&amp;type=3#timeline" />
+                <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/timeline.uss?fileID=7433441132597879392&amp;guid=065e6bcb56164071a2a204af9ea21686&amp;type=3#timeline" />
                 <ui:VisualElement style="flex-grow: 1;">
                     <ui:VisualElement name="Header" class="panel-header" />
-                    <PLUME.TimelineElement name="timeline" />
+                    <PLUME.TimelineElement name="timeline" style="flex-grow: 1;" />
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:TwoPaneSplitView>

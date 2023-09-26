@@ -23,6 +23,16 @@
     align-items: center;
 }
 
+.panel-footer {
+    background-color: rgb(56, 56, 56);
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 20px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+}
+
 .panel-header__title {
     -unity-font-style: bold;
 }
@@ -62,4 +72,7 @@
 #horizontal-pane-split-view-2 > #unity-dragline-anchor > #unity-dragline {
     left: -2px;
     width: 5px;
+}
+
+.time-scale {
 }

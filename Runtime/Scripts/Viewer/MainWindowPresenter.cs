@@ -1,6 +1,5 @@
 ﻿using System;
 using UnityEngine;
-using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 
 namespace PLUME.UI
@@ -10,7 +9,7 @@ namespace PLUME.UI
     {
         public Player player;
         public FreeCamera freeCamera;
-        
+
         private MainWindowUI _mainWindowUI;
 
         private void Awake()
@@ -20,14 +19,15 @@ namespace PLUME.UI
 
         private void Start()
         {
-            _mainWindowUI.PreviewRender.RegisterCallback<FocusInEvent>(OnPreviewRenderFocused);
-            _mainWindowUI.PreviewRender.RegisterCallback<FocusOutEvent>(OnPreviewRenderUnfocused);
-            _mainWindowUI.PreviewRender.RegisterCallback<NavigationMoveEvent>(OnPreviewRenderNavigationMove);
-            _mainWindowUI.PreviewRender.RegisterCallback<KeyDownEvent>(OnPreviewRenderKeyDown);
-
+            _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<FocusInEvent>(OnPreviewRenderFocused);
+            _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<FocusOutEvent>(OnPreviewRenderUnfocused);
+            _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<NavigationMoveEvent>(OnPreviewRenderNavigationMove);
+            _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<KeyDownEvent>(OnPreviewRenderKeyDown);
+            _mainWindowUI.PreviewRender.style.backgroundImage = Background.FromRenderTexture(freeCamera.GetRenderTexture());
+            
             _mainWindowUI.Timeline.RegisterCallback<KeyDownEvent>(OnPlayPauseKeyDown);
             _mainWindowUI.PlayPauseButton.RegisterCallback<KeyDownEvent>(OnPlayPauseKeyDown);
-            
+
             _mainWindowUI.PlayPauseButton.toggled += OnTogglePlayPause;
             _mainWindowUI.TimeIndicator.timeChanged += OnTimeIndicatorChanged;
             _mainWindowUI.TimeScale.dragged += OnTimeScaleDragged;
@@ -45,7 +45,7 @@ namespace PLUME.UI
 
             _mainWindowUI.Timeline.focusable = true;
             _mainWindowUI.Timeline.Focus();
-            
+
             player.GetPlayerContext().updatedHierarchy += OnHierarchyUpdateEvent;
         }
 
@@ -70,7 +70,8 @@ namespace PLUME.UI
                 case HierarchyUpdateSiblingIndexEvent siblingUpdateEvt:
                 {
                     var t = _mainWindowUI.HierarchyTree.GetItemDataForId<Transform>(siblingUpdateEvt.transformId);
-                    controller.Move(siblingUpdateEvt.transformId, t.parent == null ? -1 : t.parent.GetInstanceID(), siblingUpdateEvt.newSiblingIndex);
+                    controller.Move(siblingUpdateEvt.transformId, t.parent == null ? -1 : t.parent.GetInstanceID(),
+                        siblingUpdateEvt.newSiblingIndex);
                     break;
                 }
                 case HierarchyUpdateEnabledEvent enabledUpdateEvt:
@@ -83,8 +84,9 @@ namespace PLUME.UI
                 {
                     if (updateParentEvt.newParentTransformId == 0)
                         controller.Move(updateParentEvt.transformId, -1, updateParentEvt.siblingIdx);
-                    else 
-                        controller.Move(updateParentEvt.transformId, updateParentEvt.newParentTransformId, updateParentEvt.siblingIdx);
+                    else
+                        controller.Move(updateParentEvt.transformId, updateParentEvt.newParentTransformId,
+                            updateParentEvt.siblingIdx);
                     break;
                 }
             }
@@ -118,11 +120,11 @@ namespace PLUME.UI
         {
             if (evt.keyCode == KeyCode.Escape)
             {
-                _mainWindowUI.PreviewRender.Blur();
+                _mainWindowUI.PreviewRenderAspectRatio.Blur();
                 _mainWindowUI.Timeline.Focus();
             }
         }
-        
+
         private void OnPreviewRenderNavigationMove(NavigationMoveEvent evt)
         {
             // Prevent navigation keys to change focus to another pane (WASD, arrows, joystick, ...)

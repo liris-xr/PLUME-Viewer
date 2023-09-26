@@ -27,7 +27,8 @@ namespace PLUME.UI
 
         public ToggleButton ToggleMaximizePreviewButton { get; private set; }
         public VisualElement Preview { get; private set; }
-        public AspectRatioContainerElement PreviewRender { get; private set; }
+        public AspectRatioContainerElement PreviewRenderAspectRatio { get; private set; }
+        public VisualElement PreviewRender { get; private set; }
         
         public TreeView HierarchyTree { get; private set; }
 
@@ -56,7 +57,8 @@ namespace PLUME.UI
 
             ToggleMaximizePreviewButton = MediaController.Q<ToggleButton>("toggle-maximize-preview-btn");
             Preview = root.Q("preview");
-            PreviewRender = root.Q("preview").Q<AspectRatioContainerElement>("render");
+            PreviewRenderAspectRatio = root.Q("preview").Q<AspectRatioContainerElement>("aspect-ratio");
+            PreviewRender = PreviewRenderAspectRatio.Q<VisualElement>("render");
             
             HierarchyTree = root.Q<TreeView>("hierarchy-tree");
             HierarchyTree.SetRootItems(new List<TreeViewItemData<Transform>>());
@@ -126,7 +128,8 @@ namespace PLUME.UI
         public void RefreshTimelineScale()
         {
             Timeline.Duration = player.GetRecordDurationInNanoseconds();
-            Timeline.TimeDivisionDuration = 1_000_000_000u;
+            Timeline.TicksPerDivision = 10;
+            Timeline.TimeDivisionDuration = 100000000;
             Timeline.TimeDivisionWidth = 100;
             Timeline.Repaint();
         }

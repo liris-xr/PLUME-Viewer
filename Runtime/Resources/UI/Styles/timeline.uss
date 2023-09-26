@@ -1,6 +1,5 @@
-@import url("dark_theme.uss");
-@import url("global.uss");
-
+@import url('project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&guid=028e63fb930a6f74997dbdd7944d219b&type=3#dark_theme');
+@import url('project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&type=3#global');
 :root {
     --time-cursor-width: 11px;
     --time-cursor-height: 12px;
@@ -9,7 +8,7 @@
 
 .timeline {
     width: 100%;
-    height: auto;
+    height: 100%;
     flex-direction: row;
     flex-grow: 1;
     flex-shrink: 1;
@@ -32,8 +31,11 @@
     padding-bottom: 0;
     background-color: var(--unity-colors-window-background);
     border-color: var(--unity-colors-default-border);
-    border-bottom-width: 1px;
+    border-bottom-width: 0;
     overflow: hidden;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-left-width: 0;
 }
 
 #timeline-content-container {
@@ -52,7 +54,6 @@
 
 #time-field {
     align-self: center;
-    margin-top: 15px;
     width: 80%;
 }
 
@@ -67,7 +68,7 @@
 #time-cursor__handle {
     width: var(--time-cursor-width);
     height: var(--time-cursor-height);
-    background-image: resource("UI/Images/timecursor-handle");
+    background-image: resource('UI/Images/timecursor-handle');
     -unity-background-scale-mode: stretch-to-fill;
     -unity-background-image-tint-color: rgb(0, 119, 255);
 }

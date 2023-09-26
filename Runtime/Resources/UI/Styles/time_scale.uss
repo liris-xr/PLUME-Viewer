@@ -3,18 +3,19 @@
 
 .time-scale {
     overflow: hidden;
+    height: 50px;
 }
 
 .time-scale__ticks {
     width: 100%;
-    height: 20px;
+    height: 50%;
 }
 
 .time-scale__labels {
     width: 100%;
     flex-grow: 0;
     flex-shrink: 1;
-    height: 20px;
+    height: 50%;
 }
 
 .time-label {

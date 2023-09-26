@@ -6,14 +6,14 @@ using UnityEngine.Rendering;
 
 namespace PLUME
 {
-    /// <summary>
-    /// Utility Free Camera component.
-    /// </summary>
+    [RequireComponent(typeof(Camera))]
     public class FreeCamera : MonoBehaviour
     {
         [NonSerialized]
         public bool Disabled = true;
 
+        private Camera _camera;
+        
         private const float MouseSensitivityMultiplier = 0.01f;
 
         /// <summary>
@@ -45,6 +45,22 @@ namespace PLUME
         private float _inputChangeSpeed;
         private float _inputVertical, _inputHorizontal, _inputYAxis;
         private bool _leftShiftBoost, _leftShift, _fire1;
+
+        private void Awake()
+        {
+            _camera = GetComponent<Camera>();
+            _camera.targetTexture = RenderTexture.GetTemporary(1920, 1080);
+        }
+
+        private void OnDestroy()
+        {
+            _camera.targetTexture.Release();
+        }
+
+        public RenderTexture GetRenderTexture()
+        {
+            return _camera.targetTexture;
+        }
 
         private void OnEnable()
         {

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Scripting;
 using UnityEngine.UIElements;
 
@@ -6,11 +7,18 @@ namespace PLUME
 {
     public class TimelineElement : VisualElement
     {
+        private static readonly VisualTreeAsset Uxml;
+        
         private const ulong DurationDefault = 1_000_000_000u;
         private const ulong TimeDivisionDurationDefault = 100_000_000u;
         private const float TimeDivisionWidthDefault = 100;
         private const int TicksPerDivisionDefault = 10;
-
+        
+        static TimelineElement()
+        {
+            Uxml = Resources.Load<VisualTreeAsset>("UI/Uxml/timeline");
+        }
+        
         [Preserve]
         public new class UxmlFactory : UxmlFactory<TimelineElement, UxmlTraits>
         {
@@ -42,74 +50,71 @@ namespace PLUME
             }
         }
 
-        private static readonly StyleSheet StyleSheet;
-
         public override VisualElement contentContainer => _contentContainer;
 
-        private VisualElement _contentContainer;
+        private readonly VisualElement _contentContainer;
 
         private readonly TimeScaleElement _timeScale;
-        private VisualElement _timeCursor;
-        private ScrollView _scrollView;
+        private readonly VisualElement _timeCursor;
+        private readonly ScrollView _scrollView;
 
+        private readonly Scroller _horizontalScroller;
+        private readonly ScrollView _timeScaleScrollView;
+
+        private readonly VisualElement _tracksPlaceholder;
+        private readonly VisualElement _tracksContainer;
+        private readonly List<TimelineTrackElement> _tracks = new();
+        
         private ulong _duration;
         private ulong _timeDivisionDuration;
         private int _ticksPerDivision;
         private float _timeDivisionWidth;
 
-        static TimelineElement()
-        {
-            StyleSheet = Resources.Load<StyleSheet>("UI/Styles/timeline");
-        }
-
         public TimelineElement()
         {
-            styleSheets.Add(StyleSheet);
+            var timeline = Uxml.Instantiate().Q("timeline");
+            hierarchy.Add(timeline);
+            
+            _horizontalScroller = timeline.Q<Scroller>("horizontal-scroller");
+            _timeScaleScrollView = timeline.Q<ScrollView>("time-scale-scroll-view");
 
-            var infoPanel = new VisualElement {name = "time-info-panel"};
-            infoPanel.AddToClassList("panel-container-primary");
-
-            var timeIndicator = new TimeFieldElement {name = "time-field"};
-            infoPanel.Add(timeIndicator);
-
-            _scrollView = new ScrollView();
-            _scrollView.AddToClassList("panel-container-secondary");
-
-            _contentContainer = new VisualElement {name = "timeline-content-container"};
-
-            _timeScale =
-                new TimeScaleElement(DurationDefault, TimeDivisionDurationDefault, TicksPerDivisionDefault,
-                    TimeDivisionWidthDefault) {name = "time-scale"};
-
-            CreateTimeCursor();
-
+            _tracksPlaceholder = timeline.Q("tracks-placeholder");
+            _tracksContainer = timeline.Q("tracks-container");
+            
+            _horizontalScroller.slider.RegisterValueChangedCallback(evt =>
+            {
+                _timeScaleScrollView.horizontalScroller.value = evt.newValue;
+            });
+            
+            _scrollView = timeline.Q<ScrollView>();
+            _contentContainer = timeline.Q("timeline-content-container");
+            _timeScale = timeline.Q<TimeScaleElement>("time-scale");
+            _timeCursor = timeline.Q("time-cursor");
+            
             _scrollView.horizontalScroller.slider.pageSize = TimeDivisionWidthDefault;
-            _scrollView.Add(_timeScale);
-            _scrollView.Add(_timeCursor);
-            _scrollView.Add(_contentContainer);
-
-            hierarchy.Add(infoPanel);
-            hierarchy.Add(_scrollView);
-
-            _scrollView.RegisterCallback<GeometryChangedEvent>(_ => OnGeometryChanged());
             _scrollView.horizontalScroller.slider.RegisterValueChangedCallback(OnScroll);
-
-            AddToClassList("timeline");
+            RegisterCallback<GeometryChangedEvent>(_ => OnGeometryChanged());
         }
 
-        private void CreateTimeCursor()
+        public void AddTrack(TimelineTrackElement track)
         {
-            _timeCursor = new VisualElement {name = "time-cursor"};
-            var timeCursorHandle = new VisualElement {name = "time-cursor__handle"};
-            var timeCursorStem = new VisualElement {name = "time-cursor__stem"};
-            _timeCursor.style.position = new StyleEnum<Position>(Position.Absolute);
-            _timeCursor.pickingMode = PickingMode.Ignore;
-            timeCursorHandle.pickingMode = PickingMode.Position;
-            timeCursorStem.pickingMode = PickingMode.Ignore;
-            _timeCursor.Add(timeCursorHandle);
-            _timeCursor.Add(timeCursorStem);
-        }
+            _tracks.Add(track);
 
+            _tracksPlaceholder.style.display = DisplayStyle.None;
+            
+            _tracksContainer.Add(track);
+            _tracksContainer.style.display = DisplayStyle.Flex;
+
+            var trackScroller = track.Q<Scroller>("horizontal-scroller");
+            
+            _horizontalScroller.slider.RegisterValueChangedCallback(evt =>
+            {
+                trackScroller.value = evt.newValue;
+            });
+
+            UpdateHorizontalScroller();
+        }
+        
         public void SetCursorTime(ulong time)
         {
             _timeCursor.style.left = time / (float) TimeDivisionDuration * TimeDivisionWidth;
@@ -117,7 +122,51 @@ namespace PLUME
 
         private void OnGeometryChanged()
         {
+            UpdateHorizontalScroller();
             Repaint();
+        }
+
+        private void UpdateHorizontalScroller()
+        {
+            var visibleDuration = _timeScaleScrollView.contentViewport.contentRect.width / _timeDivisionWidth * _timeDivisionDuration;
+            var hiddenDuration = _duration - visibleDuration;
+            var hiddenWidth = hiddenDuration / _timeDivisionDuration * _timeDivisionWidth;
+
+            var scrollerDragger = _horizontalScroller.Q("unity-slider").Q("unity-dragger");
+            
+            if (visibleDuration >= _duration)
+            {
+                scrollerDragger.visible = false;
+                _horizontalScroller.SetEnabled(false);
+                _horizontalScroller.lowValue = 0;
+                _horizontalScroller.highValue = 0;
+
+                _timeScaleScrollView.horizontalScroller.lowValue = 0;
+                _timeScaleScrollView.horizontalScroller.highValue = 0;
+                
+                foreach (var track in _tracks)
+                {
+                    var trackScroller = track.Q<Scroller>("horizontal-scroller");
+                    trackScroller.lowValue = 0;
+                    trackScroller.highValue = 0;
+                }
+            }
+            else
+            {
+                scrollerDragger.visible = true;
+                _horizontalScroller.lowValue = 0;
+                _horizontalScroller.highValue = hiddenWidth;
+            
+                _timeScaleScrollView.horizontalScroller.lowValue = 0;
+                _timeScaleScrollView.horizontalScroller.highValue = hiddenWidth;
+
+                foreach (var track in _tracks)
+                {
+                    var trackScroller = track.Q<Scroller>("horizontal-scroller");
+                    trackScroller.lowValue = 0;
+                    trackScroller.highValue = hiddenWidth;
+                }
+            }
         }
 
         public void Repaint()
@@ -142,11 +191,9 @@ namespace PLUME
             _timeScale.SetTimeDivisionDuration(TimeDivisionDuration);
             _timeScale.SetTimeDivisionWidth(TimeDivisionWidth);
             _timeScale.SetTicksPerDivision(TicksPerDivision);
-            _timeScale.style.minWidth = Duration / (float) TimeDivisionDuration * TimeDivisionWidth
-                                        + _timeScale.resolvedStyle.paddingLeft + _timeScale.resolvedStyle.paddingRight;
 
-            var clippingRect = _scrollView.contentViewport.contentRect;
-            clippingRect.x += _scrollView.scrollOffset.x;
+            var clippingRect = _timeScaleScrollView.contentViewport.contentRect;
+            clippingRect.x += _timeScaleScrollView.scrollOffset.x;
             _timeScale.SetTicksClippingRect(clippingRect);
             _timeScale.Repaint();
         }
