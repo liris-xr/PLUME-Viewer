@@ -32,9 +32,10 @@ namespace PLUME
         private readonly Dictionary<int, string> _invertIdMap = new();
 
         private readonly Dictionary<int, GameObject> _gameObjectsByInstanceId = new();
+        private readonly Dictionary<int, string> _gameObjectsTagByInstanceId = new();
         private readonly Dictionary<int, Transform> _transformsByInstanceId = new();
         private readonly Dictionary<int, Component> _componentByInstanceId = new();
-
+        
         private PlayerContext(string name, PlayerAssets assets, Scene scene)
         {
             _name = name;
@@ -60,6 +61,7 @@ namespace PLUME
             foreach (var context in Contexts)
             {
                 context._gameObjectsByInstanceId.Clear();
+                context._gameObjectsTagByInstanceId.Clear();
                 context._transformsByInstanceId.Clear();
                 context._componentByInstanceId.Clear();
                 SceneManager.UnloadSceneAsync(context._scene);
@@ -75,6 +77,7 @@ namespace PLUME
                 return;
 
             ctx._gameObjectsByInstanceId.Clear();
+            ctx._gameObjectsTagByInstanceId.Clear();
             ctx._transformsByInstanceId.Clear();
             ctx._componentByInstanceId.Clear();
             SceneManager.UnloadSceneAsync(ctx._scene);
@@ -150,6 +153,7 @@ namespace PLUME
             }
 
             _gameObjectsByInstanceId.Clear();
+            _gameObjectsTagByInstanceId.Clear();
             _transformsByInstanceId.Clear();
             _componentByInstanceId.Clear();
             _idMap.Clear();
@@ -172,6 +176,18 @@ namespace PLUME
             }
         }
 
+        public void SetGameObjectTag(TransformGameObjectIdentifier gameObjectId, string tag)
+        {
+            var go = GetOrCreateGameObjectByIdentifier(gameObjectId);
+            _gameObjectsTagByInstanceId[go.GetInstanceID()] = tag;
+        }
+
+        public string GetGameObjectTag(int gameObjectId)
+        {
+            _gameObjectsTagByInstanceId.TryGetValue(gameObjectId, out var tag);
+            return tag;
+        }
+        
         public void SetParent(TransformGameObjectIdentifier transformId,
             TransformGameObjectIdentifier transformParentId)
         {
@@ -433,6 +449,8 @@ namespace PLUME
             if (go != null)
             {
                 _gameObjectsByInstanceId.Remove(go.GetInstanceID());
+                _gameObjectsTagByInstanceId.Remove(go.GetInstanceID());
+                
                 _transformsByInstanceId.Remove(go.transform.GetInstanceID());
 
                 foreach (var component in go.GetComponents<Component>())
@@ -470,6 +488,7 @@ namespace PLUME
             foreach (var gameObjectInstanceId in gameObjectsToRemove)
             {
                 _gameObjectsByInstanceId.Remove(gameObjectInstanceId);
+                _gameObjectsTagByInstanceId.Remove(gameObjectInstanceId);
             }
 
             foreach (var transformInstanceId in transformsToRemove)

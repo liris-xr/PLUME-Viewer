@@ -45,8 +45,7 @@ namespace PLUME
                 }
                 case GameObjectUpdateTag gameObjectUpdateTag:
                 {
-                    var go = ctx.GetOrCreateGameObjectByIdentifier(gameObjectUpdateTag.Id);
-                    // go.tag = gameObjectUpdateTag.Tag;
+                    ctx.SetGameObjectTag(gameObjectUpdateTag.Id, gameObjectUpdateTag.Tag);
                     break;
                 }
             }
