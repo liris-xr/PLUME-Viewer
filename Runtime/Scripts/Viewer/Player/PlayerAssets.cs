@@ -9,13 +9,23 @@ namespace PLUME
 {
     public class PlayerAssets
     {
-        private readonly AssetBundle _assetBundle;
+        private readonly AssetBundleCreateRequest _assetBundleCreateRequest;
 
         public PlayerAssets(string assetBundlePath)
         {
-            _assetBundle = AssetBundle.LoadFromFile(assetBundlePath);
+            _assetBundleCreateRequest = AssetBundle.LoadFromFileAsync(assetBundlePath);
         }
 
+        public float GetLoadingProgress()
+        {
+            return _assetBundleCreateRequest.progress;
+        }
+
+        public bool IsLoaded()
+        {
+            return _assetBundleCreateRequest.isDone;
+        }
+        
         public T GetOrDefaultAssetByIdentifier<T>(AssetIdentifier identifier) where T : Object
         {
             if (identifier == null)
@@ -45,7 +55,10 @@ namespace PLUME
 
         private Object LoadCustomAsset(Type type, string assetPath, string assetName)
         {
-            var assets = _assetBundle.LoadAssetWithSubAssets(assetPath, type);
+            if (!_assetBundleCreateRequest.isDone)
+                throw new Exception("Asset bundle is not fully loaded yet.");
+            
+            var assets = _assetBundleCreateRequest.assetBundle.LoadAssetWithSubAssets(assetPath, type);
             return assets.FirstOrDefault(asset => asset.name == assetName);
         }
 

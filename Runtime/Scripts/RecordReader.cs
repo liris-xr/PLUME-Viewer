@@ -2,35 +2,41 @@
 using System.IO;
 using System.IO.Compression;
 using Google.Protobuf;
+using JetBrains.Annotations;
 using PLUME.Sample;
+using UnityEngine;
 
 namespace PLUME
 {
     public class RecordReader : IDisposable
     {
-        private readonly Stream _fileStream;
+        private readonly string _recordPath;
         private readonly Stream _samplesStream;
 
         private bool _closed;
 
         private readonly RecordMetadata _metadata;
-
+        
         public RecordReader(string recordPath)
         {
-            _fileStream = File.Open(recordPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-
-            var archive = new ZipArchive(_fileStream, ZipArchiveMode.Read);
-            _samplesStream = archive.GetEntry("samples")!.Open();
-
-            using var metadataStream = archive.GetEntry("metadata")!.Open();
-            _metadata = RecordMetadata.Parser.ParseDelimitedFrom(metadataStream);
+            _recordPath = recordPath;
+            _samplesStream = new GZipStream(File.Open(recordPath, FileMode.Open, FileAccess.Read, FileShare.Read), CompressionMode.Decompress);
         }
 
-        public PackedSample ReadNextSample()
+        public RecordMetadata ReadMetadata()
         {
+            var recordMetadataPath = _recordPath + ".meta";
+
+            if (!File.Exists(recordMetadataPath))
+            {
+                return null;
+            }
+            
+            using var metadataStream = File.Open(recordMetadataPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
             try
             {
-                return PackedSample.Parser.ParseDelimitedFrom(_samplesStream);
+                return RecordMetadata.Parser.ParseDelimitedFrom(metadataStream);
             }
             catch (EndOfStreamException)
             {
@@ -42,19 +48,32 @@ namespace PLUME
             }
         }
 
-        public RecordMetadata GetMetadata()
+        public bool TryReadNextSample(out PackedSample sample)
         {
-            return _metadata;
+            try
+            {
+                sample = PackedSample.Parser.ParseDelimitedFrom(_samplesStream);
+                return true;
+            }
+            catch (Exception)
+            {
+                sample = null;
+                return false;
+            }
+        }
+        
+        public PackedSample ReadNextSample()
+        {
+            return PackedSample.Parser.ParseDelimitedFrom(_samplesStream);
         }
 
         public void Close()
         {
             if (_closed)
                 return;
-
-            _fileStream.Close();
-
             _closed = true;
+            
+            _samplesStream.Close();
         }
 
         public void Dispose()

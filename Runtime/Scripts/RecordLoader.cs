@@ -11,11 +11,9 @@ namespace PLUME
         private readonly RecordReader _reader;
         private readonly TypeRegistry _typeRegistry;
         private readonly OrderedSamplesList _loadedSamples;
-
-        public ulong Duration => _duration;
-
-        private int _sampleCount;
-        private ulong _duration;
+        
+        public ulong Duration { get; private set; }
+        public ulong SampleCount { get; private set; }
 
         private bool _closed;
         private bool _loaded;
@@ -36,12 +34,12 @@ namespace PLUME
         {
             if (_loaded)
                 return;
-
-            Debug.Log("Record metadata: " + _reader.GetMetadata());
             
-            PackedSample sample;
+            var recordHeader = _reader.ReadNextSample().Payload.Unpack<RecordHeader>();
+            
+            Debug.Log(recordHeader);
 
-            while((sample = _reader.ReadNextSample()) != null)
+            while(_reader.TryReadNextSample(out var sample))
             {
                 var payload = sample.Payload.Unpack(_typeRegistry);
 
@@ -52,8 +50,12 @@ namespace PLUME
                     continue;
                 }
 
-                var unpackedSample = UnpackedSample.InstantiateUnpackedSample(sample.Header, payload);
-
+                var unpackedSample = new UnpackedSample
+                {
+                    Header = sample.Header,
+                    Payload = payload
+                };
+                
                 if (_loadedSamples.Count > 0)
                 {
                     var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Header.Time);
@@ -74,8 +76,8 @@ namespace PLUME
                     _loadedSamples.Add(unpackedSample);
                 }
 
-                _sampleCount++;
-                _duration = Math.Max(_duration, sample.Header.Time);
+                SampleCount++;
+                Duration = Math.Max(Duration, sample.Header.Time);
             }
 
             _loaded = true;
@@ -86,7 +88,7 @@ namespace PLUME
             if (!_loaded)
                 Load();
 
-            if (index < 0 || index >= _sampleCount)
+            if (index < 0 || index >= (int)SampleCount)
             {
                 return null;
             }

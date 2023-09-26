@@ -53,8 +53,7 @@ namespace PLUME.UI.Analysis
             parameters.StartTime = startTime;
             parameters.EndTime = endTime;
 
-            // StartCoroutine(module.GenerateTrajectory(player.GetRecordLoader(), parameters, onFinishCallback));
-            module.GenerateTrajectory(player.GetRecordLoader(), parameters, onFinishCallback);
+            StartCoroutine(module.GenerateTrajectory(player.GetRecordLoader(), parameters, onFinishCallback));
         }
 
         private void OnClickDeleteResult(TrajectoryAnalysisModuleResult result)

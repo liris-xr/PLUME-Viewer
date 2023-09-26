@@ -8,24 +8,15 @@ using UnityEngine;
 
 namespace PLUME
 {
-    public class OrderedSamplesList : OrderedSamplesList<IMessage>
-    {
-    }
-
     /// <summary>
     /// List of samples ensuring that added/inserted samples have increasing times.
     /// </summary>
-    public class OrderedSamplesList<T> : IList<UnpackedSample<T>> where T : IMessage
+    public class OrderedSamplesList : IList<UnpackedSample>
     {
-        private readonly List<UnpackedSample<T>> _samples = new();
+        private readonly List<UnpackedSample> _samples = new();
 
         public int Count => _samples.Count;
         public bool IsReadOnly { get; }
-
-        public OrderedSamplesList()
-        {
-            IsReadOnly = false;
-        }
 
         /// <summary>
         /// Return the first sample in the set where its time is superior or equal to <paramref name="time"/>.
@@ -82,7 +73,7 @@ namespace PLUME
             return -1;
         }
 
-        public IEnumerator<UnpackedSample<T>> GetEnumerator()
+        public IEnumerator<UnpackedSample> GetEnumerator()
         {
             return _samples.GetEnumerator();
         }
@@ -92,7 +83,7 @@ namespace PLUME
             return GetEnumerator();
         }
 
-        public void Add(UnpackedSample<T> item)
+        public void Add(UnpackedSample item)
         {
             var lastItem = _samples.LastOrDefault();
 
@@ -125,27 +116,27 @@ namespace PLUME
             _samples.Clear();
         }
 
-        public bool Contains(UnpackedSample<T> item)
+        public bool Contains(UnpackedSample item)
         {
             return _samples.Contains(item);
         }
 
-        public void CopyTo(UnpackedSample<T>[] array, int arrayIndex)
+        public void CopyTo(UnpackedSample[] array, int arrayIndex)
         {
             _samples.CopyTo(array, arrayIndex);
         }
 
-        public bool Remove(UnpackedSample<T> item)
+        public bool Remove(UnpackedSample item)
         {
             return _samples.Remove(item);
         }
 
-        public int IndexOf(UnpackedSample<T> item)
+        public int IndexOf(UnpackedSample item)
         {
             return _samples.IndexOf(item);
         }
 
-        public void Insert(int index, UnpackedSample<T> item)
+        public void Insert(int index, UnpackedSample item)
         {
             if (item == null)
             {
@@ -177,7 +168,7 @@ namespace PLUME
             _samples.RemoveAt(index);
         }
 
-        public UnpackedSample<T> this[int index]
+        public UnpackedSample this[int index]
         {
             get => _samples[index];
             set

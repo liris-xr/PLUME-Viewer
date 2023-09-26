@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 using PLUME.Sample.Common;
 using UnityEngine;
 using UnityEngine.Profiling;
+using Debug = UnityEngine.Debug;
 
 namespace PLUME
 {
@@ -24,7 +26,7 @@ namespace PLUME
         private PlayerAssets _assets;
         public PlayerModule[] PlayerModules { get; private set; }
 
-        private RecordLoader _recordLoader;
+        private BufferedAsyncRecordLoader _recordLoader;
         private FilteredRecordLoader _markersLoader;
 
         private PlayerContext _playerContext;
@@ -50,15 +52,12 @@ namespace PLUME
         private void Awake()
         {
             PlayerModules = FindObjectsOfType<PlayerModule>(true);
-
             _assets = new PlayerAssets(Path.Combine(Application.streamingAssetsPath, "plume_asset_bundle_windows"));
             _markersLoader = new FilteredRecordLoader(new RecordReader(recordPath),
                 sample => sample.Payload.Is(Marker.Descriptor), typeRegistryProvider.GetTypeRegistry());
-            _recordLoader = new RecordLoader(new RecordReader(recordPath),
-                typeRegistryProvider.GetTypeRegistry());
-
             _markersLoader.Load();
-            _recordLoader.Load();
+            _recordLoader = new BufferedAsyncRecordLoader(new RecordReader(recordPath), typeRegistryProvider.GetTypeRegistry());
+            _recordLoader.StartLoading();
 
             _playerContext = PlayerContext.NewContext("MainPlayerContext", _assets);
 
@@ -139,9 +138,9 @@ namespace PLUME
         private void PlayForward(ulong durationNanoseconds)
         {
             var endTime = _currentTimeNanoseconds + durationNanoseconds;
-
+            
             _isLoading = true;
-            var samples = _recordLoader.SamplesInTimeRange(_currentTimeNanoseconds, endTime);
+            var samples = _recordLoader.SamplesInTimeRangeAsync(_currentTimeNanoseconds, endTime).Result;
             _isLoading = false;
 
             _playerContext.PlaySamples(PlayerModules, samples);
@@ -192,8 +191,8 @@ namespace PLUME
         {
             return _recordLoader.Duration;
         }
-
-        public RecordLoader GetRecordLoader()
+        
+        public BufferedAsyncRecordLoader GetRecordLoader()
         {
             return _recordLoader;
         }

@@ -24,8 +24,7 @@ namespace PLUME
 
         private Camera _lastPlayerCamera;
 
-        // public IEnumerator GenerateTrajectory(BufferedAsyncRecordLoader loader,
-        public void GenerateTrajectory(RecordLoader loader,
+        public IEnumerator GenerateTrajectory(BufferedAsyncRecordLoader loader,
             TrajectoryAnalysisModuleParameters parameters, Action<TrajectoryAnalysisModuleResult> finishCallback)
         {
             if (parameters.EndTime < parameters.StartTime)
@@ -34,9 +33,8 @@ namespace PLUME
                     $"{nameof(parameters.StartTime)} should be less or equal to {nameof(parameters.EndTime)}.");
             }
 
-            // var samplesLoadingTask = loader.SamplesInTimeRangeAsync(parameters.StartTime, parameters.EndTime);
-            // yield return new WaitUntil(() => samplesLoadingTask.IsCompleted);
-            var samples = loader.SamplesInTimeRange(parameters.StartTime, parameters.EndTime);
+            var samplesLoadingTask = loader.SamplesInTimeRangeAsync(parameters.StartTime, parameters.EndTime);
+            yield return new WaitUntil(() => samplesLoadingTask.IsCompleted);
 
             var points = new List<TrajectorySegmentPoint>();
             var teleportationIndices = new List<int>();
@@ -44,8 +42,7 @@ namespace PLUME
 
             var index = 0;
 
-            // foreach (var sample in samplesLoadingTask.Result)
-            foreach (var sample in samples)
+            foreach (var sample in samplesLoadingTask.Result)
             {
                 var lastPosition = points.LastOrDefault()?.Position;
                 var lastRotation = points.LastOrDefault()?.Rotation;

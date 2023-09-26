@@ -30,16 +30,23 @@ namespace PLUME
         {
             if (_loaded)
                 return;
-
-            Debug.Log("Record metadata: " + _reader.GetMetadata());
             
             PackedSample sample;
-
+            
+            var recordHeader = _reader.ReadNextSample().Payload.Unpack<RecordHeader>();
+            
             do
             {
-                sample = _reader.ReadNextSample();
+                try
+                {
+                    sample = _reader.ReadNextSample();
+                }
+                catch (Exception)
+                {
+                    break;
+                }
 
-                if (sample == null || !_filter.Invoke(sample)) continue;
+                if (!_filter.Invoke(sample)) continue;
 
                 // Unpack the sample
                 var payload = sample.Payload.Unpack(_typeRegistry);
@@ -51,8 +58,12 @@ namespace PLUME
                     continue;
                 }
 
-                var unpackedSample = UnpackedSample.InstantiateUnpackedSample(sample.Header, payload);
-
+                var unpackedSample = new UnpackedSample
+                {
+                    Header = sample.Header,
+                    Payload = payload
+                };
+                
                 if (_loadedSamples.Count > 0)
                 {
                     var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Header.Time);
