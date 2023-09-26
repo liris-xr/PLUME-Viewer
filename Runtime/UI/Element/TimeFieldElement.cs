@@ -27,17 +27,10 @@ namespace PLUME
         };
 
         public EventCallback<ChangeEvent<ulong>> timeChanged;
-
-        private static readonly StyleSheet StyleSheet;
-
-        static TimeFieldElement()
-        {
-            StyleSheet = Resources.Load<StyleSheet>("UI/Styles/time_field");
-        }
         
         public TimeFieldElement()
         {
-            styleSheets.Add(StyleSheet);
+            styleSheets.Add(Resources.Load<StyleSheet>("UI/Styles/time_field"));
             
             _timeTextField = new TextField();
             _timeTextField.isDelayed = true;

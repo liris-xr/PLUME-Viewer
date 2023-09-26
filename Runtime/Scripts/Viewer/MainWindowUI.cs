@@ -1,8 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Xml.Linq;
+using PLUME.Sample.LSL;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Random = UnityEngine.Random;
 
 namespace PLUME.UI
 {
@@ -125,6 +129,114 @@ namespace PLUME.UI
             return TimeIndicator != null && TimeIndicator.IsFocused();
         }
 
+        public void CreatePhysiologicalTracks()
+        {
+            var physioSignalsLoader = player.GetPhysiologicalSignalsLoader();
+
+            var tracks = new Dictionary<string, TimelinePhysiologicalSignalTrackElement[]>();
+            
+            foreach (var s in physioSignalsLoader.AllOfType<StreamOpen>())
+            {
+                if (s.Payload is not StreamOpen streamOpen)
+                    continue;
+                
+                var xmlInfo = XElement.Parse(streamOpen.XmlHeader);
+                var streamName = xmlInfo.Element("name")!.Value;
+                var channelFormat = xmlInfo.Element("channel_format")!.Value;
+                var channelCount = int.Parse(xmlInfo.Element("channel_count")!.Value);
+                var nominalSamplingRate = float.Parse(xmlInfo.Element("nominal_srate")!.Value);
+
+                if (channelFormat == "string")
+                    continue;
+
+                var streamColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+                var channelsTrack = new TimelinePhysiologicalSignalTrackElement[channelCount];
+                
+                for (var channelIdx = 0; channelIdx < channelCount; channelIdx++)
+                {
+                    var channelColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+                    channelsTrack[channelIdx] = new TimelinePhysiologicalSignalTrackElement();
+                    channelsTrack[channelIdx].SetName(streamName);
+                    channelsTrack[channelIdx].SetFrequency(nominalSamplingRate);
+                    channelsTrack[channelIdx].SetChannel(channelIdx);
+                    channelsTrack[channelIdx].SetStreamColor(streamColor);
+                    channelsTrack[channelIdx].SetChannelColor(channelColor);
+                    Timeline.AddTrack(channelsTrack[channelIdx]);
+                }
+                
+                tracks.Add(streamOpen.StreamInfo.LslStreamId, channelsTrack);
+            }
+
+            var streamSamples = physioSignalsLoader.AllOfType<StreamSample>()
+                .OrderBy(s => s.Header!.Time)
+                .GroupBy(s => ((StreamSample)s.Payload).StreamInfo.LslStreamId);
+
+            foreach (var streamSamplesGroup in streamSamples)
+            {
+                var streamId = streamSamplesGroup.Key;
+
+                if (!tracks.TryGetValue(streamId, out var physioTracks))
+                    continue;
+
+                for (var channelIdx = 0; channelIdx < physioTracks.Length; ++channelIdx)
+                {
+                    var min = float.MaxValue;
+                    var max = float.MinValue;
+                    
+                    var points = new List<Vector2>();
+
+                    foreach (var unpackedSample in streamSamplesGroup)
+                    {
+                        if (unpackedSample.Payload is not StreamSample sample)
+                            continue;
+
+                        switch (sample.ValuesCase)
+                        {
+                            case StreamSample.ValuesOneofCase.FloatValue:
+                                min = Math.Min(min, sample.FloatValue.Value[channelIdx]);
+                                max = Math.Max(max, sample.FloatValue.Value[channelIdx]);
+                                points.Add(new Vector2(unpackedSample.Header!.Time, sample.FloatValue.Value[channelIdx]));
+                                break;
+                            case StreamSample.ValuesOneofCase.DoubleValue:
+                                min = Math.Min(min, (float)sample.DoubleValue.Value[channelIdx]);
+                                max = Math.Max(max, (float)sample.DoubleValue.Value[channelIdx]);
+                                points.Add(new Vector2(unpackedSample.Header!.Time, (float)sample.DoubleValue.Value[channelIdx]));
+                                break;
+                            case StreamSample.ValuesOneofCase.Int8Value:
+                                min = Math.Min(min, sample.Int8Value.Value[channelIdx]);
+                                max = Math.Max(max, sample.Int8Value.Value[channelIdx]);
+                                points.Add(new Vector2(unpackedSample.Header!.Time, sample.Int8Value.Value[channelIdx]));
+                                break;
+                            case StreamSample.ValuesOneofCase.Int16Value:
+                                min = Math.Min(min, sample.Int16Value.Value[channelIdx]);
+                                max = Math.Max(max, sample.Int16Value.Value[channelIdx]);
+                                points.Add(new Vector2(unpackedSample.Header!.Time, sample.Int16Value.Value[channelIdx]));
+                                break;
+                            case StreamSample.ValuesOneofCase.Int32Value:
+                                min = Math.Min(min, sample.Int32Value.Value[channelIdx]);
+                                max = Math.Max(max, sample.Int32Value.Value[channelIdx]);
+                                points.Add(new Vector2(unpackedSample.Header!.Time, sample.Int32Value.Value[channelIdx]));
+                                break;
+                            case StreamSample.ValuesOneofCase.Int64Value:
+                                min = Math.Min(min, sample.Int64Value.Value[channelIdx]);
+                                max = Math.Max(max, sample.Int64Value.Value[channelIdx]);
+                                points.Add(new Vector2(unpackedSample.Header!.Time, sample.Int64Value.Value[channelIdx]));
+                                break;
+                            case StreamSample.ValuesOneofCase.None:
+                            case StreamSample.ValuesOneofCase.StringValue:
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException();
+                        }
+                    }
+                    
+                    physioTracks[channelIdx].SetPoints(points);
+                    physioTracks[channelIdx].SetMinValue(min);
+                    physioTracks[channelIdx].SetMaxValue(max);
+                }
+            }
+        }
+        
         public void RefreshTimelineScale()
         {
             Timeline.Duration = player.GetRecordDurationInNanoseconds();
@@ -138,10 +250,15 @@ namespace PLUME.UI
         {
             TimeIndicator.SetTimeWithoutNotify(player.GetCurrentPlayTimeInNanoseconds());
         }
-
+        
         public void RefreshTimelineCursor()
         {
             Timeline.SetCursorTime(player.GetCurrentPlayTimeInNanoseconds());
+
+            if (player.IsPlaying())
+            {
+                Timeline.KeepTimeCursorInView();
+            }
         }
 
         public void RefreshPlayPauseButton()

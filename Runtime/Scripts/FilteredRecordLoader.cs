@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using PLUME.Sample;
 using UnityEngine;
@@ -30,22 +32,15 @@ namespace PLUME
         {
             if (_loaded)
                 return;
-            
-            PackedSample sample;
-            
+
             var recordHeader = _reader.ReadNextSample().Payload.Unpack<RecordHeader>();
             
-            do
+            while(_reader.TryReadNextSample(out var sample))
             {
-                try
-                {
-                    sample = _reader.ReadNextSample();
-                }
-                catch (Exception)
-                {
-                    break;
-                }
-
+                // Skip samples without timestamp
+                if (sample.Header == null)
+                    continue;
+                
                 if (!_filter.Invoke(sample)) continue;
 
                 // Unpack the sample
@@ -85,11 +80,21 @@ namespace PLUME
                 }
 
                 _sampleCount++;
-            } while (sample != null);
+            }
 
             _loaded = true;
         }
 
+        public UnpackedSample[] All()
+        {
+            return _loadedSamples.ToArray();
+        }
+        
+        public UnpackedSample[] AllOfType<T>() where T : IMessage
+        {
+            return _loadedSamples.Where(sample => sample.Payload is T).ToArray();
+        }
+        
         public UnpackedSample SampleAtIndex(int index)
         {
             if (!_loaded)
@@ -102,7 +107,7 @@ namespace PLUME
 
             if (index < _loadedSamples.Count)
             {
-                return _loadedSamples[index] as UnpackedSample;
+                return _loadedSamples[index];
             }
 
             return null;

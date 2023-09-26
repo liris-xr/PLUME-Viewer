@@ -1,10 +1,5 @@
 @import url('project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&guid=028e63fb930a6f74997dbdd7944d219b&type=3#dark_theme');
 @import url('project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&type=3#global');
-:root {
-    --time-cursor-width: 11px;
-    --time-cursor-height: 12px;
-    --time-cursor-half-width: 5px;
-}
 
 .timeline {
     width: 100%;
@@ -14,20 +9,12 @@
     flex-shrink: 1;
 }
 
-.timeline ScrollView {
-    flex-grow: 1;
-}
-
-.timeline ScrollView #unity-content-container {
-    height: 100%;
-}
-
 .time-label {
     color: rgb(208, 208, 208);
 }
 
 #time-scale {
-    padding: 5px var(--time-cursor-half-width);
+    padding: 5px 0;
     padding-bottom: 0;
     background-color: var(--unity-colors-window-background);
     border-color: var(--unity-colors-default-border);
@@ -38,11 +25,8 @@
     border-left-width: 0;
 }
 
-#timeline-content-container {
-    flex-grow: 1;
-    flex-direction: column;
-    width: 200px;
-    margin: 0 var(--time-cursor-half-width);
+#time-scale-scroll-view {
+    width: 100%;
 }
 
 #time-info-panel {
@@ -61,21 +45,11 @@
     padding: 10px;
 }
 
-#time-cursor {
+#tracks-placeholder #unity-content-container {
     height: 100%;
 }
 
-#time-cursor__handle {
-    width: var(--time-cursor-width);
-    height: var(--time-cursor-height);
-    background-image: resource('UI/Images/timecursor-handle');
-    -unity-background-scale-mode: stretch-to-fill;
-    -unity-background-image-tint-color: rgb(0, 119, 255);
-}
-
-#time-cursor__stem {
-    width: 1px;
+#track-content-container #unity-content-container {
     height: 100%;
-    left: var(--time-cursor-half-width);
-    background-color: rgb(0, 119, 255);
+    width: 100%;
 }

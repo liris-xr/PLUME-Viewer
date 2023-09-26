@@ -7,17 +7,10 @@ namespace PLUME
 {
     public class TimelineElement : VisualElement
     {
-        private static readonly VisualTreeAsset Uxml;
-        
         private const ulong DurationDefault = 1_000_000_000u;
         private const ulong TimeDivisionDurationDefault = 100_000_000u;
         private const float TimeDivisionWidthDefault = 100;
         private const int TicksPerDivisionDefault = 10;
-        
-        static TimelineElement()
-        {
-            Uxml = Resources.Load<VisualTreeAsset>("UI/Uxml/timeline");
-        }
         
         [Preserve]
         public new class UxmlFactory : UxmlFactory<TimelineElement, UxmlTraits>
@@ -50,20 +43,18 @@ namespace PLUME
             }
         }
 
-        public override VisualElement contentContainer => _contentContainer;
-
-        private readonly VisualElement _contentContainer;
-
         private readonly TimeScaleElement _timeScale;
+        
         private readonly VisualElement _timeCursor;
-        private readonly ScrollView _scrollView;
 
+        private float _timeCursorPosition;
+        
         private readonly Scroller _horizontalScroller;
         private readonly ScrollView _timeScaleScrollView;
 
         private readonly VisualElement _tracksPlaceholder;
         private readonly VisualElement _tracksContainer;
-        private readonly List<TimelineTrackElement> _tracks = new();
+        private readonly List<TimelinePhysiologicalSignalTrackElement> _tracks = new();
         
         private ulong _duration;
         private ulong _timeDivisionDuration;
@@ -72,7 +63,8 @@ namespace PLUME
 
         public TimelineElement()
         {
-            var timeline = Uxml.Instantiate().Q("timeline");
+            var uxml = Resources.Load<VisualTreeAsset>("UI/Uxml/timeline");
+            var timeline = uxml.Instantiate().Q("timeline");
             hierarchy.Add(timeline);
             
             _horizontalScroller = timeline.Q<Scroller>("horizontal-scroller");
@@ -81,43 +73,54 @@ namespace PLUME
             _tracksPlaceholder = timeline.Q("tracks-placeholder");
             _tracksContainer = timeline.Q("tracks-container");
             
-            _horizontalScroller.slider.RegisterValueChangedCallback(evt =>
-            {
-                _timeScaleScrollView.horizontalScroller.value = evt.newValue;
-            });
-            
-            _scrollView = timeline.Q<ScrollView>();
-            _contentContainer = timeline.Q("timeline-content-container");
             _timeScale = timeline.Q<TimeScaleElement>("time-scale");
             _timeCursor = timeline.Q("time-cursor");
             
-            _scrollView.horizontalScroller.slider.pageSize = TimeDivisionWidthDefault;
-            _scrollView.horizontalScroller.slider.RegisterValueChangedCallback(OnScroll);
+            _horizontalScroller.slider.RegisterValueChangedCallback(evt =>
+            {
+                _timeScaleScrollView.horizontalScroller.value = evt.newValue;
+                
+                _timeCursor.Q("scroll-offset").style.left = - evt.newValue;
+                
+                OnScroll(evt);
+            });
+            
             RegisterCallback<GeometryChangedEvent>(_ => OnGeometryChanged());
         }
 
-        public void AddTrack(TimelineTrackElement track)
+        public void AddTrack(TimelinePhysiologicalSignalTrackElement physiologicalSignalTrack)
         {
-            _tracks.Add(track);
+            _tracks.Add(physiologicalSignalTrack);
 
             _tracksPlaceholder.style.display = DisplayStyle.None;
             
-            _tracksContainer.Add(track);
+            _tracksContainer.Add(physiologicalSignalTrack);
             _tracksContainer.style.display = DisplayStyle.Flex;
-
-            var trackScroller = track.Q<Scroller>("horizontal-scroller");
             
             _horizontalScroller.slider.RegisterValueChangedCallback(evt =>
             {
-                trackScroller.value = evt.newValue;
+                physiologicalSignalTrack.GetHorizontalScroller().value = evt.newValue;
             });
-
+            
             UpdateHorizontalScroller();
+        }
+
+        public void KeepTimeCursorInView()
+        {
+            var viewportWidth = _timeScaleScrollView.contentViewport.contentRect.width;
+            const int margin = 5;
+            _horizontalScroller.slider.value = _timeCursorPosition - viewportWidth + margin;
         }
         
         public void SetCursorTime(ulong time)
         {
-            _timeCursor.style.left = time / (float) TimeDivisionDuration * TimeDivisionWidth;
+            _timeCursorPosition = time / (float)TimeDivisionDuration * TimeDivisionWidth;
+            _timeCursor.Q("time-offset").style.left = _timeCursorPosition;
+            
+            foreach (var track in _tracks)
+            {
+                track.SetCurrentTime(time);
+            }
         }
 
         private void OnGeometryChanged()
@@ -146,7 +149,7 @@ namespace PLUME
                 
                 foreach (var track in _tracks)
                 {
-                    var trackScroller = track.Q<Scroller>("horizontal-scroller");
+                    var trackScroller = track.GetHorizontalScroller();
                     trackScroller.lowValue = 0;
                     trackScroller.highValue = 0;
                 }
@@ -162,7 +165,7 @@ namespace PLUME
 
                 foreach (var track in _tracks)
                 {
-                    var trackScroller = track.Q<Scroller>("horizontal-scroller");
+                    var trackScroller = track.GetHorizontalScroller();
                     trackScroller.lowValue = 0;
                     trackScroller.highValue = hiddenWidth;
                 }
@@ -172,17 +175,16 @@ namespace PLUME
         public void Repaint()
         {
             UpdateTimeScale();
-            UpdateContentContainerSize();
+            
+            foreach (var track in _tracks)
+            {
+                track.Repaint();
+            }
         }
 
         private void OnScroll(ChangeEvent<float> evt)
         {
             UpdateTimeScale();
-        }
-
-        private void UpdateContentContainerSize()
-        {
-            _contentContainer.style.width = Duration / (float) TimeDivisionDuration * TimeDivisionWidth;
         }
 
         private void UpdateTimeScale()
@@ -196,6 +198,14 @@ namespace PLUME
             clippingRect.x += _timeScaleScrollView.scrollOffset.x;
             _timeScale.SetTicksClippingRect(clippingRect);
             _timeScale.Repaint();
+            
+            foreach (var track in _tracks)
+            {
+                track.SetDuration(Duration);
+                track.SetTimeDivisionDuration(TimeDivisionDuration);
+                track.SetTimeDivisionWidth(TimeDivisionWidth);
+                track.SetTicksPerDivision(TicksPerDivision);
+            }
         }
 
         public ulong Duration
@@ -235,7 +245,6 @@ namespace PLUME
             {
                 _timeDivisionWidth = value;
                 _timeScale.SetTimeDivisionWidth(value);
-                _scrollView.horizontalScroller.slider.pageSize = _timeDivisionWidth;
             }
         }
     }

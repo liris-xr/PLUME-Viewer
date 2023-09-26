@@ -1,15 +1,10 @@
 ﻿using System;
-using System.Collections;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using PLUME.Sample.Common;
+using PLUME.Sample.LSL;
 using UnityEngine;
-using UnityEngine.Profiling;
-using Debug = UnityEngine.Debug;
 
 namespace PLUME
 {
@@ -28,6 +23,7 @@ namespace PLUME
 
         private BufferedAsyncRecordLoader _recordLoader;
         private FilteredRecordLoader _markersLoader;
+        private FilteredRecordLoader _physioSignalsLoader;
 
         private PlayerContext _playerContext;
         private bool _isPlaying;
@@ -53,9 +49,18 @@ namespace PLUME
         {
             PlayerModules = FindObjectsOfType<PlayerModule>(true);
             _assets = new PlayerAssets(Path.Combine(Application.streamingAssetsPath, "plume_asset_bundle_windows"));
+            
             _markersLoader = new FilteredRecordLoader(new RecordReader(recordPath),
                 sample => sample.Payload.Is(Marker.Descriptor), typeRegistryProvider.GetTypeRegistry());
             _markersLoader.Load();
+            
+            _physioSignalsLoader = new FilteredRecordLoader(new RecordReader(recordPath),
+                sample => sample.Payload.Is(StreamOpen.Descriptor)
+                          || sample.Payload.Is(StreamClose.Descriptor)
+                          || sample.Payload.Is(StreamSample.Descriptor),
+                typeRegistryProvider.GetTypeRegistry());
+            _physioSignalsLoader.Load();
+            
             _recordLoader = new BufferedAsyncRecordLoader(new RecordReader(recordPath), typeRegistryProvider.GetTypeRegistry());
             _recordLoader.StartLoading();
 
@@ -63,6 +68,11 @@ namespace PLUME
 
             transform.parent = null;
             DontDestroyOnLoad(this);
+        }
+
+        public FilteredRecordLoader GetPhysiologicalSignalsLoader()
+        {
+            return _physioSignalsLoader;
         }
 
         public PlayerAssets GetPlayerAssets()

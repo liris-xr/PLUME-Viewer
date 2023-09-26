@@ -41,6 +41,10 @@ namespace PLUME
 
             while(_reader.TryReadNextSample(out var sample))
             {
+                // Skip samples without timestamp
+                if (sample.Header == null)
+                    continue;
+                
                 var payload = sample.Payload.Unpack(_typeRegistry);
 
                 // Unpacking might fail if the message descriptor is not found in the type registry.

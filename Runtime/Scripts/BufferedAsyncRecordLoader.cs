@@ -59,7 +59,7 @@ namespace PLUME
 
             var versionStr =
                 $"{recordHeader.RecorderVersion.Name} v{recordHeader.RecorderVersion.Major}.{recordHeader.RecorderVersion.Minor}.{recordHeader.RecorderVersion.Patch}";
-            Debug.Log($"Loading record {recordHeader.Identifier}. Recorded with version {versionStr}");
+            Debug.Log($"Loading record {recordHeader.Identifier}. Recorded with version {versionStr}. Duration: {recordMetadata.Duration/1000000000.0:0.000}s");
 
             if (recordMetadata == null)
             {
@@ -88,7 +88,11 @@ namespace PLUME
                     _finishedLoading = true;
                     break;
                 }
-
+                
+                // Skip samples without timestamp
+                if (sample.Header == null)
+                    continue;
+                
                 var messageDescriptor = _typeRegistry.Find(Any.GetTypeName(sample.Payload.TypeUrl));
 
                 if (messageDescriptor == null)
@@ -97,6 +101,7 @@ namespace PLUME
                 }
 
                 var payload = sample.Payload.Unpack(_typeRegistry);
+                
                 var unpackedSample = new UnpackedSample
                 {
                     Header = sample.Header,

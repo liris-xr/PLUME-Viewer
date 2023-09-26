@@ -29,13 +29,6 @@ namespace PLUME
         public Action<ulong> clicked;
         public Action<ulong> dragged;
 
-        private static readonly StyleSheet StyleSheet;
-
-        static TimeScaleElement()
-        {
-            StyleSheet = Resources.Load<StyleSheet>("UI/Styles/time_scale");
-        }
-
         [Preserve]
         public new class UxmlFactory : UxmlFactory<TimeScaleElement, UxmlTraits>
         {
@@ -81,37 +74,37 @@ namespace PLUME
             {
                 base.Init(ve, bag, cc);
                 var ele = ve as TimeScaleElement;
-                ele.Duration = Duration.GetValueFromBag(bag, cc);
-                ele.TimeDivisionDuration = TimeDivisionDuration.GetValueFromBag(bag, cc);
-                ele.TicksPerDivision = TicksPerDivision.GetValueFromBag(bag, cc);
-                ele.TimeDivisionWidth = TimeDivisionWidth.GetValueFromBag(bag, cc);
+                ele._duration = Duration.GetValueFromBag(bag, cc);
+                ele._timeDivisionDuration = TimeDivisionDuration.GetValueFromBag(bag, cc);
+                ele._ticksPerDivision = TicksPerDivision.GetValueFromBag(bag, cc);
+                ele._timeDivisionWidth = TimeDivisionWidth.GetValueFromBag(bag, cc);
 
-                ele.MinorTickWidth = MinorTickWidth.GetValueFromBag(bag, cc);
-                ele.MinorTickHeight = MinorTickHeight.GetValueFromBag(bag, cc);
-                ele.MajorTickWidth = MajorTickWidth.GetValueFromBag(bag, cc);
-                ele.MajorTickHeight = MajorTickHeight.GetValueFromBag(bag, cc);
-                ele.MinorTickColor = MinorTickColor.GetValueFromBag(bag, cc);
-                ele.MajorTickColor = MajorTickColor.GetValueFromBag(bag, cc);
-                ele.DisabledTickColor = DisabledTickColor.GetValueFromBag(bag, cc);
+                ele._minorTickWidth = MinorTickWidth.GetValueFromBag(bag, cc);
+                ele._minorTickHeight = MinorTickHeight.GetValueFromBag(bag, cc);
+                ele._majorTickWidth = MajorTickWidth.GetValueFromBag(bag, cc);
+                ele._majorTickHeight = MajorTickHeight.GetValueFromBag(bag, cc);
+                ele._minorTickColor = MinorTickColor.GetValueFromBag(bag, cc);
+                ele._majorTickColor = MajorTickColor.GetValueFromBag(bag, cc);
+                ele._disabledTickColor = DisabledTickColor.GetValueFromBag(bag, cc);
             }
         }
 
-        private ulong Duration;
-        private ulong TimeDivisionDuration;
-        private int TicksPerDivision;
-        private float TimeDivisionWidth;
+        private ulong _duration;
+        private ulong _timeDivisionDuration;
+        private int _ticksPerDivision;
+        private float _timeDivisionWidth;
 
-        private int MinorTickWidth;
-        private int MinorTickHeight;
-        private int MajorTickWidth;
-        private int MajorTickHeight;
-        private Color MinorTickColor;
-        private Color MajorTickColor;
-        private Color DisabledTickColor;
+        private int _minorTickWidth;
+        private int _minorTickHeight;
+        private int _majorTickWidth;
+        private int _majorTickHeight;
+        private Color _minorTickColor;
+        private Color _majorTickColor;
+        private Color _disabledTickColor;
 
         public TimeScaleElement()
         {
-            styleSheets.Add(StyleSheet);
+            styleSheets.Add(Resources.Load<StyleSheet>("UI/Styles/time_scale"));
 
             _timeLabelsContainer = new VisualElement();
             _timeScaleTicks = new VisualElement();
@@ -144,7 +137,7 @@ namespace PLUME
             if (leftButtonPressed) // left button
             {
                 var mousePos = evt.localPosition;
-                var pixelsToDuration = TimeDivisionDuration / TimeDivisionWidth;
+                var pixelsToDuration = _timeDivisionDuration / _timeDivisionWidth;
                 var time = (ulong)((mousePos.x - resolvedStyle.paddingLeft) * pixelsToDuration);
                 dragged?.Invoke(time);
             }
@@ -157,7 +150,7 @@ namespace PLUME
             if (leftButtonPressed) // left button
             {
                 var mousePos = evt.localMousePosition;
-                var pixelsToDuration = TimeDivisionDuration / TimeDivisionWidth;
+                var pixelsToDuration = _timeDivisionDuration / _timeDivisionWidth;
                 var time = (ulong)((mousePos.x - resolvedStyle.paddingLeft) * pixelsToDuration);
                 clicked?.Invoke(time);
             }
@@ -165,22 +158,22 @@ namespace PLUME
 
         public void SetDuration(ulong duration)
         {
-            Duration = duration;
+            _duration = duration;
         }
 
         public void SetTimeDivisionDuration(ulong timeDivisionDuration)
         {
-            TimeDivisionDuration = timeDivisionDuration;
+            _timeDivisionDuration = timeDivisionDuration;
         }
 
         public void SetTicksPerDivision(int ticksPerDivision)
         {
-            TicksPerDivision = ticksPerDivision;
+            _ticksPerDivision = ticksPerDivision;
         }
 
         public void SetTimeDivisionWidth(float timeDivisionWidth)
         {
-            TimeDivisionWidth = timeDivisionWidth;
+            _timeDivisionWidth = timeDivisionWidth;
         }
 
         public void SetTicksClippingRect(Rect ticksClippingRect)
@@ -190,9 +183,7 @@ namespace PLUME
 
         public void Repaint()
         {
-            style.minWidth = Duration / (float) TimeDivisionDuration * TimeDivisionWidth
-                                        + resolvedStyle.paddingLeft + resolvedStyle.paddingRight;
-            
+            style.minWidth = _duration / (float) _timeDivisionDuration * _timeDivisionWidth;
             GenerateTimescaleLabels();
             _timeScaleTicks.MarkDirtyRepaint();
         }
@@ -203,32 +194,32 @@ namespace PLUME
 
             var timeScaleTicksRect = _timeScaleTicks.contentRect;
 
-            var nDivisions = timeScaleTicksRect.width / TimeDivisionWidth;
-            var nTicks = Mathf.CeilToInt(nDivisions * TicksPerDivision);
-            var tickSpacing = TimeDivisionWidth / TicksPerDivision;
+            var nDivisions = timeScaleTicksRect.width / _timeDivisionWidth;
+            var nTicks = Mathf.CeilToInt(nDivisions * _ticksPerDivision);
+            var tickSpacing = _timeDivisionWidth / _ticksPerDivision;
 
             for (var tickIndex = 0u; tickIndex <= nTicks; ++tickIndex)
             {
-                var isMajorTick = tickIndex % TicksPerDivision == 0;
+                var isMajorTick = tickIndex % _ticksPerDivision == 0;
 
                 if (!isMajorTick)
                     continue;
 
-                var divisionIdx = tickIndex / TicksPerDivision;
+                var divisionIdx = tickIndex / _ticksPerDivision;
 
                 var tickRect = new Rect();
-                tickRect.x = tickIndex * tickSpacing - MajorTickWidth / 2f;
-                tickRect.y = timeScaleTicksRect.height - MajorTickHeight;
-                tickRect.width = MajorTickWidth;
-                tickRect.height = MajorTickHeight;
+                tickRect.x = tickIndex * tickSpacing - _majorTickWidth / 2f;
+                tickRect.y = timeScaleTicksRect.height - _majorTickHeight;
+                tickRect.width = _majorTickWidth;
+                tickRect.height = _majorTickHeight;
 
                 if (!IsTickVisible(tickRect))
                 {
                     continue;
                 }
 
-                var time = TimeDivisionDuration * (ulong)divisionIdx; // time in nanoseconds
-                var disabled = time > Duration;
+                var time = _timeDivisionDuration * (ulong)divisionIdx; // time in nanoseconds
+                var disabled = time > _duration;
                 var timeStr = TimeSpan.FromMilliseconds(time / 1_000_000.0).ToString(@"hh\:mm\:ss\.fff");
 
                 var timeLabelContainer = new VisualElement();
@@ -262,25 +253,25 @@ namespace PLUME
             {
                 var timeScaleTicksRect = _timeScaleTicks.contentRect;
 
-                var nDivisions = timeScaleTicksRect.width / TimeDivisionWidth;
-                var nTicks = Mathf.CeilToInt(nDivisions * TicksPerDivision);
-                var tickSpacing = TimeDivisionWidth / TicksPerDivision;
-                var timePerTick = TimeDivisionDuration / (double)TicksPerDivision;
+                var nDivisions = timeScaleTicksRect.width / _timeDivisionWidth;
+                var nTicks = Mathf.CeilToInt(nDivisions * _ticksPerDivision);
+                var tickSpacing = _timeDivisionWidth / _ticksPerDivision;
+                var timePerTick = _timeDivisionDuration / (double)_ticksPerDivision;
 
                 var verticesList = new List<Vertex>();
                 var indicesList = new List<ushort>();
 
                 for (var tickIndex = 0u; tickIndex <= nTicks; ++tickIndex)
                 {
-                    var isMajorTick = tickIndex % TicksPerDivision == 0;
+                    var isMajorTick = tickIndex % _ticksPerDivision == 0;
 
                     // Time in nanoseconds
                     var tickTime = tickIndex * timePerTick;
-                    var tickColor = tickTime > Duration
-                        ? DisabledTickColor
-                        : (isMajorTick ? MajorTickColor : MinorTickColor);
-                    var tickWidth = isMajorTick ? MajorTickWidth : MinorTickWidth;
-                    var tickHeight = isMajorTick ? MajorTickHeight : MinorTickHeight;
+                    var tickColor = tickTime > _duration
+                        ? _disabledTickColor
+                        : (isMajorTick ? _majorTickColor : _minorTickColor);
+                    var tickWidth = isMajorTick ? _majorTickWidth : _minorTickWidth;
+                    var tickHeight = isMajorTick ? _majorTickHeight : _minorTickHeight;
 
                     var tickRect = new Rect();
                     tickRect.x = tickIndex * tickSpacing - tickWidth / 2f;
