@@ -1,6 +1,9 @@
 ﻿Shader "Unlit/SamplesHeatmap"
 {
-    Properties {}
+    Properties
+    {
+        [Toggle] _Shading("Enable shading", Float) = 1
+    }
     SubShader
     {
         Tags
@@ -19,6 +22,8 @@
             #include "UnityCG.cginc"
             #include "Math.cginc"
 
+            uniform float _Shading;
+            
             StructuredBuffer<uint> triangles_resolution_buffer;
             StructuredBuffer<uint> triangles_samples_index_offset_buffer;
             StructuredBuffer<float> samples_value_buffer;
@@ -28,12 +33,14 @@
             struct appdata
             {
                 float4 vertex : POSITION;
+                float3 normal : NORMAL;
             };
 
             struct v2g
             {
                 float4 vertex : SV_POSITION;
                 float4 pos_world : TEXCOORD0;
+                float3 normal_dir : TEXCOORD1;
             };
 
             struct g2f
@@ -42,6 +49,7 @@
                 uint triangle_id : TEXCOORD0;
                 float4 pos_world : TEXCOORD1;
                 linear float3 barycentric_weights : TEXCOORD2;
+                float3 normal_dir : TEXCOORD3;
             };
 
             v2g vert(appdata v)
@@ -49,6 +57,7 @@
                 v2g o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.pos_world = mul(unity_ObjectToWorld, v.vertex);
+                o.normal_dir = UnityObjectToWorldNormal(v.normal);
                 return o;
             }
 
@@ -64,6 +73,7 @@
                 for (int j = 0; j < 3; ++j)
                 {
                     o[j].triangle_id = pid;
+                    o[j].normal_dir = tri[j].normal_dir;
                     o[j].pos_world = tri[j].pos_world;
                     o[j].vertex = tri[j].vertex;
                     stream.Append(o[j]);
@@ -168,9 +178,31 @@
 
                 const uint idx = scaled_barycentric_weights_to_sample_idx(b, triangle_resolution);
                 const float val = samples_value_buffer[offset + idx];
-                return fixation_density_to_color(val);
+                const half4 color = fixation_density_to_color(val);
+                
+                if (!_Shading)
+                {
+                    return color;
+                }
 
-                // TODO Add shading
+                // Apply lighting
+                const float3 normal_direction = i.normal_dir;
+                float3 light_direction;
+
+                // Directional light when w == 0, spot or point light when w == 1
+                if (_WorldSpaceLightPos0.w == 0.0)
+                {
+                    // _WorldSpaceLightPos0 is the directional light world space direction
+                    light_direction = normalize(_WorldSpaceLightPos0.xyz);
+                }
+                else
+                {
+                    // _WorldSpaceLightPos0 is the spot/point light world space position
+                    light_direction = normalize(_WorldSpaceLightPos0.xyz - i.pos_world.xyz);
+                }
+
+                float light = saturate(dot(normal_direction, light_direction));
+                return float4(color.xyz * (light + 0.5f), 1);
             }
             ENDCG
         }
