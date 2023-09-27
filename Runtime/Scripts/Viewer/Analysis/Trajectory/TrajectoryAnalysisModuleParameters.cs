@@ -7,6 +7,7 @@
         public ulong EndTime;
         public bool IncludeRotations;
         public float TeleportationTolerance;
+        public bool TeleportationSegments;
         public float DecimationTolerance;
         public string[] VisibleMarkers;
     }

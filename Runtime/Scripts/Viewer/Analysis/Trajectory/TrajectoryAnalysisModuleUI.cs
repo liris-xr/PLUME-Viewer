@@ -20,6 +20,7 @@ namespace PLUME.UI.Analysis
         public Button GenerateButton { get; private set; }
         public TextField ObjectIdTextField { get; private set; }
         public TextField MarkersTextField { get; private set; }
+        public Toggle TeleportationSegments { get; private set; }
         public TextField TeleportationToleranceTextField { get; private set; }
         public TextField DecimationToleranceTextField { get; private set; }
         public Toggle IncludeRotations { get; private set; }
@@ -32,6 +33,7 @@ namespace PLUME.UI.Analysis
             GenerateButton = Options.Q<Button>("generate-btn");
             ObjectIdTextField = Options.Q<TextField>("object-id");
             MarkersTextField = Options.Q<TextField>("markers");
+            TeleportationSegments = Options.Q<Toggle>("teleportation-segments");
             TeleportationToleranceTextField = Options.Q<TextField>("teleportation-tolerance");
             DecimationToleranceTextField = Options.Q<TextField>("decimation-tolerance");
             IncludeRotations = Options.Q<Toggle>("include-rotations");

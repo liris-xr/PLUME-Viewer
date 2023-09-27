@@ -1,11 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using PLUME.Sample.Common;
 using TMPro;
 using UnityEngine;
-using Color = UnityEngine.Color;
-using Vector2 = UnityEngine.Vector2;
-using Vector3 = UnityEngine.Vector3;
 
 namespace PLUME
 {
@@ -30,10 +26,13 @@ namespace PLUME
 
                 AddContinuousSegment(segmentPoints);
 
-                if (segmentIdx < result.Segments.Length - 1)
+                if (result.GenerationParameters.TeleportationSegments)
                 {
-                    var nextSegment = result.Segments[segmentIdx + 1];
-                    AddTeleportationSegment(segmentPoints.Last(), nextSegment.First());
+                    if (segmentIdx < result.Segments.Length - 1)
+                    {
+                        var nextSegment = result.Segments[segmentIdx + 1];
+                        AddTeleportationSegment(segmentPoints.Last(), nextSegment.First());
+                    }
                 }
 
                 if (result.GenerationParameters.IncludeRotations)

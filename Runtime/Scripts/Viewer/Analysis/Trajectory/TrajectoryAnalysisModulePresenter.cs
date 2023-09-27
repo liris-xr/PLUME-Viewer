@@ -13,6 +13,7 @@ namespace PLUME.UI.Analysis
             ui.ObjectIdTextField.value = "30558";
             ui.MarkersTextField.value = "";
             ui.TeleportationToleranceTextField.value = "0.1";
+            ui.TeleportationSegments.value = false;
             ui.DecimationToleranceTextField.value = "0.01";
             ui.IncludeRotations.value = false;
             ui.MarkersTextField.value = "";
@@ -29,6 +30,7 @@ namespace PLUME.UI.Analysis
             var objectId = ui.ObjectIdTextField.value;
             var markers = ui.MarkersTextField.value.Split(",");
             var teleportationTolerance = float.Parse(ui.TeleportationToleranceTextField.value);
+            var teleportationSegments = ui.TeleportationSegments.value;
             var decimationTolerance = float.Parse(ui.DecimationToleranceTextField.value);
             var includeRotations = ui.IncludeRotations.value;
             var startTime = ui.TimeRange.StartTime;
@@ -48,6 +50,7 @@ namespace PLUME.UI.Analysis
             parameters.ObjectIdentifier = objectId;
             parameters.VisibleMarkers = markers;
             parameters.IncludeRotations = includeRotations;
+            parameters.TeleportationSegments = teleportationSegments;
             parameters.TeleportationTolerance = teleportationTolerance;
             parameters.DecimationTolerance = decimationTolerance;
             parameters.StartTime = startTime;
