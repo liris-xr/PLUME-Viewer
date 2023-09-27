@@ -17,7 +17,7 @@
             <ui:VisualElement name="middle-container" style="flex-grow: 1; align-self: flex-start; top: auto; flex-direction: row;">
                 <ui:TwoPaneSplitView fixed-pane-initial-dimension="300" name="horizontal-pane-split-view-1">
                     <ui:TwoPaneSplitView orientation="Vertical" fixed-pane-initial-dimension="300" name="vertical-pane-split-view" style="min-width: 200px;">
-                        <ui:Instance template="records" name="records-container" style="flex-grow: 1; min-height: 200px;" />
+                        <ui:Instance template="records" name="records-container" style="flex-grow: 1; min-height: 200px; display: none;" />
                         <ui:Instance template="hierarchy" name="hierarchy" style="flex-grow: 1; min-height: 200px;" />
                     </ui:TwoPaneSplitView>
                     <ui:TwoPaneSplitView fixed-pane-index="1" fixed-pane-initial-dimension="300" name="horizontal-pane-split-view-2">

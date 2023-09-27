@@ -17,7 +17,7 @@ namespace PLUME
         }
     }
 
-    public abstract class AnalysisModuleWithResults<T> : AnalysisModule where T : AnalysisModuleResult
+    public abstract class AnalysisModuleWithResults<T> : AnalysisModule, IDisposable where T : AnalysisModuleResult
     {
         private readonly List<T> _results = new();
         
@@ -66,5 +66,7 @@ namespace PLUME
         {
             return typeof(T);
         }
+        
+        public virtual void Dispose() {}
     }
 }

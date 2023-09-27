@@ -10,7 +10,7 @@ using UnityEngine.Rendering;
 
 namespace PLUME
 {
-    public class PositionHeatmapAnalysisModule : AnalysisModuleWithResults<PositionHeatmapAnalysisResult>
+    public class PositionHeatmapAnalysisModule : AnalysisModuleWithResults<PositionHeatmapAnalysisResult>, IDisposable
     {
         /**
          * Radius that will match the nSigmas.
@@ -467,6 +467,14 @@ namespace PLUME
         public PositionHeatmapAnalysisResult GetVisibleResult()
         {
             return _visibleResult;
+        }
+
+        public override void Dispose()
+        {
+            foreach (var result in GetResults())
+            {
+                result.Dispose();
+            }
         }
     }
 }
