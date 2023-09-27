@@ -281,8 +281,8 @@ namespace PLUME
             if (mesh == null || mesh.vertexBufferCount == 0)
                 return null;
 
-            if (meshSamplerResults.ContainsKey(meshSamplerResultHash))
-                return meshSamplerResults[meshSamplerResultHash];
+            if (meshSamplerResults.TryGetValue(meshSamplerResultHash, out var result))
+                return result;
 
             var meshSamplerResult = meshSampler.Sample(mesh, samplesPerSquareMeter);
             meshSamplerResults.Add(meshSamplerResultHash, meshSamplerResult);
@@ -380,7 +380,8 @@ namespace PLUME
                 return;
             }
 
-            goRenderer.sharedMaterial = _defaultHeatmapMaterial;
+            var nSharedMaterials = goRenderer.sharedMaterials.Length;
+            goRenderer.sharedMaterials = Enumerable.Repeat(_defaultHeatmapMaterial, nSharedMaterials).ToArray();
             goRenderer.SetPropertyBlock(null);
 
             if (!go.TryGetComponent<MeshFilter>(out var meshFilter) || meshFilter.sharedMesh == null || meshFilter.sharedMesh.vertexCount == 0)
@@ -402,7 +403,7 @@ namespace PLUME
             if (!hasMeshSamplerResult)
                 return;
 
-            goRenderer.sharedMaterial = _sampleHeatmapMaterial;
+            goRenderer.sharedMaterials = Enumerable.Repeat(_sampleHeatmapMaterial, nSharedMaterials).ToArray();
             var propertyBlock = GetOrCreateResultPropertyBlock(meshSamplerResult);
             goRenderer.SetPropertyBlock(propertyBlock);
         }
