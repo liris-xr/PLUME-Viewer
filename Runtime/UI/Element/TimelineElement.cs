@@ -107,9 +107,15 @@ namespace PLUME
 
         public void KeepTimeCursorInView()
         {
-            var viewportWidth = _timeScaleScrollView.contentViewport.contentRect.width;
-            const int margin = 5;
-            _horizontalScroller.slider.value = _timeCursorPosition - viewportWidth + margin;
+            var viewWidth = _timeScaleScrollView.contentViewport.contentRect.width;
+
+            var cursorViewRelativePosition = _timeCursorPosition - _horizontalScroller.slider.value;
+            var isOutsideOfView = cursorViewRelativePosition < 0 || cursorViewRelativePosition > viewWidth;
+            
+            if (isOutsideOfView)
+            {
+                _horizontalScroller.slider.value = _timeCursorPosition;
+            }
         }
         
         public void SetCursorTime(ulong time)
