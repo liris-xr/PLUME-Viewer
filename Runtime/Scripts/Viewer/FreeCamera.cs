@@ -72,11 +72,10 @@ namespace PLUME
             var map = new InputActionMap("Free Camera");
 
             _lookAction = map.AddAction("look", binding: "<Mouse>/delta");
-            _moveAction = map.AddAction("move", binding: "<Gamepad>/leftStick");
-            _speedAction = map.AddAction("speed", binding: "<Gamepad>/dpad");
+            _moveAction = map.AddAction("move");
+            _speedAction = map.AddAction("speed");
             _yMoveAction = map.AddAction("yMove");
 
-            _lookAction.AddBinding("<Gamepad>/rightStick").WithProcessor("scaleVector2(x=15, y=15)");
             _moveAction.AddCompositeBinding("Dpad")
                 .With("Up", "<Keyboard>/w")
                 .With("Up", "<Keyboard>/upArrow")
@@ -93,9 +92,7 @@ namespace PLUME
                 .With("Up", "<Keyboard>/pageUp")
                 .With("Down", "<Keyboard>/pageDown")
                 .With("Up", "<Keyboard>/e")
-                .With("Down", "<Keyboard>/q")
-                .With("Up", "<Gamepad>/rightshoulder")
-                .With("Down", "<Gamepad>/leftshoulder");
+                .With("Down", "<Keyboard>/q");
 
             _moveAction.Enable();
             _lookAction.Enable();
@@ -108,15 +105,12 @@ namespace PLUME
             _inputRotateAxisX = 0.0f;
             _inputRotateAxisY = 0.0f;
             _leftShiftBoost = false;
-            _fire1 = false;
 
             var lookDelta = _lookAction.ReadValue<Vector2>();
             _inputRotateAxisX = lookDelta.x * lookSpeedMouse * MouseSensitivityMultiplier;
             _inputRotateAxisY = lookDelta.y * lookSpeedMouse * MouseSensitivityMultiplier;
 
             _leftShift = Keyboard.current?.leftShiftKey?.isPressed ?? false;
-            _fire1 = Mouse.current?.leftButton?.isPressed == true || Gamepad.current?.xButton?.isPressed == true;
-
             _inputChangeSpeed = _speedAction.ReadValue<Vector2>().y;
 
             var moveDelta = _moveAction.ReadValue<Vector2>();
@@ -128,6 +122,9 @@ namespace PLUME
         private void Update()
         {
             if (Disabled)
+                return;
+
+            if (Mouse.current?.rightButton?.isPressed == false)
                 return;
 
             UpdateInputs();
@@ -157,7 +154,7 @@ namespace PLUME
                 t.localRotation = Quaternion.Euler(newRotationX, newRotationY, t.localEulerAngles.z);
 
                 var speed = Time.deltaTime * this.moveSpeed;
-                if (_fire1 || _leftShiftBoost && _leftShift)
+                if (_leftShiftBoost && _leftShift)
                     speed *= turbo;
 
                 var position = t.position;
