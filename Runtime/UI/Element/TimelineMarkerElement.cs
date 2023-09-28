@@ -71,7 +71,7 @@ namespace PLUME
             UpdateTimeOffset();
         }
 
-        public void UpdateTimeOffset()
+        private void UpdateTimeOffset()
         {
             _marker.Q("time-offset").style.left = _time / (float)TimeDivisionDuration * TimeDivisionWidth;
         }
@@ -98,7 +98,7 @@ namespace PLUME
 
         public void SetScrollOffset(float scrollOffset)
         {
-            _marker.Q("scroll-offset").style.left = scrollOffset;
+            _marker.Q("scroll-offset").style.left = -scrollOffset;
         }
     }
 }

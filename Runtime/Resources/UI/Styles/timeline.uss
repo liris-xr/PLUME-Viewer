@@ -53,3 +53,7 @@
     height: 100%;
     width: 100%;
 }
+
+.timeline-scroller Label {
+    display: none;
+}

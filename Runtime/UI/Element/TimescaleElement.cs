@@ -19,7 +19,6 @@ namespace PLUME
         private const int MajorTickHeightDefault = 20;
         private static readonly Color MajorTickColorDefault = new(0.6f, 0.6f, 0.6f, 1);
         private static readonly Color MinorTickColorDefault = new(0.4f, 0.4f, 0.4f, 1);
-        private static readonly Color DisabledTickColorDefault = new(0.25f, 0.25f, 0.25f, 1);
 
         private readonly VisualElement _timeScaleTicks;
         private readonly VisualElement _timeLabelsContainer;
@@ -66,10 +65,7 @@ namespace PLUME
 
             private readonly UxmlColorAttributeDescription MajorTickColor = new()
                 { name = "major-tick-color", defaultValue = MajorTickColorDefault };
-
-            private readonly UxmlColorAttributeDescription DisabledTickColor = new()
-                { name = "disabled-tick-color", defaultValue = DisabledTickColorDefault };
-
+            
             public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
             {
                 base.Init(ve, bag, cc);
@@ -85,7 +81,6 @@ namespace PLUME
                 ele._majorTickHeight = MajorTickHeight.GetValueFromBag(bag, cc);
                 ele._minorTickColor = MinorTickColor.GetValueFromBag(bag, cc);
                 ele._majorTickColor = MajorTickColor.GetValueFromBag(bag, cc);
-                ele._disabledTickColor = DisabledTickColor.GetValueFromBag(bag, cc);
             }
         }
 
@@ -100,7 +95,6 @@ namespace PLUME
         private int _majorTickHeight;
         private Color _minorTickColor;
         private Color _majorTickColor;
-        private Color _disabledTickColor;
 
         public TimeScaleElement()
         {
@@ -156,34 +150,14 @@ namespace PLUME
             }
         }
 
-        public void SetDuration(ulong duration)
+        public void RecalculateSize()
         {
-            _duration = duration;
+            style.minWidth = _duration / (float)_timeDivisionDuration * _timeDivisionWidth;
+            Repaint();
         }
-
-        public void SetTimeDivisionDuration(ulong timeDivisionDuration)
-        {
-            _timeDivisionDuration = timeDivisionDuration;
-        }
-
-        public void SetTicksPerDivision(int ticksPerDivision)
-        {
-            _ticksPerDivision = ticksPerDivision;
-        }
-
-        public void SetTimeDivisionWidth(float timeDivisionWidth)
-        {
-            _timeDivisionWidth = timeDivisionWidth;
-        }
-
-        public void SetTicksClippingRect(Rect ticksClippingRect)
-        {
-            _ticksClippingRect = ticksClippingRect;
-        }
-
+        
         public void Repaint()
         {
-            style.minWidth = _duration / (float) _timeDivisionDuration * _timeDivisionWidth;
             GenerateTimescaleLabels();
             _timeScaleTicks.MarkDirtyRepaint();
         }
@@ -251,9 +225,7 @@ namespace PLUME
         {
             try
             {
-                var timeScaleTicksRect = _timeScaleTicks.contentRect;
-
-                var nDivisions = timeScaleTicksRect.width / _timeDivisionWidth;
+                var nDivisions = _duration / (float) _timeDivisionDuration;
                 var nTicks = Mathf.CeilToInt(nDivisions * _ticksPerDivision);
                 var tickSpacing = _timeDivisionWidth / _ticksPerDivision;
                 var timePerTick = _timeDivisionDuration / (double)_ticksPerDivision;
@@ -267,15 +239,13 @@ namespace PLUME
 
                     // Time in nanoseconds
                     var tickTime = tickIndex * timePerTick;
-                    var tickColor = tickTime > _duration
-                        ? _disabledTickColor
-                        : (isMajorTick ? _majorTickColor : _minorTickColor);
+                    var tickColor = isMajorTick ? _majorTickColor : _minorTickColor;
                     var tickWidth = isMajorTick ? _majorTickWidth : _minorTickWidth;
                     var tickHeight = isMajorTick ? _majorTickHeight : _minorTickHeight;
 
                     var tickRect = new Rect();
                     tickRect.x = tickIndex * tickSpacing - tickWidth / 2f;
-                    tickRect.y = timeScaleTicksRect.height - tickHeight;
+                    tickRect.y = _timeScaleTicks.contentRect.height - tickHeight;
                     tickRect.width = tickWidth;
                     tickRect.height = tickHeight;
 
@@ -319,6 +289,56 @@ namespace PLUME
             catch (Exception)
             {
                 // ignored
+            }
+        }
+
+        public ulong Duration
+        {
+            get => _duration;
+            set
+            {
+                _duration = value;
+                RecalculateSize();
+            }
+        }
+
+        public ulong TimeDivisionDuration
+        {
+            get => _timeDivisionDuration;
+            set
+            {
+                _timeDivisionDuration = value;
+                RecalculateSize();
+            }
+        }
+
+        public float TimeDivisionWidth
+        {
+            get => _timeDivisionWidth;
+            set
+            {
+                _timeDivisionWidth = value;
+                RecalculateSize();
+            }
+        }
+        
+        public int TicksPerDivision
+        {
+            get => _ticksPerDivision;
+            set
+            {
+                _ticksPerDivision = value;
+                Repaint();
+            }
+        }
+
+        public Rect? TicksClippingRect
+        {
+            get => _ticksClippingRect;
+            set
+            {
+                _ticksClippingRect = value;
+                Repaint();
             }
         }
     }

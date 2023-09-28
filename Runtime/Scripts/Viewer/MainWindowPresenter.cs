@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -23,8 +24,9 @@ namespace PLUME.UI
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<FocusOutEvent>(OnPreviewRenderUnfocused);
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<NavigationMoveEvent>(OnPreviewRenderNavigationMove);
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<KeyDownEvent>(OnPreviewRenderKeyDown);
-            _mainWindowUI.PreviewRender.style.backgroundImage = Background.FromRenderTexture(freeCamera.GetRenderTexture());
-            
+            _mainWindowUI.PreviewRender.style.backgroundImage =
+                Background.FromRenderTexture(freeCamera.GetRenderTexture());
+
             _mainWindowUI.Timeline.RegisterCallback<KeyDownEvent>(OnPlayPauseKeyDown);
             _mainWindowUI.PlayPauseButton.RegisterCallback<KeyDownEvent>(OnPlayPauseKeyDown);
 
@@ -39,7 +41,7 @@ namespace PLUME.UI
 
             _mainWindowUI.CreateMarkers();
             _mainWindowUI.CreatePhysiologicalTracks();
-            
+
             _mainWindowUI.RefreshTimelineScale();
             _mainWindowUI.RefreshTimelineTimeIndicator();
             _mainWindowUI.RefreshTimelineCursor();
@@ -48,6 +50,9 @@ namespace PLUME.UI
 
             _mainWindowUI.Timeline.focusable = true;
             _mainWindowUI.Timeline.Focus();
+            
+            // By default, show 30s of the record in the timeline
+            _mainWindowUI.Timeline.ShowTimePeriod(0, 30_000_000_000);
 
             player.GetPlayerContext().updatedHierarchy += OnHierarchyUpdateEvent;
         }
@@ -55,41 +60,86 @@ namespace PLUME.UI
         private void OnHierarchyUpdateEvent(IHierarchyUpdateEvent evt)
         {
             var controller = _mainWindowUI.HierarchyTree.viewController;
+            var ctx = player.GetPlayerContext();
 
             switch (evt)
             {
                 case HierarchyUpdateCreateTransformEvent createEvt:
                 {
-                    var t = ObjectExtensions.FindObjectFromInstanceID(createEvt.transformId) as Transform;
-                    var item = new TreeViewItemData<Transform>(createEvt.transformId, t);
-                    _mainWindowUI.HierarchyTree.AddItem(item);
+                    var id = createEvt.transformIdentifier.GetHashCode();
+                    var instanceId = player.GetPlayerContext().GetReplayInstanceId(createEvt.transformIdentifier);
+
+                    if (instanceId.HasValue)
+                    {
+                        var t = ObjectExtensions.FindObjectFromInstanceID(instanceId.Value) as Transform;
+
+                        if (t != null)
+                        {
+                            var itemData = new TreeViewItemData<Transform>(id, t);
+                            _mainWindowUI.HierarchyTree.AddItem(itemData);
+                        }
+                    }
+
                     break;
                 }
                 case HierarchyUpdateDestroyTransformEvent destroyEvt:
                 {
-                    _mainWindowUI.HierarchyTree.TryRemoveItem(destroyEvt.transformId);
+                    var id = destroyEvt.transformIdentifier.GetHashCode();
+                    _mainWindowUI.HierarchyTree.TryRemoveItem(id);
                     break;
                 }
                 case HierarchyUpdateSiblingIndexEvent siblingUpdateEvt:
                 {
-                    var t = _mainWindowUI.HierarchyTree.GetItemDataForId<Transform>(siblingUpdateEvt.transformId);
-                    controller.Move(siblingUpdateEvt.transformId, t.parent == null ? -1 : t.parent.GetInstanceID(),
-                        siblingUpdateEvt.newSiblingIndex);
+                    var id = siblingUpdateEvt.transformIdentifier.GetHashCode();
+
+                    var t = _mainWindowUI.HierarchyTree.GetItemDataForId<Transform>(id);
+
+                    if (t != null)
+                    {
+                        if (t.parent == null)
+                        {
+                            controller.Move(id, -1, siblingUpdateEvt.siblingIndex);
+                        }
+                        else
+                        {
+                            var parentId = ctx.GetRecordIdentifier(t.parent.GetInstanceID()).GetHashCode();
+                            controller.Move(id, parentId, siblingUpdateEvt.siblingIndex);
+                        }
+                    }
+
                     break;
                 }
                 case HierarchyUpdateEnabledEvent enabledUpdateEvt:
                 {
-                    var index = controller.GetIndexForId(enabledUpdateEvt.transformId);
-                    _mainWindowUI.HierarchyTree.RefreshItem(index);
+                    var id = enabledUpdateEvt.transformIdentifier.GetHashCode();
+                    var index = controller.GetIndexForId(id);
+                    if (index != -1)
+                    {
+                        _mainWindowUI.HierarchyTree.RefreshItem(index);
+                    }
+
                     break;
                 }
                 case HierarchyUpdateParentEvent updateParentEvt:
                 {
-                    if (updateParentEvt.newParentTransformId == 0)
-                        controller.Move(updateParentEvt.transformId, -1, updateParentEvt.siblingIdx);
+                    var id = updateParentEvt.transformIdentifier.GetHashCode();
+
+                    if (updateParentEvt.parentTransformIdentifier == null)
+                    {
+                        controller.Move(id, -1, updateParentEvt.siblingIdx);
+                    }
                     else
-                        controller.Move(updateParentEvt.transformId, updateParentEvt.newParentTransformId,
-                            updateParentEvt.siblingIdx);
+                    {
+                        var parentId = updateParentEvt.parentTransformIdentifier.GetHashCode();
+                        controller.Move(id, parentId, updateParentEvt.siblingIdx);
+                    }
+
+                    break;
+                }
+                case HierarchyUpdateResetEvent:
+                {
+                    _mainWindowUI.HierarchyTree.SetRootItems(new List<TreeViewItemData<Transform>>());
+                    _mainWindowUI.HierarchyTree.Rebuild();
                     break;
                 }
             }

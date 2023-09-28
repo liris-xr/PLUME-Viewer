@@ -147,10 +147,10 @@ namespace PLUME
         {
             foreach (var rootGameObject in _scene.GetRootGameObjects())
             {
-                updatedHierarchy?.Invoke(
-                    new HierarchyUpdateDestroyTransformEvent(rootGameObject.transform.GetInstanceID()));
                 Object.DestroyImmediate(rootGameObject);
             }
+            
+            updatedHierarchy?.Invoke(new HierarchyUpdateResetEvent());
 
             _gameObjectsByInstanceId.Clear();
             _gameObjectsTagByInstanceId.Clear();
@@ -176,9 +176,9 @@ namespace PLUME
             }
         }
 
-        public void SetGameObjectTag(TransformGameObjectIdentifier gameObjectId, string tag)
+        public void SetGameObjectTag(TransformGameObjectIdentifier id, string tag)
         {
-            var go = GetOrCreateGameObjectByIdentifier(gameObjectId);
+            var go = GetOrCreateGameObjectByIdentifier(id);
             _gameObjectsTagByInstanceId[go.GetInstanceID()] = tag;
         }
 
@@ -188,32 +188,27 @@ namespace PLUME
             return tag;
         }
         
-        public void SetParent(TransformGameObjectIdentifier transformId,
-            TransformGameObjectIdentifier transformParentId)
+        public void SetParent(TransformGameObjectIdentifier id, TransformGameObjectIdentifier parentId)
         {
-            var t = GetOrCreateTransformByIdentifier(transformId);
-            var parent = GetOrCreateTransformByIdentifier(transformParentId);
-            var prevParentTransformId = t.parent == null ? 0 : t.parent.GetInstanceID();
-            t.parent = parent;
-            var newParentTransformId = parent == null ? 0 : parent.GetInstanceID();
-            updatedHierarchy?.Invoke(new HierarchyUpdateParentEvent(t.GetInstanceID(), t.GetSiblingIndex(), prevParentTransformId,
-                newParentTransformId));
+            var t = GetOrCreateTransformByIdentifier(id);
+            var parent = GetOrCreateTransformByIdentifier(parentId);
+            t.SetParent(parent);
+            updatedHierarchy?.Invoke(new HierarchyUpdateParentEvent(id.TransformId, parentId?.TransformId, t.GetSiblingIndex()));
         }
 
-        public void SetSiblingIndex(TransformGameObjectIdentifier transformId, int siblingIndex)
+        public void SetSiblingIndex(TransformGameObjectIdentifier id, int siblingIndex)
         {
-            var t = GetOrCreateTransformByIdentifier(transformId);
-            var prevSiblingIndex = t.GetSiblingIndex();
+            var t = GetOrCreateTransformByIdentifier(id);
             t.SetSiblingIndex(siblingIndex);
             updatedHierarchy?.Invoke(
-                new HierarchyUpdateSiblingIndexEvent(t.GetInstanceID(), prevSiblingIndex, siblingIndex));
+                new HierarchyUpdateSiblingIndexEvent(id.TransformId, siblingIndex));
         }
 
         public void SetActive(TransformGameObjectIdentifier id, bool active)
         {
             var go = GetOrCreateGameObjectByIdentifier(id);
             go.SetActive(active);
-            updatedHierarchy?.Invoke(new HierarchyUpdateEnabledEvent(go.transform.GetInstanceID(), active));
+            updatedHierarchy?.Invoke(new HierarchyUpdateEnabledEvent(id.TransformId, active));
         }
 
         private void EnableRootGameObjects()
@@ -243,13 +238,13 @@ namespace PLUME
             return _gameObjectsByInstanceId.Values;
         }
 
-        public GameObject GetOrCreateGameObjectByIdentifier(TransformGameObjectIdentifier identifier)
+        public GameObject GetOrCreateGameObjectByIdentifier(TransformGameObjectIdentifier id)
         {
-            if (identifier == null)
+            if (id == null)
                 return null;
 
-            var replayGoInstanceId = GetReplayInstanceId(identifier.GameObjectId);
-            var replayTransformInstanceId = GetReplayInstanceId(identifier.TransformId);
+            var replayGoInstanceId = GetReplayInstanceId(id.GameObjectId);
+            var replayTransformInstanceId = GetReplayInstanceId(id.TransformId);
 
             if (replayGoInstanceId.HasValue)
             {
@@ -260,7 +255,7 @@ namespace PLUME
                     if (!replayTransformInstanceId.HasValue)
                     {
                         _transformsByInstanceId[go.transform.GetInstanceID()] = go.transform;
-                        TryAddIdentifierCorrespondence(identifier.TransformId, go.transform.GetInstanceID());
+                        TryAddIdentifierCorrespondence(id.TransformId, go.transform.GetInstanceID());
                     }
 
                     return go;
@@ -275,7 +270,7 @@ namespace PLUME
                 {
                     var go = t.gameObject;
                     _gameObjectsByInstanceId[go.GetInstanceID()] = go;
-                    TryAddIdentifierCorrespondence(identifier.GameObjectId, go.GetInstanceID());
+                    TryAddIdentifierCorrespondence(id.GameObjectId, go.GetInstanceID());
                     return go;
                 }
             }
@@ -287,19 +282,19 @@ namespace PLUME
             var newTransform = newGameObject.transform;
             _gameObjectsByInstanceId[newGameObject.GetInstanceID()] = newGameObject;
             _transformsByInstanceId[newTransform.GetInstanceID()] = newTransform;
-            TryAddIdentifierCorrespondence(identifier.GameObjectId, newGameObject.GetInstanceID());
-            TryAddIdentifierCorrespondence(identifier.TransformId, newTransform.GetInstanceID());
-            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(newTransform.GetInstanceID()));
+            TryAddIdentifierCorrespondence(id.GameObjectId, newGameObject.GetInstanceID());
+            TryAddIdentifierCorrespondence(id.TransformId, newTransform.GetInstanceID());
+            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(id.TransformId));
             return newGameObject;
         }
 
-        public Transform GetOrCreateTransformByIdentifier(TransformGameObjectIdentifier identifier)
+        public Transform GetOrCreateTransformByIdentifier(TransformGameObjectIdentifier id)
         {
-            if (identifier == null)
+            if (id == null)
                 return null;
 
-            var replayTransformInstanceId = GetReplayInstanceId(identifier.TransformId);
-            var replayGameObjectInstanceId = GetReplayInstanceId(identifier.GameObjectId);
+            var replayTransformInstanceId = GetReplayInstanceId(id.TransformId);
+            var replayGameObjectInstanceId = GetReplayInstanceId(id.GameObjectId);
 
             if (replayTransformInstanceId.HasValue)
             {
@@ -310,7 +305,7 @@ namespace PLUME
                     if (!replayGameObjectInstanceId.HasValue)
                     {
                         _gameObjectsByInstanceId[t.gameObject.GetInstanceID()] = t.gameObject;
-                        TryAddIdentifierCorrespondence(identifier.GameObjectId, t.gameObject.GetInstanceID());
+                        TryAddIdentifierCorrespondence(id.GameObjectId, t.gameObject.GetInstanceID());
                     }
 
                     return t;
@@ -325,7 +320,7 @@ namespace PLUME
                 {
                     var t = go.transform;
                     _transformsByInstanceId[t.GetInstanceID()] = t;
-                    TryAddIdentifierCorrespondence(identifier.TransformId, t.GetInstanceID());
+                    TryAddIdentifierCorrespondence(id.TransformId, t.GetInstanceID());
                     return t;
                 }
             }
@@ -334,19 +329,19 @@ namespace PLUME
             var newTransform = newGameObject.transform;
             _gameObjectsByInstanceId[newGameObject.GetInstanceID()] = newGameObject;
             _transformsByInstanceId[newTransform.GetInstanceID()] = newTransform;
-            TryAddIdentifierCorrespondence(identifier.TransformId, newTransform.GetInstanceID());
-            TryAddIdentifierCorrespondence(identifier.GameObjectId, newGameObject.GetInstanceID());
-            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(newTransform.GetInstanceID()));
+            TryAddIdentifierCorrespondence(id.TransformId, newTransform.GetInstanceID());
+            TryAddIdentifierCorrespondence(id.GameObjectId, newGameObject.GetInstanceID());
+            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(id.TransformId));
             return newTransform;
         }
 
-        public RectTransform GetOrCreateRectTransformByIdentifier(TransformGameObjectIdentifier identifier)
+        public RectTransform GetOrCreateRectTransformByIdentifier(TransformGameObjectIdentifier id)
         {
-            if (identifier == null)
+            if (id == null)
                 return null;
 
-            var replayTransformInstanceId = GetReplayInstanceId(identifier.TransformId);
-            var replayGameObjectInstanceId = GetReplayInstanceId(identifier.GameObjectId);
+            var replayTransformInstanceId = GetReplayInstanceId(id.TransformId);
+            var replayGameObjectInstanceId = GetReplayInstanceId(id.GameObjectId);
 
             if (replayTransformInstanceId.HasValue)
             {
@@ -357,7 +352,7 @@ namespace PLUME
                     if (!replayGameObjectInstanceId.HasValue)
                     {
                         _gameObjectsByInstanceId[t.gameObject.GetInstanceID()] = t.gameObject;
-                        TryAddIdentifierCorrespondence(identifier.GameObjectId, t.gameObject.GetInstanceID());
+                        TryAddIdentifierCorrespondence(id.GameObjectId, t.gameObject.GetInstanceID());
                     }
 
                     return t;
@@ -373,7 +368,7 @@ namespace PLUME
                     if (go!.transform is not RectTransform) go.AddComponent<RectTransform>();
                     var t = go.transform;
                     _transformsByInstanceId[t.GetInstanceID()] = t;
-                    TryAddIdentifierCorrespondence(identifier.TransformId, t.GetInstanceID());
+                    TryAddIdentifierCorrespondence(id.TransformId, t.GetInstanceID());
                     return t as RectTransform;
                 }
             }
@@ -382,23 +377,23 @@ namespace PLUME
             var newTransform = newGameObject.transform as RectTransform;
             _gameObjectsByInstanceId[newGameObject.GetInstanceID()] = newGameObject;
             _transformsByInstanceId[newTransform.GetInstanceID()] = newTransform;
-            TryAddIdentifierCorrespondence(identifier.TransformId, newTransform.GetInstanceID());
-            TryAddIdentifierCorrespondence(identifier.GameObjectId, newGameObject.GetInstanceID());
-            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(newTransform.GetInstanceID()));
+            TryAddIdentifierCorrespondence(id.TransformId, newTransform.GetInstanceID());
+            TryAddIdentifierCorrespondence(id.GameObjectId, newGameObject.GetInstanceID());
+            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(id.TransformId));
             return newTransform;
         }
 
-        public T GetOrDefaultAssetByIdentifier<T>(AssetIdentifier identifier) where T : Object
+        public T GetOrDefaultAssetByIdentifier<T>(AssetIdentifier id) where T : Object
         {
-            return _assets.GetOrDefaultAssetByIdentifier<T>(identifier);
+            return _assets.GetOrDefaultAssetByIdentifier<T>(id);
         }
 
-        public T GetOrCreateComponentByIdentifier<T>(ComponentIdentifier identifier) where T : Component
+        public T GetOrCreateComponentByIdentifier<T>(ComponentIdentifier id) where T : Component
         {
-            if (identifier == null)
+            if (id == null)
                 return null;
 
-            var replayComponentInstanceId = GetReplayInstanceId(identifier.Id);
+            var replayComponentInstanceId = GetReplayInstanceId(id.Id);
 
             if (replayComponentInstanceId.HasValue)
             {
@@ -411,7 +406,7 @@ namespace PLUME
                 return _componentByInstanceId.GetValueOrDefault(replayComponentInstanceId.Value) as T;
             }
 
-            var go = GetOrCreateGameObjectByIdentifier(identifier.ParentId);
+            var go = GetOrCreateGameObjectByIdentifier(id.ParentId);
 
             var component = go.AddComponent<T>();
 
@@ -424,14 +419,14 @@ namespace PLUME
             }
 
             _componentByInstanceId[component.GetInstanceID()] = component;
-            TryAddIdentifierCorrespondence(identifier.Id, component.GetInstanceID());
+            TryAddIdentifierCorrespondence(id.Id, component.GetInstanceID());
             return component;
         }
 
-        public bool TryDestroyGameObjectByIdentifier(TransformGameObjectIdentifier identifier)
+        public bool TryDestroyGameObjectByIdentifier(TransformGameObjectIdentifier id)
         {
-            var goReplayInstanceId = GetReplayInstanceId(identifier.GameObjectId);
-            var transformReplayInstanceId = GetReplayInstanceId(identifier.TransformId);
+            var goReplayInstanceId = GetReplayInstanceId(id.GameObjectId);
+            var transformReplayInstanceId = GetReplayInstanceId(id.TransformId);
 
             GameObject go = null;
 
@@ -450,7 +445,6 @@ namespace PLUME
             {
                 _gameObjectsByInstanceId.Remove(go.GetInstanceID());
                 _gameObjectsTagByInstanceId.Remove(go.GetInstanceID());
-                
                 _transformsByInstanceId.Remove(go.transform.GetInstanceID());
 
                 foreach (var component in go.GetComponents<Component>())
@@ -458,8 +452,8 @@ namespace PLUME
                     _componentByInstanceId.Remove(component.GetInstanceID());
                     RemoveIdentifierCorrespondence(GetRecordIdentifier(component.GetInstanceID()));
                 }
-
-                updatedHierarchy?.Invoke(new HierarchyUpdateDestroyTransformEvent(go.transform.GetInstanceID()));
+                
+                updatedHierarchy?.Invoke(new HierarchyUpdateDestroyTransformEvent(id.TransformId));
                 Object.DestroyImmediate(go);
             }
 
@@ -493,16 +487,19 @@ namespace PLUME
 
             foreach (var transformInstanceId in transformsToRemove)
             {
+                var recordIdentifier = GetRecordIdentifier(transformInstanceId);
                 _transformsByInstanceId.Remove(transformInstanceId);
+                if(recordIdentifier != null)
+                    updatedHierarchy?.Invoke(new HierarchyUpdateDestroyTransformEvent(recordIdentifier));
             }
 
             foreach (var componentInstanceId in componentsToRemove)
             {
                 _componentByInstanceId.Remove(componentInstanceId);
             }
-
-            RemoveIdentifierCorrespondence(identifier.GameObjectId);
-            RemoveIdentifierCorrespondence(identifier.TransformId);
+            
+            RemoveIdentifierCorrespondence(id.GameObjectId);
+            RemoveIdentifierCorrespondence(id.TransformId);
             return true;
         }
 

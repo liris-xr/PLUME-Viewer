@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
-using PLUME.Sample;
 using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
 using UnityEngine;
@@ -20,7 +19,7 @@ namespace PLUME.UI
         public Player player;
 
         public UIDocument document;
-        
+
         public TimelineElement Timeline { get; private set; }
         public TimeFieldElement TimeIndicator { get; private set; }
         public TimeScaleElement TimeScale { get; private set; }
@@ -37,7 +36,7 @@ namespace PLUME.UI
         public VisualElement Preview { get; private set; }
         public AspectRatioContainerElement PreviewRenderAspectRatio { get; private set; }
         public VisualElement PreviewRender { get; private set; }
-        
+
         public TreeView HierarchyTree { get; private set; }
 
         public CollapseBarElement RecordsCollapseBar { get; private set; }
@@ -67,14 +66,14 @@ namespace PLUME.UI
             Preview = root.Q("preview");
             PreviewRenderAspectRatio = root.Q("preview").Q<AspectRatioContainerElement>("aspect-ratio");
             PreviewRender = PreviewRenderAspectRatio.Q<VisualElement>("render");
-            
+
             HierarchyTree = root.Q<TreeView>("hierarchy-tree");
             HierarchyTree.SetRootItems(new List<TreeViewItemData<Transform>>());
             HierarchyTree.makeItem = () =>
             {
                 var container = new VisualElement();
                 container.style.flexDirection = FlexDirection.Row;
-                container.Add(new Label {name = "name"});
+                container.Add(new Label { name = "name" });
                 return container;
             };
             HierarchyTree.bindItem = (element, i) =>
@@ -83,15 +82,22 @@ namespace PLUME.UI
                 if (t == null)
                     return;
                 element.Q<Label>("name").text = t.gameObject.name;
-                element.Q<Label>("name").style.color = t.gameObject.activeInHierarchy ? new StyleColor(Color.white) : new StyleColor(Color.gray);
+                element.Q<Label>("name").style.color = t.gameObject.activeInHierarchy
+                    ? new StyleColor(Color.white)
+                    : new StyleColor(Color.gray);
             };
-            
+
             HierarchyTree.RegisterCallback<KeyDownEvent>(evt =>
             {
                 if (evt.ctrlKey && evt.keyCode == KeyCode.C)
                 {
                     var selectedItems = HierarchyTree.GetSelectedItems<Transform>();
-                    GUIUtility.systemCopyBuffer = string.Join(",", selectedItems.Select(t => player.GetPlayerContext().GetRecordIdentifier(t.data.gameObject.GetInstanceID())));
+                    
+                    Debug.Log(selectedItems.ElementAt(0).id);
+                    
+                    GUIUtility.systemCopyBuffer = string.Join(",",
+                        selectedItems.Select(t =>
+                            player.GetPlayerContext().GetRecordIdentifier(t.data.gameObject.GetInstanceID())));
                 }
             });
 
@@ -110,7 +116,7 @@ namespace PLUME.UI
                 else
                     HorizontalSplitView1.UnCollapse();
             };
-            
+
             AnalysisCollapseBar.toggledCollapse += collapsed =>
             {
                 if (collapsed)
@@ -118,7 +124,7 @@ namespace PLUME.UI
                 else
                     HorizontalSplitView2.UnCollapse();
             };
-            
+
             TimelineCollapseBar.toggledCollapse += collapsed =>
             {
                 if (collapsed)
@@ -137,7 +143,7 @@ namespace PLUME.UI
         {
             var markersLoader = player.GetMarkersLoader();
             var markerColors = new Dictionary<string, Color>();
-            
+
             foreach (var s in markersLoader.All())
             {
                 if (s.Payload is not Marker marker)
@@ -155,18 +161,18 @@ namespace PLUME.UI
                 Timeline.AddMarker(markerElement);
             }
         }
-        
+
         public void CreatePhysiologicalTracks()
         {
             var physioSignalsLoader = player.GetPhysiologicalSignalsLoader();
 
             var tracks = new Dictionary<string, TimelinePhysiologicalSignalTrackElement[]>();
-            
+
             foreach (var s in physioSignalsLoader.AllOfType<StreamOpen>())
             {
                 if (s.Payload is not StreamOpen streamOpen)
                     continue;
-                
+
                 var xmlInfo = XElement.Parse(streamOpen.XmlHeader);
                 var streamName = xmlInfo.Element("name")!.Value;
                 var channelFormat = xmlInfo.Element("channel_format")!.Value;
@@ -178,7 +184,7 @@ namespace PLUME.UI
 
                 var streamColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
                 var channelsTrack = new TimelinePhysiologicalSignalTrackElement[channelCount];
-                
+
                 for (var channelIdx = 0; channelIdx < channelCount; channelIdx++)
                 {
                     var channelColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
@@ -190,7 +196,7 @@ namespace PLUME.UI
                     channelsTrack[channelIdx].SetChannelColor(channelColor);
                     Timeline.AddTrack(channelsTrack[channelIdx]);
                 }
-                
+
                 tracks.Add(streamOpen.StreamInfo.LslStreamId, channelsTrack);
             }
 
@@ -209,7 +215,7 @@ namespace PLUME.UI
                 {
                     var min = float.MaxValue;
                     var max = float.MinValue;
-                    
+
                     var points = new List<Vector2>();
 
                     foreach (var unpackedSample in streamSamplesGroup)
@@ -222,32 +228,38 @@ namespace PLUME.UI
                             case StreamSample.ValuesOneofCase.FloatValue:
                                 min = Math.Min(min, sample.FloatValue.Value[channelIdx]);
                                 max = Math.Max(max, sample.FloatValue.Value[channelIdx]);
-                                points.Add(new Vector2(unpackedSample.Header!.Time, sample.FloatValue.Value[channelIdx]));
+                                points.Add(
+                                    new Vector2(unpackedSample.Header!.Time, sample.FloatValue.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.DoubleValue:
                                 min = Math.Min(min, (float)sample.DoubleValue.Value[channelIdx]);
                                 max = Math.Max(max, (float)sample.DoubleValue.Value[channelIdx]);
-                                points.Add(new Vector2(unpackedSample.Header!.Time, (float)sample.DoubleValue.Value[channelIdx]));
+                                points.Add(new Vector2(unpackedSample.Header!.Time,
+                                    (float)sample.DoubleValue.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.Int8Value:
                                 min = Math.Min(min, sample.Int8Value.Value[channelIdx]);
                                 max = Math.Max(max, sample.Int8Value.Value[channelIdx]);
-                                points.Add(new Vector2(unpackedSample.Header!.Time, sample.Int8Value.Value[channelIdx]));
+                                points.Add(new Vector2(unpackedSample.Header!.Time,
+                                    sample.Int8Value.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.Int16Value:
                                 min = Math.Min(min, sample.Int16Value.Value[channelIdx]);
                                 max = Math.Max(max, sample.Int16Value.Value[channelIdx]);
-                                points.Add(new Vector2(unpackedSample.Header!.Time, sample.Int16Value.Value[channelIdx]));
+                                points.Add(
+                                    new Vector2(unpackedSample.Header!.Time, sample.Int16Value.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.Int32Value:
                                 min = Math.Min(min, sample.Int32Value.Value[channelIdx]);
                                 max = Math.Max(max, sample.Int32Value.Value[channelIdx]);
-                                points.Add(new Vector2(unpackedSample.Header!.Time, sample.Int32Value.Value[channelIdx]));
+                                points.Add(
+                                    new Vector2(unpackedSample.Header!.Time, sample.Int32Value.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.Int64Value:
                                 min = Math.Min(min, sample.Int64Value.Value[channelIdx]);
                                 max = Math.Max(max, sample.Int64Value.Value[channelIdx]);
-                                points.Add(new Vector2(unpackedSample.Header!.Time, sample.Int64Value.Value[channelIdx]));
+                                points.Add(
+                                    new Vector2(unpackedSample.Header!.Time, sample.Int64Value.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.None:
                             case StreamSample.ValuesOneofCase.StringValue:
@@ -256,28 +268,27 @@ namespace PLUME.UI
                                 throw new ArgumentOutOfRangeException();
                         }
                     }
-                    
+
                     physioTracks[channelIdx].SetPoints(points);
                     physioTracks[channelIdx].SetMinValue(min);
                     physioTracks[channelIdx].SetMaxValue(max);
                 }
             }
         }
-        
+
         public void RefreshTimelineScale()
         {
             Timeline.Duration = player.GetRecordDurationInNanoseconds();
             Timeline.TicksPerDivision = 10;
             Timeline.TimeDivisionDuration = 100000000;
             Timeline.TimeDivisionWidth = 100;
-            Timeline.Repaint();
         }
 
         public void RefreshTimelineTimeIndicator()
         {
             TimeIndicator.SetTimeWithoutNotify(player.GetCurrentPlayTimeInNanoseconds());
         }
-        
+
         public void RefreshTimelineCursor()
         {
             Timeline.SetCursorTime(player.GetCurrentPlayTimeInNanoseconds());
@@ -321,6 +332,5 @@ namespace PLUME.UI
         {
             return document.rootVisualElement.Q(name, className);
         }
-
     }
 }

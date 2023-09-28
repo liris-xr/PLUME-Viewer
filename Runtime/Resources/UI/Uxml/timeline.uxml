@@ -46,8 +46,9 @@
             <ui:VisualElement name="spacer" style="flex-grow: 0; background-color: rgba(0, 0, 0, 0); height: 20px; flex-shrink: 0;" />
         </ui:VisualElement>
         <ui:VisualElement name="footer" class="panel-footer" style="flex-grow: 0; flex-shrink: 0; height: 20px; flex-direction: row; background-color: rgb(48, 48, 48); align-items: center; justify-content: center; align-self: center;">
-            <ui:VisualElement name="spacer" style="flex-grow: 0; flex-shrink: 0; width: 400px;" />
-            <ui:Scroller high-value="10" direction="Horizontal" value="5" name="horizontal-scroller" style="flex-grow: 1; height: 100%; width: 100%; align-self: center; align-items: center; justify-content: center;" />
+            <ui:VisualElement name="spacer" style="flex-grow: 0; flex-shrink: 0; width: 400px; height: 100%;" />
+            <ui:MinMaxSlider picking-mode="Ignore" label="Min/Max Slider" low-limit="-10" high-limit="40" name="timeline-scroller" class="timeline-scroller" style="flex-grow: 1; flex-shrink: 1; display: flex; overflow: visible;" />
+            <ui:VisualElement name="spacer" style="flex-grow: 0; flex-shrink: 0; width: 12px; height: 100%;" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

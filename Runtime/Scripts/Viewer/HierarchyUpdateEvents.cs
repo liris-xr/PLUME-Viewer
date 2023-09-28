@@ -1,68 +1,70 @@
-﻿namespace PLUME
+﻿using JetBrains.Annotations;
+
+namespace PLUME
 {
     public interface IHierarchyUpdateEvent
     {
     }
 
+    public class HierarchyUpdateResetEvent : IHierarchyUpdateEvent
+    {
+    }
+
     public class HierarchyUpdateSiblingIndexEvent : IHierarchyUpdateEvent
     {
-        public readonly int transformId;
-        public readonly int prevSiblingIndex;
-        public readonly int newSiblingIndex;
+        public readonly string transformIdentifier;
+        public readonly int siblingIndex;
 
-        public HierarchyUpdateSiblingIndexEvent(int transformId, int prevSiblingIndex, int newSiblingIndex)
+        public HierarchyUpdateSiblingIndexEvent(string transformIdentifier, int siblingIndex)
         {
-            this.transformId = transformId;
-            this.prevSiblingIndex = prevSiblingIndex;
-            this.newSiblingIndex = newSiblingIndex;
+            this.transformIdentifier = transformIdentifier;
+            this.siblingIndex = siblingIndex;
         }
     }
 
     public class HierarchyUpdateParentEvent : IHierarchyUpdateEvent
     {
-        public readonly int transformId;
+        public readonly string transformIdentifier;
+        [CanBeNull] public readonly string parentTransformIdentifier;
         public readonly int siblingIdx;
-        public readonly int prevParentTransformId;
-        public readonly int newParentTransformId;
 
-        public HierarchyUpdateParentEvent(int transformId, int siblingIdx, int prevParentTransformId, int newParentTransformId)
+        public HierarchyUpdateParentEvent(string transformIdentifier, [CanBeNull] string parentTransformIdentifier, int siblingIdx)
         {
-            this.transformId = transformId;
+            this.transformIdentifier = transformIdentifier;
+            this.parentTransformIdentifier = parentTransformIdentifier;
             this.siblingIdx = siblingIdx;
-            this.prevParentTransformId = prevParentTransformId;
-            this.newParentTransformId = newParentTransformId;
         }
     }
     
     public class HierarchyUpdateEnabledEvent : IHierarchyUpdateEvent
     {
-        public readonly int transformId;
+        public readonly string transformIdentifier;
         public readonly bool enabled;
 
-        public HierarchyUpdateEnabledEvent(int transformId, bool enabled)
+        public HierarchyUpdateEnabledEvent(string transformIdentifier, bool enabled)
         {
-            this.transformId = transformId;
+            this.transformIdentifier = transformIdentifier;
             this.enabled = enabled;
         }
     }
 
     public class HierarchyUpdateCreateTransformEvent : IHierarchyUpdateEvent
     {
-        public readonly int transformId;
+        public readonly string transformIdentifier;
 
-        public HierarchyUpdateCreateTransformEvent(int transformId)
+        public HierarchyUpdateCreateTransformEvent(string transformIdentifier)
         {
-            this.transformId = transformId;
+            this.transformIdentifier = transformIdentifier;
         }
     }
 
     public class HierarchyUpdateDestroyTransformEvent : IHierarchyUpdateEvent
     {
-        public readonly int transformId;
+        public readonly string transformIdentifier;
 
-        public HierarchyUpdateDestroyTransformEvent(int transformId)
+        public HierarchyUpdateDestroyTransformEvent(string transformIdentifier)
         {
-            this.transformId = transformId;
+            this.transformIdentifier = transformIdentifier;
         }
     }
 }
