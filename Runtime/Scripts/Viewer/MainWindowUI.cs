@@ -291,7 +291,7 @@ namespace PLUME.UI
 
         public void RefreshTimelineCursor()
         {
-            Timeline.SetCursorTime(player.GetCurrentPlayTimeInNanoseconds());
+            Timeline.SetCurrentTime(player.GetCurrentPlayTimeInNanoseconds());
 
             if (player.IsPlaying())
             {

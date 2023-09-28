@@ -51,8 +51,6 @@ namespace PLUME
         private readonly VisualElement _markersContainer;
         private readonly List<TimelineMarkerElement> _markers = new();
 
-        private float _timeCursorPosition;
-
         private readonly MinMaxSlider _timelineScroller;
         private readonly ScrollView _timeScaleScrollView;
 
@@ -60,6 +58,8 @@ namespace PLUME
         private readonly VisualElement _tracksContainer;
         private readonly List<TimelinePhysiologicalSignalTrackElement> _tracks = new();
 
+        private ulong _time;
+        
         private ulong _duration;
         private ulong _timeDivisionDuration;
         private int _ticksPerDivision;
@@ -123,14 +123,17 @@ namespace PLUME
 
         public void KeepTimeCursorInView()
         {
-            var viewWidth = _timeScaleScrollView.contentViewport.contentRect.width;
+            var relTime = _time / (float) _duration;
 
-            var cursorViewRelativePosition = _timeCursorPosition - _timelineScroller.minValue;
-            var isOutsideOfView = cursorViewRelativePosition < 0 || cursorViewRelativePosition > viewWidth;
-
-            if (isOutsideOfView)
+            var relTimeRange = _timelineScroller.maxValue - _timelineScroller.minValue;
+            if (relTime < _timelineScroller.minValue)
             {
-                _timelineScroller.minValue = _timeCursorPosition;
+                _timelineScroller.minValue = relTime;
+                _timelineScroller.maxValue = relTime + relTimeRange;
+            } else if (relTime > _timelineScroller.maxValue)
+            {
+                _timelineScroller.maxValue = relTime + relTimeRange;
+                _timelineScroller.minValue = relTime;
             }
         }
 
@@ -199,9 +202,6 @@ namespace PLUME
             TimeDivisionWidth = timelineContentWidth / timeRange * TimeDivisionDuration;
             
             var scrollOffset = minTime / (float)TimeDivisionDuration * TimeDivisionWidth;
-
-            _timeScaleScrollView.horizontalScroller.lowValue = 0;
-            _timeScaleScrollView.horizontalScroller.highValue = Duration / (float) TimeDivisionDuration * TimeDivisionWidth;
             _timeScaleScrollView.horizontalScroller.value = scrollOffset;
             _timeCursor.Q("scroll-offset").style.left = -scrollOffset;
             
@@ -218,10 +218,10 @@ namespace PLUME
             UpdateTimescaleTicksClippingRect();
         }
 
-        public void SetCursorTime(ulong time)
+        public void SetCurrentTime(ulong time)
         {
-            _timeCursorPosition = time / (float)TimeDivisionDuration * TimeDivisionWidth;
-            _timeCursor.Q("time-offset").style.left = _timeCursorPosition;
+            _time = time;
+            _timeCursor.Q("time-offset").style.left = time / (float)TimeDivisionDuration * TimeDivisionWidth;
 
             foreach (var track in _tracks)
             {
@@ -235,6 +235,12 @@ namespace PLUME
             UpdateTimelineScroller();
         }
 
+        private void UpdateTimescaleScrollerLimits()
+        {
+            _timeScaleScrollView.horizontalScroller.lowValue = 0;
+            _timeScaleScrollView.horizontalScroller.highValue = Duration / (float) TimeDivisionDuration * TimeDivisionWidth;
+        }
+        
         private void UpdateTimescaleTicksClippingRect()
         {
             var clippingRect = _timeScaleScrollView.contentViewport.contentRect;
@@ -254,6 +260,8 @@ namespace PLUME
                 {
                     track.Duration = value;
                 }
+                
+                UpdateTimescaleScrollerLimits();
             }
         }
 
@@ -274,16 +282,8 @@ namespace PLUME
                 {
                     marker.TimeDivisionDuration = value;
                 }
-            }
-        }
-
-        public int TicksPerDivision
-        {
-            get => _ticksPerDivision;
-            set
-            {
-                _ticksPerDivision = value;
-                _timeScale.TicksPerDivision = value;
+                
+                UpdateTimescaleScrollerLimits();
             }
         }
 
@@ -304,6 +304,18 @@ namespace PLUME
                 {
                     marker.TimeDivisionWidth = value;
                 }
+                
+                UpdateTimescaleScrollerLimits();
+            }
+        }
+        
+        public int TicksPerDivision
+        {
+            get => _ticksPerDivision;
+            set
+            {
+                _ticksPerDivision = value;
+                _timeScale.TicksPerDivision = value;
             }
         }
     }
