@@ -151,6 +151,8 @@
                 // Local sub-triangle barycentric weights
                 float3 w = scaled_barycentric_weights - b;
 
+                half4 color;
+
                 // Left side of parallelogram composed of the two triangles
                 if (abs(w.x + w.y + w.z - 1) <= 2 * epsilon)
                 {
@@ -160,11 +162,11 @@
                     const float val0 = samples_value_buffer[offset + idx0];
                     const float val1 = samples_value_buffer[offset + idx1];
                     const float val2 = samples_value_buffer[offset + idx2];
-                    return fixation_density_to_color(val0 * w.x + val1 * w.y + val2 * w.z);
+                    color = fixation_density_to_color(val0 * w.x + val1 * w.y + val2 * w.z);
                 }
 
                 // Right side of parallelogram composed of the two triangles
-                if (abs(w.x + w.y + w.z - 2) <= 2 * epsilon)
+                else if (abs(w.x + w.y + w.z - 2) <= 2 * epsilon)
                 {
                     const uint idx0 = scaled_barycentric_weights_to_sample_idx(b + int2(0, 1), triangle_resolution);
                     const uint idx1 = scaled_barycentric_weights_to_sample_idx(b + int2(1, 0), triangle_resolution);
@@ -173,12 +175,13 @@
                     const float val1 = samples_value_buffer[offset + idx1];
                     const float val2 = samples_value_buffer[offset + idx2];
                     w = float3(1, 1, 1) - w;
-                    return fixation_density_to_color(val0 * w.x + val1 * w.y + val2 * w.z);
+                    color = fixation_density_to_color(val0 * w.x + val1 * w.y + val2 * w.z);
+                } else
+                {
+                    const uint idx = scaled_barycentric_weights_to_sample_idx(b, triangle_resolution);
+                    const float val = samples_value_buffer[offset + idx];
+                    color = fixation_density_to_color(val);
                 }
-
-                const uint idx = scaled_barycentric_weights_to_sample_idx(b, triangle_resolution);
-                const float val = samples_value_buffer[offset + idx];
-                const half4 color = fixation_density_to_color(val);
                 
                 if (!_Shading)
                 {

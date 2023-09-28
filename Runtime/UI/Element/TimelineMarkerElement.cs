@@ -52,6 +52,7 @@ namespace PLUME
             _markerStem = _marker.Q("marker__stem");
             hierarchy.Add(_marker);
             pickingMode = PickingMode.Ignore;
+            style.position = Position.Absolute;
             style.width = _marker.style.width;
             style.height = Length.Percent(100);
             style.flexGrow = 1;
