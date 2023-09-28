@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using PLUME.Sample.Common;
 using UnityEngine;
 using UnityEngine.Scripting;
 using UnityEngine.UIElements;
@@ -46,7 +47,10 @@ namespace PLUME
         private readonly TimeScaleElement _timeScale;
         
         private readonly VisualElement _timeCursor;
-
+        
+        private readonly VisualElement _markersContainer;
+        private readonly List<TimelineMarkerElement> _markers = new();
+        
         private float _timeCursorPosition;
         
         private readonly Scroller _horizontalScroller;
@@ -63,8 +67,8 @@ namespace PLUME
 
         public TimelineElement()
         {
-            var uxml = Resources.Load<VisualTreeAsset>("UI/Uxml/timeline");
-            var timeline = uxml.Instantiate().Q("timeline");
+            var timelineUxml = Resources.Load<VisualTreeAsset>("UI/Uxml/timeline");
+            var timeline = timelineUxml.Instantiate().Q("timeline");
             hierarchy.Add(timeline);
             
             _horizontalScroller = timeline.Q<Scroller>("horizontal-scroller");
@@ -74,6 +78,9 @@ namespace PLUME
             _tracksContainer = timeline.Q("tracks-container");
             
             _timeScale = timeline.Q<TimeScaleElement>("time-scale");
+            
+            _markersContainer = timeline.Q("markers-container");
+            
             _timeCursor = timeline.Q("time-cursor");
             
             _horizontalScroller.slider.RegisterValueChangedCallback(evt =>
@@ -81,11 +88,22 @@ namespace PLUME
                 _timeScaleScrollView.horizontalScroller.value = evt.newValue;
                 
                 _timeCursor.Q("scroll-offset").style.left = - evt.newValue;
+
+                foreach (var marker in _markers)
+                {
+                    marker.SetScrollOffset(-evt.newValue);
+                }
                 
                 OnScroll(evt);
             });
             
             RegisterCallback<GeometryChangedEvent>(_ => OnGeometryChanged());
+        }
+
+        public void AddMarker(TimelineMarkerElement markerElement)
+        {
+            _markers.Add(markerElement);
+            _markersContainer.Add(markerElement);
         }
 
         public void AddTrack(TimelinePhysiologicalSignalTrackElement physiologicalSignalTrack)
@@ -212,6 +230,12 @@ namespace PLUME
                 track.SetTimeDivisionWidth(TimeDivisionWidth);
                 track.SetTicksPerDivision(TicksPerDivision);
             }
+
+            foreach (var marker in _markers)
+            {
+                marker.TimeDivisionDuration = TimeDivisionDuration;
+                marker.TimeDivisionWidth = TimeDivisionWidth;
+            }
         }
 
         public ulong Duration
@@ -231,6 +255,11 @@ namespace PLUME
             {
                 _timeDivisionDuration = value;
                 _timeScale.SetTimeDivisionDuration(value);
+                
+                foreach(var marker in _markers)
+                {
+                    marker.TimeDivisionDuration = value;
+                }
             }
         }
 
@@ -251,6 +280,11 @@ namespace PLUME
             {
                 _timeDivisionWidth = value;
                 _timeScale.SetTimeDivisionWidth(value);
+                
+                foreach(var marker in _markers)
+                {
+                    marker.TimeDivisionWidth = value;
+                }
             }
         }
     }

@@ -37,6 +37,7 @@ namespace PLUME.UI
             _mainWindowUI.IncreaseSpeedButton.clicked += OnClickIncreaseSpeed;
             _mainWindowUI.ToggleMaximizePreviewButton.toggled += OnClickToggleMaximizePreview;
 
+            _mainWindowUI.CreateMarkers();
             _mainWindowUI.CreatePhysiologicalTracks();
             
             _mainWindowUI.RefreshTimelineScale();

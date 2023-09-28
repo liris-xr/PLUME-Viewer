@@ -74,6 +74,11 @@ namespace PLUME
         {
             return _physioSignalsLoader;
         }
+        
+        public FilteredRecordLoader GetMarkersLoader()
+        {
+            return _markersLoader;
+        }
 
         public PlayerAssets GetPlayerAssets()
         {
@@ -216,5 +221,6 @@ namespace PLUME
         {
             return _playerContext;
         }
+
     }
 }

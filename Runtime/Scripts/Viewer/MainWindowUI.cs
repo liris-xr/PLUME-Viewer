@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
+using PLUME.Sample;
+using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Color = UnityEngine.Color;
 using Random = UnityEngine.Random;
+using Vector2 = UnityEngine.Vector2;
 
 namespace PLUME.UI
 {
@@ -129,6 +133,29 @@ namespace PLUME.UI
             return TimeIndicator != null && TimeIndicator.IsFocused();
         }
 
+        public void CreateMarkers()
+        {
+            var markersLoader = player.GetMarkersLoader();
+            var markerColors = new Dictionary<string, Color>();
+            
+            foreach (var s in markersLoader.All())
+            {
+                if (s.Payload is not Marker marker)
+                    continue;
+
+                if (!markerColors.TryGetValue(marker.Label, out var markerColor))
+                {
+                    markerColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+                    markerColors.Add(marker.Label, markerColor);
+                }
+
+                var markerElement = new TimelineMarkerElement();
+                markerElement.SetColor(markerColor);
+                markerElement.SetTime(s.Header.Time);
+                Timeline.AddMarker(markerElement);
+            }
+        }
+        
         public void CreatePhysiologicalTracks()
         {
             var physioSignalsLoader = player.GetPhysiologicalSignalsLoader();
