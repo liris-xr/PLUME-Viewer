@@ -47,7 +47,7 @@ namespace PLUME
         
         private void Awake()
         {
-            PlayerModules = FindObjectsOfType<PlayerModule>(true);
+            PlayerModules = FindObjectsOfType<PlayerModule>();
             _assets = new PlayerAssets(Path.Combine(Application.streamingAssetsPath, "plume_asset_bundle_windows"));
             
             _markersLoader = new FilteredRecordLoader(new RecordReader(recordPath),
