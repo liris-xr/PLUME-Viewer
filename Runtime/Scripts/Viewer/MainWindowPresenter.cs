@@ -42,6 +42,7 @@ namespace PLUME.UI
             _mainWindowUI.CreateMarkers();
             _mainWindowUI.CreatePhysiologicalTracks();
 
+            _mainWindowUI.RefreshAssetLoadingPanel();
             _mainWindowUI.RefreshTimelineScale();
             _mainWindowUI.RefreshTimelineTimeIndicator();
             _mainWindowUI.RefreshTimelineCursor();
@@ -236,6 +237,8 @@ namespace PLUME.UI
 
         public void Update()
         {
+            _mainWindowUI.RefreshAssetLoadingPanel();
+            
             if (!_mainWindowUI.IsTimeIndicatorFocused())
             {
                 _mainWindowUI.RefreshTimelineTimeIndicator();

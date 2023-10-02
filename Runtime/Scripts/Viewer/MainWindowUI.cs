@@ -20,6 +20,10 @@ namespace PLUME.UI
 
         public UIDocument document;
 
+        public VisualElement LoadingPanel { get; private set; }
+        
+        public VisualElement ViewerPanel { get; private set; }
+        
         public TimelineElement Timeline { get; private set; }
         public TimeFieldElement TimeIndicator { get; private set; }
         public TimeScaleElement TimeScale { get; private set; }
@@ -42,6 +46,8 @@ namespace PLUME.UI
         public CollapseBarElement RecordsCollapseBar { get; private set; }
         public CollapseBarElement TimelineCollapseBar { get; private set; }
         public CollapseBarElement AnalysisCollapseBar { get; private set; }
+        
+        public VisualElement AnalysisContainer { get; private set; }
 
         public TwoPaneSplitView VerticalSplitView { get; private set; }
         public TwoPaneSplitView HorizontalSplitView1 { get; private set; }
@@ -50,11 +56,15 @@ namespace PLUME.UI
         private void Awake()
         {
             var root = document.rootVisualElement;
-            Timeline = root.Q<TimelineElement>("timeline");
+
+            LoadingPanel = root.Q("loading-panel");
+            ViewerPanel = root.Q("viewer");
+            
+            Timeline = ViewerPanel.Q<TimelineElement>("timeline");
             TimeIndicator = Timeline.Q<TimeFieldElement>();
             TimeScale = Timeline.Q<TimeScaleElement>();
 
-            MediaController = root.Q<VisualElement>("media-controller");
+            MediaController = ViewerPanel.Q<VisualElement>("media-controller");
             PlayPauseButton = MediaController.Q<ToggleButton>("play-pause-btn");
             StopButton = MediaController.Q<Button>("stop-btn");
 
@@ -63,11 +73,11 @@ namespace PLUME.UI
             SpeedTextField = MediaController.Q<TextField>("speed-textfield");
 
             ToggleMaximizePreviewButton = MediaController.Q<ToggleButton>("toggle-maximize-preview-btn");
-            Preview = root.Q("preview");
-            PreviewRenderAspectRatio = root.Q("preview").Q<AspectRatioContainerElement>("aspect-ratio");
+            Preview = ViewerPanel.Q("preview");
+            PreviewRenderAspectRatio = ViewerPanel.Q("preview").Q<AspectRatioContainerElement>("aspect-ratio");
             PreviewRender = PreviewRenderAspectRatio.Q<VisualElement>("render");
 
-            HierarchyTree = root.Q<TreeView>("hierarchy-tree");
+            HierarchyTree = ViewerPanel.Q<TreeView>("hierarchy-tree");
             HierarchyTree.SetRootItems(new List<TreeViewItemData<Transform>>());
             HierarchyTree.makeItem = () =>
             {
@@ -101,13 +111,15 @@ namespace PLUME.UI
                 }
             });
 
-            RecordsCollapseBar = root.Q<CollapseBarElement>("records-collapse-bar");
-            TimelineCollapseBar = root.Q<CollapseBarElement>("timeline-collapse-bar");
-            AnalysisCollapseBar = root.Q<CollapseBarElement>("analysis-collapse-bar");
+            RecordsCollapseBar = ViewerPanel.Q<CollapseBarElement>("records-collapse-bar");
+            TimelineCollapseBar = ViewerPanel.Q<CollapseBarElement>("timeline-collapse-bar");
+            AnalysisCollapseBar = ViewerPanel.Q<CollapseBarElement>("analysis-collapse-bar");
 
-            VerticalSplitView = root.Q<TwoPaneSplitView>("vertical-pane-split-view");
-            HorizontalSplitView1 = root.Q<TwoPaneSplitView>("horizontal-pane-split-view-1");
-            HorizontalSplitView2 = root.Q<TwoPaneSplitView>("horizontal-pane-split-view-2");
+            AnalysisContainer = ViewerPanel.Q("analysis-container");
+
+            VerticalSplitView = ViewerPanel.Q<TwoPaneSplitView>("vertical-pane-split-view");
+            HorizontalSplitView1 = ViewerPanel.Q<TwoPaneSplitView>("horizontal-pane-split-view-1");
+            HorizontalSplitView2 = ViewerPanel.Q<TwoPaneSplitView>("horizontal-pane-split-view-2");
 
             RecordsCollapseBar.toggledCollapse += collapsed =>
             {
@@ -323,14 +335,27 @@ namespace PLUME.UI
             AnalysisCollapseBar.Inflate();
         }
 
-        public T Q<T>(string name = null, string className = null) where T : VisualElement
+        public void RefreshAssetLoadingPanel()
         {
-            return document.rootVisualElement.Q<T>(name, className);
-        }
+            var isLoading = !player.GetPlayerAssets().IsLoaded() || !player.MarkersLoaded() ||
+                                       !player.PhysiologicalSignalsLoaded();
+            
+            ViewerPanel.style.display = isLoading ? DisplayStyle.None : DisplayStyle.Flex;
+            LoadingPanel.style.display = isLoading ? DisplayStyle.Flex : DisplayStyle.None;
 
-        public VisualElement Q(string name = null, string className = null)
-        {
-            return document.rootVisualElement.Q(name, className);
+            if (!player.GetPlayerAssets().IsLoaded())
+            {
+                LoadingPanel.Q<ProgressBar>("progress-bar").value = player.GetPlayerAssets().GetLoadingProgress();
+                LoadingPanel.Q<ProgressBar>("progress-bar").title = "Loading asset bundle...";
+            } else if (!player.MarkersLoaded())
+            {
+                LoadingPanel.Q<ProgressBar>("progress-bar").value = 0;
+                LoadingPanel.Q<ProgressBar>("progress-bar").title = "Loading markers...";
+            }else if (!player.PhysiologicalSignalsLoaded())
+            {
+                LoadingPanel.Q<ProgressBar>("progress-bar").value = 0;
+                LoadingPanel.Q<ProgressBar>("progress-bar").title = "Loading physiological markers...";
+            }
         }
     }
 }

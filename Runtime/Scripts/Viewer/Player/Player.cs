@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
 using UnityEngine;
@@ -37,6 +38,9 @@ namespace PLUME
         public Camera topViewCamera;
         public Camera sceneMainCamera;
 
+        private Task _markersLoadingTask;
+        private Task _physioSignalsLoadingTask;
+        
         [RuntimeInitializeOnLoadMethod]
         public static void OnInitialize()
         {
@@ -52,14 +56,14 @@ namespace PLUME
             
             _markersLoader = new FilteredRecordLoader(new RecordReader(recordPath),
                 sample => sample.Payload.Is(Marker.Descriptor), typeRegistryProvider.GetTypeRegistry());
-            _markersLoader.Load();
+            _markersLoadingTask = Task.Run(() => _markersLoader.Load());
             
             _physioSignalsLoader = new FilteredRecordLoader(new RecordReader(recordPath),
                 sample => sample.Payload.Is(StreamOpen.Descriptor)
                           || sample.Payload.Is(StreamClose.Descriptor)
                           || sample.Payload.Is(StreamSample.Descriptor),
                 typeRegistryProvider.GetTypeRegistry());
-            _physioSignalsLoader.Load();
+            _physioSignalsLoadingTask = Task.Run(() => _physioSignalsLoader.Load());
             
             _recordLoader = new BufferedAsyncRecordLoader(new RecordReader(recordPath), typeRegistryProvider.GetTypeRegistry());
             _recordLoader.StartLoading();
@@ -70,6 +74,16 @@ namespace PLUME
             DontDestroyOnLoad(this);
         }
 
+        public bool MarkersLoaded()
+        {
+            return _markersLoadingTask.IsCompleted;
+        }
+        
+        public bool PhysiologicalSignalsLoaded()
+        {
+            return _physioSignalsLoadingTask.IsCompleted;
+        }
+        
         public FilteredRecordLoader GetPhysiologicalSignalsLoader()
         {
             return _physioSignalsLoader;

@@ -7,16 +7,9 @@ namespace PLUME.UI.Analysis
     {
         public MainWindowUI mainWindowUI;
 
-        private ScrollView _scrollView;
-
-        private void Awake()
-        {
-            _scrollView = mainWindowUI.Q("analysis-container").Q<ScrollView>();
-        }
-
         public void Add(VisualElement moduleRootElement)
         {
-            _scrollView.Add(moduleRootElement);
+            mainWindowUI.AnalysisContainer.Q<ScrollView>().Add(moduleRootElement);
         }
     }
 }
