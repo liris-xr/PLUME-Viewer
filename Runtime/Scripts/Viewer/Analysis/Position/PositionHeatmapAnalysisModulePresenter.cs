@@ -25,10 +25,14 @@ namespace PLUME.UI.Analysis
         {
             module.SetVisibleResult(null);
 
-            var projectionCasterId = ui.ProjectionCasterIdTextField.value;
-            var projectionReceiversIds = ui.ProjectionReceiversIdsTextField.value.Split(",").ToArray();
-            var startTime = ui.TimeRange.StartTime;
-            var endTime = ui.TimeRange.EndTime;
+            var parameters = new PositionHeatmapAnalysisModuleParameters
+            {
+                CasterIdentifier = ui.ProjectionCasterIdTextField.value,
+                ReceiversIdentifiers = ui.ProjectionReceiversIdsTextField.value.Split(",").ToArray(),
+                StartTime = ui.TimeRange.StartTime,
+                EndTime = ui.TimeRange.EndTime,
+                IncludeReceiversChildren = ui.IncludeReceiversChildrenToggle.value
+            };
 
             ui.GenerateButton.SetEnabled(false);
 
@@ -40,8 +44,8 @@ namespace PLUME.UI.Analysis
                 ui.RefreshResults();
             });
 
-            StartCoroutine(module.GenerateHeatmap(player.GetRecordLoader(), player.GetPlayerAssets(),
-                projectionCasterId, projectionReceiversIds, startTime, endTime, onFinishCallback));
+            StartCoroutine(module.GenerateHeatmap(player.GetRecordLoader(), player.GetPlayerAssets(), parameters,
+                onFinishCallback));
         }
 
         private void OnClickDeleteResult(PositionHeatmapAnalysisResult result)

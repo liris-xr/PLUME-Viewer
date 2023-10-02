@@ -103,8 +103,6 @@ namespace PLUME.UI
                 {
                     var selectedItems = HierarchyTree.GetSelectedItems<Transform>();
                     
-                    Debug.Log(selectedItems.ElementAt(0).id);
-                    
                     GUIUtility.systemCopyBuffer = string.Join(",",
                         selectedItems.Select(t =>
                             player.GetPlayerContext().GetRecordIdentifier(t.data.gameObject.GetInstanceID())));

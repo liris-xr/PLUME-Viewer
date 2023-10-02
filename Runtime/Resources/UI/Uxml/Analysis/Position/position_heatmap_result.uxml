@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Packages/fr.liris.plume/Runtime/Resources/UI/Styles/position_heatmap_module.uss?fileID=7433441132597879392&amp;guid=5bdf89c930640cf429376d6e120cb9e3&amp;type=3#position_heatmap_module" />
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/position_heatmap_module.uss?fileID=7433441132597879392&amp;guid=5bdf89c930640cf429376d6e120cb9e3&amp;type=3#position_heatmap_module" />
     <ui:VisualElement class="result-entry">
         <ui:Label text="#1" display-tooltip-when-elided="true" name="result-index" class="result-index" />
         <ui:VisualElement name="result-fields" class="result-fields">
@@ -9,7 +9,7 @@
             </ui:VisualElement>
             <ui:VisualElement name="projection-receivers" class="result-field" style="flex-grow: 1;">
                 <ui:Label text="Projection receivers IDs" class="result-field__label" />
-                <ui:Label text="Value" name="value" class="result-field__value" />
+                <ui:Label text="Value" name="value" class="result-field__value" style="overflow: hidden; max-height: 100px; text-overflow: ellipsis; flex-shrink: 1;" />
             </ui:VisualElement>
             <ui:VisualElement name="start-time" class="result-field">
                 <ui:Label text="Start time" class="result-field__label" />

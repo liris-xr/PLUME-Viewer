@@ -5,12 +5,19 @@ using UnityEngine;
 
 namespace PLUME
 {
+    
+    public struct PositionHeatmapAnalysisModuleParameters
+    {
+        public string CasterIdentifier;
+        public string[] ReceiversIdentifiers;
+        public bool IncludeReceiversChildren;
+        public ulong StartTime;
+        public ulong EndTime;
+    }
+    
     public class PositionHeatmapAnalysisResult : AnalysisModuleResult, IDisposable
     {
-        public string ProjectionCasterIdentifier { get; }
-        public string[] ProjectionReceiversIdentifiers  { get; }
-        public ulong ProjectionStartTime { get; }
-        public ulong ProjectionEndTime { get; }
+        public PositionHeatmapAnalysisModuleParameters Parameters;
         public ComputeBuffer MinValueBuffer { get; }
         public ComputeBuffer MaxValueBuffer { get; }
         
@@ -21,16 +28,12 @@ namespace PLUME
 
         public PositionHeatmapAnalysisResult() {}
         
-        public PositionHeatmapAnalysisResult(string projectionCasterIdentifier, string[] projectionReceiversIdentifiers,
-            ulong projectionStartTime, ulong projectionEndTime,
+        public PositionHeatmapAnalysisResult(PositionHeatmapAnalysisModuleParameters parameters,
             ComputeBuffer minValueBuffer,
             ComputeBuffer maxValueBuffer,
             Dictionary<int, MeshSamplerResult> samplerResults)
         {
-            ProjectionCasterIdentifier = projectionCasterIdentifier;
-            ProjectionReceiversIdentifiers = projectionReceiversIdentifiers;
-            ProjectionStartTime = projectionStartTime;
-            ProjectionEndTime = projectionEndTime;
+            Parameters = parameters;
             MinValueBuffer = minValueBuffer;
             MaxValueBuffer = maxValueBuffer;
             SamplerResults = samplerResults;

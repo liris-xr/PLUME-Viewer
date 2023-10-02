@@ -6,7 +6,6 @@ using System.Runtime.InteropServices;
 using PLUME.Sample.Unity;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
-using UnityEngine.Rendering;
 
 namespace PLUME
 {
@@ -55,19 +54,22 @@ namespace PLUME
 
         public bool IsGenerating { get; private set; }
 
-        private Camera _segmentedObjectDepthCamera;
+        private Camera _projectionCamera;
 
         private Material _sampleHeatmapMaterial;
         private Material _defaultHeatmapMaterial;
+        private Material _segmentedObjectDepthMaterial;
 
         private PositionHeatmapAnalysisResult _visibleResult;
-        private readonly Dictionary<MeshSamplerResult, MaterialPropertyBlock> _cachedPropertyBlocks = new();
+        private readonly Dictionary<MeshSamplerResult, MaterialPropertyBlock> _cachedMeshSamplerResultPropertyBlocks = new();
+        private readonly Dictionary<int, MaterialPropertyBlock> _cachedSegmentedObjectsDepthPropertyBlocks = new();
 
         private void Awake()
         {
             SetupProjectionCamera(segmentedObjectDepthTextureResolution, radius * 2, 0.3f, 1000.0f);
             _sampleHeatmapMaterial = new Material(samplesHeatmapShader);
             _defaultHeatmapMaterial = new Material(defaultHeatmapShader);
+            _segmentedObjectDepthMaterial = new Material(segmentedObjectDepthShader);
         }
 
         private void SetupProjectionCamera(int res, float size, float nearClipPlane, float farClipPlane)
@@ -79,25 +81,25 @@ namespace PLUME
 
             var half = size / 2;
             var orthographicMatrix = Matrix4x4.Ortho(-half, half, -half, half, nearClipPlane, farClipPlane);
-            _segmentedObjectDepthCamera = gameObject.AddComponent<Camera>();
-            _segmentedObjectDepthCamera.orthographic = true;
-            _segmentedObjectDepthCamera.orthographicSize = size;
-            _segmentedObjectDepthCamera.nearClipPlane = nearClipPlane;
-            _segmentedObjectDepthCamera.farClipPlane = farClipPlane;
-            _segmentedObjectDepthCamera.aspect = 1;
-            _segmentedObjectDepthCamera.projectionMatrix = orthographicMatrix;
-            _segmentedObjectDepthCamera.targetTexture = segmentedObjectDepthTexture;
+            _projectionCamera = gameObject.AddComponent<Camera>();
+            _projectionCamera.enabled = false;
+            _projectionCamera.orthographic = true;
+            _projectionCamera.orthographicSize = size;
+            _projectionCamera.nearClipPlane = nearClipPlane;
+            _projectionCamera.farClipPlane = farClipPlane;
+            _projectionCamera.aspect = 1;
+            _projectionCamera.projectionMatrix = orthographicMatrix;
+            _projectionCamera.targetTexture = segmentedObjectDepthTexture;
         }
 
         public IEnumerator GenerateHeatmap(BufferedAsyncRecordLoader loader, PlayerAssets assets,
-            string projectionCasterIdentifier, string[] projectionReceiversIdentifiers,
-            ulong projectionStartTime, ulong projectionEndTime,
+            PositionHeatmapAnalysisModuleParameters parameters,
             Action<PositionHeatmapAnalysisResult> finishCallback)
         {
-            if (projectionEndTime < projectionStartTime)
+            if (parameters.EndTime < parameters.StartTime)
             {
                 throw new Exception(
-                    $"{nameof(projectionStartTime)} should be less or equal to {nameof(projectionEndTime)}.");
+                    $"{nameof(parameters.StartTime)} should be less or equal to {nameof(parameters.EndTime)}.");
             }
 
             IsGenerating = true;
@@ -114,9 +116,7 @@ namespace PLUME
             // key: mesh record id, value: sampled mesh containing values
             var meshSamplerResults = new Dictionary<int, MeshSamplerResult>();
 
-            var result = new PositionHeatmapAnalysisResult(projectionCasterIdentifier,
-                projectionReceiversIdentifiers, projectionStartTime, projectionEndTime,
-                samplesMinValueBuffer, samplesMaxValueBuffer, meshSamplerResults);
+            var result = new PositionHeatmapAnalysisResult(parameters, samplesMinValueBuffer, samplesMaxValueBuffer, meshSamplerResults);
 
             SetVisibleResult(result);
 
@@ -129,30 +129,45 @@ namespace PLUME
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = int.MaxValue;
 
-            if (projectionStartTime > 0)
+            if (parameters.StartTime > 0)
             {
-                yield return PlaySamplesInTimeRange(loader, ctx, 0, projectionStartTime - 1u);
+                yield return PlaySamplesInTimeRange(loader, ctx, 0, parameters.StartTime - 1u);
             }
 
-            var currentTime = projectionStartTime;
+            var currentTime = parameters.StartTime;
 
-            while (currentTime <= projectionEndTime && currentTime <= loader.Duration)
+            while (currentTime <= parameters.EndTime && currentTime <= loader.Duration)
             {
                 var startTime = currentTime;
                 var endTime = currentTime + projectionSamplingInterval;
                 yield return PlaySamplesInTimeRange(loader, ctx, startTime, endTime);
                 
-                // TODO: also project onto children
-                var replayProjectionCasterId = ctx.GetReplayInstanceId(projectionCasterIdentifier);
-                var replayProjectionReceiversIds = projectionReceiversIdentifiers.Select(ctx.GetReplayInstanceId)
-                    .Where(id => id.HasValue)
-                    .Select(id => id.Value).ToArray();
-                
-                if (replayProjectionCasterId.HasValue && replayProjectionReceiversIds.Length > 0)
+                var replayProjectionCasterId = ctx.GetReplayInstanceId(parameters.CasterIdentifier);
+                var replayProjectionReceiversIds = new List<int>();
+
+                foreach (var receiversIdentifier in parameters.ReceiversIdentifiers)
                 {
-                    if (currentTime >= projectionStartTime && currentTime <= projectionEndTime)
+                    var replayId = ctx.GetReplayInstanceId(receiversIdentifier);
+                    if (!replayId.HasValue) continue;
+                    
+                    if(!replayProjectionReceiversIds.Contains(replayId.Value))
+                        replayProjectionReceiversIds.Add(replayId.Value);
+
+                    if (!parameters.IncludeReceiversChildren) continue;
+                    
+                    var go = ctx.FindGameObjectByInstanceId(replayId.Value);
+
+                    foreach (var goInstanceId in go.GetComponentsInChildren<Renderer>().Select(r => r.gameObject.GetInstanceID()))
                     {
-                        // TODO Handle both case where the given ID might be a gameobject or a transform
+                        if(!replayProjectionReceiversIds.Contains(goInstanceId))
+                            replayProjectionReceiversIds.Add(goInstanceId);
+                    }
+                }
+                
+                if (replayProjectionCasterId.HasValue && replayProjectionReceiversIds.Count > 0)
+                {
+                    if (currentTime >= parameters.StartTime && currentTime <= parameters.EndTime)
+                    {
                         var projectionCaster = ctx.FindGameObjectByInstanceId(replayProjectionCasterId.Value);
 
                         if (projectionCaster != null)
@@ -165,7 +180,7 @@ namespace PLUME
 
                             if (projectionReceiversGameObjects.Length > 0)
                             {
-                                yield return ProjectCurrentPosition(ctx, projectionCaster,
+                                ProjectCurrentPosition(ctx, projectionCaster,
                                     projectionReceiversGameObjects,
                                     meshSamplerResults, projectionKernel);
                             }
@@ -186,20 +201,38 @@ namespace PLUME
             finishCallback(result);
         }
 
-        private IEnumerator ProjectCurrentPosition(
+        private void ProjectCurrentPosition(
             PlayerContext ctx,
             GameObject projectionCasterGameObject,
             GameObject[] projectionReceiversGameObjects,
             IDictionary<int, MeshSamplerResult> meshSamplerResults, int projectionKernel)
         {
-            _segmentedObjectDepthCamera.transform.SetPositionAndRotation(
+            _projectionCamera.transform.SetPositionAndRotation(
                 projectionCasterGameObject.transform.position, Quaternion.Euler(90, 0, 0));
+
+            var wasRendererEnabled = new Dictionary<Renderer, bool>();
             
-            yield return RenderSegmentedObjectsDepth(projectionReceiversGameObjects);
+            // Render object depth with an extra channel containing their instance ID
+            ApplySegmentedObjectsDepthMaterials(projectionReceiversGameObjects);
+            // Only render projection receivers
+            foreach (var go in ctx.GetAllGameObjects())
+            {
+                if (!go.TryGetComponent<Renderer>(out var goRenderer)) continue;
+                wasRendererEnabled.Add(goRenderer, goRenderer.enabled);
+                goRenderer.enabled = projectionReceiversGameObjects.Contains(go);
+            }
+            
+            _projectionCamera.Render();
+            
+            foreach (var go in ctx.GetAllGameObjects())
+            {
+                if (!go.TryGetComponent<Renderer>(out var goRenderer)) continue;
+                goRenderer.enabled = wasRendererEnabled[goRenderer];
+            }
 
-            var planes = GeometryUtility.CalculateFrustumPlanes(_segmentedObjectDepthCamera);
+            var planes = GeometryUtility.CalculateFrustumPlanes(_projectionCamera);
 
-            projectionShader.SetMatrix("view_mtx", _segmentedObjectDepthCamera.worldToCameraMatrix);
+            projectionShader.SetMatrix("view_mtx", _projectionCamera.worldToCameraMatrix);
 
             // TODO: Handle children of projection receivers as well
             foreach (var go in projectionReceiversGameObjects)
@@ -264,18 +297,6 @@ namespace PLUME
             }
         }
 
-        private IEnumerator RenderSegmentedObjectsDepth(GameObject[] projectionReceiversGameObjects)
-        {
-            // Only render the receivers as we don't want the caster to cast onto itself
-            var cmdBuf = GetSegmentedObjectDepthCmdBuffer(projectionReceiversGameObjects);
-
-            _segmentedObjectDepthCamera.RemoveAllCommandBuffers();
-            _segmentedObjectDepthCamera.AddCommandBuffer(CameraEvent.AfterEverything, cmdBuf);
-
-            // Wait for camera to render
-            yield return new WaitForEndOfFrame();
-        }
-
         private MeshSamplerResult GetOrCreateMeshSamplerResult(int meshSamplerResultHash, Mesh mesh, IDictionary<int, MeshSamplerResult> meshSamplerResults)
         {
             if (mesh == null || mesh.vertexBufferCount == 0)
@@ -303,34 +324,11 @@ namespace PLUME
         {
             projectionShader.SetFloat("n_sigmas", nSigmas);
             projectionShader.SetTexture(projectionKernel, "segmented_object_depth_texture",
-                _segmentedObjectDepthCamera.targetTexture);
-            projectionShader.SetMatrix("projection_mtx", _segmentedObjectDepthCamera.projectionMatrix);
-            projectionShader.SetBool("is_projection_orthographic", _segmentedObjectDepthCamera.orthographic);
+                _projectionCamera.targetTexture);
+            projectionShader.SetMatrix("projection_mtx", _projectionCamera.projectionMatrix);
+            projectionShader.SetBool("is_projection_orthographic", _projectionCamera.orthographic);
             projectionShader.SetBuffer(projectionKernel, "samples_min_value", samplesMinValueBuffer);
             projectionShader.SetBuffer(projectionKernel, "samples_max_value", samplesMaxValueBuffer);
-        }
-
-        private CommandBuffer GetSegmentedObjectDepthCmdBuffer(IEnumerable<GameObject> gameObjects)
-        {
-            var objectInstanceID = Shader.PropertyToID("object_instance_id");
-
-            var cmdBuf = new CommandBuffer();
-            cmdBuf.SetRenderTarget(_segmentedObjectDepthCamera.targetTexture);
-            cmdBuf.ClearRenderTarget(true, true, Color.clear);
-
-            foreach (var go in gameObjects)
-            {
-                var goRenderer = go.GetComponent<Renderer>();
-
-                if (goRenderer != null)
-                {
-                    var instanceMaterial = new Material(segmentedObjectDepthShader);
-                    instanceMaterial.SetInt(objectInstanceID, go.GetInstanceID());
-                    cmdBuf.DrawRenderer(goRenderer, instanceMaterial);
-                }
-            }
-
-            return cmdBuf;
         }
 
         private void LateUpdate()
@@ -342,17 +340,14 @@ namespace PLUME
 
             if (_visibleResult != null)
             {
-                var gameObjects = activeContext.GetAllGameObjects();
-                
-                foreach (var go in gameObjects)
-                {
-                    ApplyHeatmapMaterial(go, activeContext);
-                }
+                ApplyHeatmapMaterials(activeContext);
             }
         }
 
-        private void RestorePreviousMaterials(IEnumerable<GameObject> gameObjects)
+        private void RestoreRecordMaterials(PlayerContext ctx)
         {
+            var gameObjects = ctx.GetAllGameObjects();
+            
             foreach (var go in gameObjects)
             {
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
@@ -373,44 +368,90 @@ namespace PLUME
             }
         }
 
-        private void ApplyHeatmapMaterial(GameObject go, PlayerContext ctx)
+        private void ApplySegmentedObjectsDepthMaterials(IEnumerable<GameObject> projectionReceivers)
         {
-            if (!go.TryGetComponent<Renderer>(out var goRenderer))
+            foreach (var go in projectionReceivers)
             {
-                return;
+                if (!go.TryGetComponent<Renderer>(out var goRenderer))
+                {
+                    continue;
+                }
+
+                var nSharedMaterials = goRenderer.sharedMaterials.Length;
+                goRenderer.sharedMaterials = Enumerable.Repeat(_segmentedObjectDepthMaterial, nSharedMaterials).ToArray();
+                var propertyBlock = GetOrCreateSegmentedObjectsDepthPropertyBlock(go);
+                goRenderer.SetPropertyBlock(propertyBlock);
             }
-
-            var nSharedMaterials = goRenderer.sharedMaterials.Length;
-            goRenderer.sharedMaterials = Enumerable.Repeat(_defaultHeatmapMaterial, nSharedMaterials).ToArray();
-            goRenderer.SetPropertyBlock(null);
-
-            if (!go.TryGetComponent<MeshFilter>(out var meshFilter) || meshFilter.sharedMesh == null || meshFilter.sharedMesh.vertexCount == 0)
-                return;
-
-            var gameObjectIdentifier = ctx.GetRecordIdentifier(go.GetInstanceID());
-            var meshRecordIdentifier = ctx.GetRecordIdentifier(meshFilter.sharedMesh.GetInstanceID());
-            
-            if (gameObjectIdentifier == null)
-                return;
-            if (meshRecordIdentifier == null)
-                return;
-            
-            var meshSamplerResultHash = HashCode.Combine(gameObjectIdentifier, meshRecordIdentifier);
-            
-            var hasMeshSamplerResult =
-                _visibleResult.SamplerResults.TryGetValue(meshSamplerResultHash, out var meshSamplerResult);
-
-            if (!hasMeshSamplerResult)
-                return;
-
-            goRenderer.sharedMaterials = Enumerable.Repeat(_sampleHeatmapMaterial, nSharedMaterials).ToArray();
-            var propertyBlock = GetOrCreateResultPropertyBlock(meshSamplerResult);
-            goRenderer.SetPropertyBlock(propertyBlock);
         }
 
-        private MaterialPropertyBlock GetOrCreateResultPropertyBlock(MeshSamplerResult meshSamplerResult)
+        private MaterialPropertyBlock GetOrCreateSegmentedObjectsDepthPropertyBlock(GameObject go)
         {
-            if (_cachedPropertyBlocks.TryGetValue(meshSamplerResult, out var propertyBlock))
+            if (_cachedSegmentedObjectsDepthPropertyBlocks.TryGetValue(go.GetInstanceID(), out var propertyBlock))
+            {
+                return propertyBlock;
+            }
+            
+            var objectInstanceID = Shader.PropertyToID("object_instance_id");
+            var newPropertyBlock = new MaterialPropertyBlock();
+            newPropertyBlock.SetInteger(objectInstanceID, go.GetInstanceID());
+            _cachedSegmentedObjectsDepthPropertyBlocks.Add(go.GetInstanceID(), newPropertyBlock);
+            return newPropertyBlock;
+        }
+        
+        private void ApplyHeatmapMaterials(PlayerContext ctx)
+        {
+            var gameObjects = ctx.GetAllGameObjects();
+
+            foreach (var go in gameObjects)
+            {
+                if (!go.TryGetComponent<Renderer>(out var goRenderer))
+                {
+                    continue;
+                }
+
+                var nSharedMaterials = goRenderer.sharedMaterials.Length;
+                goRenderer.sharedMaterials = Enumerable.Repeat(_defaultHeatmapMaterial, nSharedMaterials).ToArray();
+                goRenderer.SetPropertyBlock(null);
+
+                Mesh mesh = null;
+
+                if (go.TryGetComponent<MeshFilter>(out var meshFilter))
+                {
+                    mesh = meshFilter.sharedMesh;
+                }
+                else if (go.TryGetComponent<SkinnedMeshRenderer>(out var skinnedMeshRenderer))
+                {
+                    mesh = skinnedMeshRenderer.sharedMesh;
+                }
+
+                if (mesh == null || mesh.vertexCount == 0)
+                    continue;
+
+                var gameObjectIdentifier = ctx.GetRecordIdentifier(go.GetInstanceID());
+                var meshRecordIdentifier = ctx.GetRecordIdentifier(mesh.GetInstanceID());
+
+                if (gameObjectIdentifier == null)
+                    continue;
+                if (meshRecordIdentifier == null)
+                    continue;
+
+                var meshSamplerResultHash = HashCode.Combine(gameObjectIdentifier, meshRecordIdentifier);
+
+                var hasMeshSamplerResult =
+                    _visibleResult.SamplerResults.TryGetValue(meshSamplerResultHash, out var meshSamplerResult);
+
+                if (!hasMeshSamplerResult)
+                    continue;
+
+                goRenderer.sharedMaterials = Enumerable.Repeat(_sampleHeatmapMaterial, nSharedMaterials).ToArray();
+                var propertyBlock = GetOrCreateMeshSamplerResultPropertyBlock(meshSamplerResult);
+                goRenderer.SetPropertyBlock(propertyBlock);
+            }
+        }
+        
+        private MaterialPropertyBlock GetOrCreateMeshSamplerResultPropertyBlock(MeshSamplerResult meshSamplerResult)
+        {
+            if (_cachedMeshSamplerResultPropertyBlocks.TryGetValue(meshSamplerResult, out var propertyBlock))
             {
                 return propertyBlock;
             }
@@ -428,7 +469,7 @@ namespace PLUME
             newPropertyBlock.SetBuffer(trianglesSamplesIndexOffsetBuffer,
                 meshSamplerResult.TrianglesSamplesIndexOffsetBuffer);
             newPropertyBlock.SetBuffer(samplesValueBuffer, meshSamplerResult.SampleValuesBuffer);
-            _cachedPropertyBlocks.Add(meshSamplerResult, newPropertyBlock);
+            _cachedMeshSamplerResultPropertyBlocks.Add(meshSamplerResult, newPropertyBlock);
             return newPropertyBlock;
         }
 
@@ -438,7 +479,7 @@ namespace PLUME
 
             if (result == _visibleResult)
             {
-                _cachedPropertyBlocks.Clear();
+                _cachedMeshSamplerResultPropertyBlocks.Clear();
                 SetVisibleResult(null);
             }
         }
@@ -450,8 +491,8 @@ namespace PLUME
                 result.Dispose();
             }
 
-            _segmentedObjectDepthCamera.targetTexture.Release();
-            _segmentedObjectDepthCamera.targetTexture = null;
+            _projectionCamera.targetTexture.Release();
+            _projectionCamera.targetTexture = null;
         }
 
         public void SetVisibleResult(PositionHeatmapAnalysisResult result)
@@ -460,8 +501,7 @@ namespace PLUME
 
             if (result == null)
             {
-                var gameObjects = player.GetPlayerContext().GetAllGameObjects();
-                RestorePreviousMaterials(gameObjects);
+                RestoreRecordMaterials(player.GetPlayerContext());
             }
         }
 

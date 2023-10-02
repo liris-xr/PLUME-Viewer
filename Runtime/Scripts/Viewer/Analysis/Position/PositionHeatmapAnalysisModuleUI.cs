@@ -16,6 +16,7 @@ namespace PLUME.UI.Analysis
         public Button GenerateButton { get; private set; }
         public TextField ProjectionCasterIdTextField { get; private set; }
         public TextField ProjectionReceiversIdsTextField { get; private set; }
+        public Toggle IncludeReceiversChildrenToggle { get; private set; }
         public TimeRangeElement TimeRange { get; private set; }
 
         protected new void Awake()
@@ -25,6 +26,7 @@ namespace PLUME.UI.Analysis
             GenerateButton = Options.Q<Button>("generate-btn");
             ProjectionCasterIdTextField = Options.Q<TextField>("projection-caster");
             ProjectionReceiversIdsTextField = Options.Q<TextField>("projection-receivers");
+            IncludeReceiversChildrenToggle = Options.Q<Toggle>("include-receivers-children");
             TimeRange = Options.Q<TimeRangeElement>("time-range");
         }
 
@@ -48,13 +50,13 @@ namespace PLUME.UI.Analysis
                 var result = module.GetResults().ElementAt(resultIdx);
 
                 var resultEntry = resultEntryTemplate.Instantiate();
-                var startTimeStr = TimeSpan.FromMilliseconds(result.ProjectionStartTime / 1_000_000.0)
+                var startTimeStr = TimeSpan.FromMilliseconds(result.Parameters.StartTime / 1_000_000.0)
                     .ToString(@"hh\:mm\:ss\.fff");
-                var endTimeStr = TimeSpan.FromMilliseconds(result.ProjectionEndTime / 1_000_000.0)
+                var endTimeStr = TimeSpan.FromMilliseconds(result.Parameters.EndTime / 1_000_000.0)
                     .ToString(@"hh\:mm\:ss\.fff");
-                var projectionReceiversIds = string.Join(",", result.ProjectionReceiversIdentifiers);
+                var projectionReceiversIds = string.Join(",", result.Parameters.ReceiversIdentifiers);
 
-                resultEntry.Q("projection-caster").Q<Label>("value").text = result.ProjectionCasterIdentifier.ToString();
+                resultEntry.Q("projection-caster").Q<Label>("value").text = result.Parameters.CasterIdentifier.ToString();
                 resultEntry.Q("projection-receivers").Q<Label>("value").text = projectionReceiversIds;
                 resultEntry.Q("start-time").Q<Label>("value").text = startTimeStr;
                 resultEntry.Q("end-time").Q<Label>("value").text = endTimeStr;
