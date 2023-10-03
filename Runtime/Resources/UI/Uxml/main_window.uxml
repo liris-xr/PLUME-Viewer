@@ -7,7 +7,7 @@
     <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&amp;guid=028e63fb930a6f74997dbdd7944d219b&amp;type=3#dark_theme" />
     <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global" />
     <ui:VisualElement style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); justify-content: flex-start; flex-basis: 100%; width: 100%; height: 100%;">
-        <ui:VisualElement name="loading-panel" class="panel-container-primary" style="flex-grow: 1; display: none;">
+        <ui:VisualElement name="loading-panel" class="panel-container-primary" style="flex-grow: 1; display: flex;">
             <ui:VisualElement name="navbar" style="flex-grow: 0;">
                 <ui:VisualElement name="logo" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); height: 100%; max-height: 100%; min-height: 100%; align-items: flex-start; width: 80px; padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px;">
                     <PLUME.AspectRatioContainerElement aspect-ratio-width="418" aspect-ratio-height="119" style="width: 100%; max-width: 100%; min-width: 100%; height: 100%; max-height: 100%; min-height: 100%;">
@@ -16,10 +16,16 @@
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement name="content" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); align-items: center; justify-content: center;">
-                <ui:ProgressBar value="0" title="Loading asset bundle..." name="progress-bar" high-value="1" style="flex-grow: 0; min-width: 200px; max-width: 500px; width: 500px; flex-shrink: 1;" />
+                <PLUME.AspectRatioContainerElement aspect-ratio-width="418" aspect-ratio-height="119" style="width: 200px; max-width: 200%; height: 80px; max-height: 80px;">
+                    <ui:VisualElement name="Image" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); background-image: url(&apos;project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Images/logo-dark.png?fileID=2800000&amp;guid=8a27b2be8237e7647a8ce439f4a16f56&amp;type=3#logo-dark&apos;); max-width: 100%; max-height: 100%; left: auto; height: 100%; min-height: 100%; width: 100%; min-width: 100%; align-items: center; justify-content: center; align-self: center;" />
+                </PLUME.AspectRatioContainerElement>
+                <PLUME.AspectRatioContainerElement aspect-ratio-width="1" aspect-ratio-height="1" style="flex-grow: 1; max-width: 200px; width: 200px; height: 200px; max-height: 200px;">
+                    <ui:VisualElement style="background-image: resource(&apos;UI/Images/dummy&apos;); -unity-background-scale-mode: scale-to-fit; flex-grow: 1;" />
+                </PLUME.AspectRatioContainerElement>
+                <ui:ProgressBar value="0" title="Loading asset bundle..." name="progress-bar" high-value="1" style="flex-grow: 0; min-width: 200px; max-width: 500px; width: 500px; flex-shrink: 1; margin-top: 30px; margin-left: 0; margin-right: 0; margin-bottom: 0;" />
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="viewer" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); display: flex;">
+        <ui:VisualElement name="viewer" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); display: none;">
             <ui:VisualElement name="navbar" style="flex-grow: 0;">
                 <ui:VisualElement name="logo" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); height: 100%; max-height: 100%; min-height: 100%; align-items: flex-start; width: 80px; padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px;">
                     <PLUME.AspectRatioContainerElement aspect-ratio-width="418" aspect-ratio-height="119" style="width: 100%; max-width: 100%; min-width: 100%; height: 100%; max-height: 100%; min-height: 100%;">
