@@ -107,6 +107,9 @@ namespace PLUME
 
         public void AddMarker(TimelineMarkerElement markerElement)
         {
+            markerElement.TimeDivisionWidth = TimeDivisionWidth;
+            markerElement.TimeDivisionDuration = TimeDivisionDuration;
+            
             _markers.Add(markerElement);
             _markersContainer.Add(markerElement);
         }
@@ -119,6 +122,10 @@ namespace PLUME
 
         public void AddTrack(TimelinePhysiologicalSignalTrackElement physiologicalSignalTrack)
         {
+            physiologicalSignalTrack.Duration = Duration;
+            physiologicalSignalTrack.TimeDivisionWidth = TimeDivisionWidth;
+            physiologicalSignalTrack.TimeDivisionDuration = TimeDivisionDuration;
+            
             _tracks.Add(physiologicalSignalTrack);
             _tracksContainer.Add(physiologicalSignalTrack);
             _tracksPlaceholder.style.display = DisplayStyle.None;
