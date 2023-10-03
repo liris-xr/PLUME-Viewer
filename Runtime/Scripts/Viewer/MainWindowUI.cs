@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
+using PLUME.Sample;
 using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
 using UnityEngine;
@@ -21,9 +22,9 @@ namespace PLUME.UI
         public UIDocument document;
 
         public VisualElement LoadingPanel { get; private set; }
-        
+
         public VisualElement ViewerPanel { get; private set; }
-        
+
         public TimelineElement Timeline { get; private set; }
         public TimeFieldElement TimeIndicator { get; private set; }
         public TimeScaleElement TimeScale { get; private set; }
@@ -46,8 +47,10 @@ namespace PLUME.UI
         public CollapseBarElement RecordsCollapseBar { get; private set; }
         public CollapseBarElement TimelineCollapseBar { get; private set; }
         public CollapseBarElement AnalysisCollapseBar { get; private set; }
-        
+
         public VisualElement AnalysisContainer { get; private set; }
+        
+        public VisualElement MarkersListView { get; private set; }
 
         public TwoPaneSplitView VerticalSplitView { get; private set; }
         public TwoPaneSplitView HorizontalSplitView1 { get; private set; }
@@ -59,7 +62,7 @@ namespace PLUME.UI
 
             LoadingPanel = root.Q("loading-panel");
             ViewerPanel = root.Q("viewer");
-            
+
             Timeline = ViewerPanel.Q<TimelineElement>("timeline");
             TimeIndicator = Timeline.Q<TimeFieldElement>();
             TimeScale = Timeline.Q<TimeScaleElement>();
@@ -102,7 +105,7 @@ namespace PLUME.UI
                 if (evt.ctrlKey && evt.keyCode == KeyCode.C)
                 {
                     var selectedItems = HierarchyTree.GetSelectedItems<Transform>();
-                    
+
                     GUIUtility.systemCopyBuffer = string.Join(",",
                         selectedItems.Select(t =>
                             player.GetPlayerContext().GetRecordIdentifier(t.data.gameObject.GetInstanceID())));
@@ -115,6 +118,8 @@ namespace PLUME.UI
 
             AnalysisContainer = ViewerPanel.Q("analysis-container");
 
+            MarkersListView = ViewerPanel.Q("markers").Q<ListView>("markers-list");
+            
             VerticalSplitView = ViewerPanel.Q<TwoPaneSplitView>("vertical-pane-split-view");
             HorizontalSplitView1 = ViewerPanel.Q<TwoPaneSplitView>("horizontal-pane-split-view-1");
             HorizontalSplitView2 = ViewerPanel.Q<TwoPaneSplitView>("horizontal-pane-split-view-2");
@@ -149,10 +154,18 @@ namespace PLUME.UI
             return TimeIndicator != null && TimeIndicator.IsFocused();
         }
 
-        public void CreateMarkers()
+        public void RefreshMarkers()
         {
+            var markerEntryUxml = Resources.Load<VisualTreeAsset>("UI/Uxml/markers_list_entry");
+            
+            Timeline.ClearMarkers();
+            MarkersListView.Clear();
+            
             var markersLoader = player.GetMarkersLoader();
             var markerColors = new Dictionary<string, Color>();
+            
+            var groupedMarkerTimelineElements = new Dictionary<string, List<TimelineMarkerElement>>();
+            var groupedMarkerSamples = new Dictionary<string, List<UnpackedSample>>();
 
             foreach (var s in markersLoader.All())
             {
@@ -161,6 +174,7 @@ namespace PLUME.UI
 
                 if (!markerColors.TryGetValue(marker.Label, out var markerColor))
                 {
+                    Random.InitState(marker.Label.GetHashCode());
                     markerColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
                     markerColors.Add(marker.Label, markerColor);
                 }
@@ -169,11 +183,67 @@ namespace PLUME.UI
                 markerElement.SetColor(markerColor);
                 markerElement.SetTime(s.Header.Time);
                 Timeline.AddMarker(markerElement);
+
+                if (groupedMarkerSamples.ContainsKey(marker.Label))
+                {
+                    groupedMarkerTimelineElements[marker.Label].Add(markerElement);
+                    groupedMarkerSamples[marker.Label].Add(s);
+                }
+                else
+                {
+                    groupedMarkerTimelineElements.Add(marker.Label, new List<TimelineMarkerElement> {markerElement});
+                    groupedMarkerSamples.Add(marker.Label, new List<UnpackedSample> {s});
+                }
+            }
+            
+            foreach (var (markerLabel, markerSamples) in groupedMarkerSamples.OrderBy(pair => pair.Key))
+            {
+                var entry = markerEntryUxml.Instantiate().Q("markers-list-entry");
+
+                var prevBtn = entry.Q("marker-snap").Q<Button>("prev");
+                var nextBtn = entry.Q("marker-snap").Q<Button>("next");
+                
+                entry.Q("marker-color").style.backgroundColor = markerColors[markerLabel];
+                entry.Q<Label>("marker-label").text = markerLabel;
+                entry.Q<Toggle>("marker-toggle").value = true;
+                entry.Q<Toggle>("marker-toggle").RegisterValueChangedCallback(evt =>
+                {
+                    foreach (var timelineMarkerElement in groupedMarkerTimelineElements[markerLabel])
+                    {
+                        timelineMarkerElement.style.display = evt.newValue ? DisplayStyle.Flex : DisplayStyle.None;
+                    }
+                    
+                    prevBtn.SetEnabled(evt.newValue);
+                    nextBtn.SetEnabled(evt.newValue);
+                });
+                prevBtn.clicked += () =>
+                {
+                    // TODO: move this into the MainWindowPresenter
+                    var t = player.GetCurrentPlayTimeInNanoseconds();
+                    
+                    var snapMarker = markerSamples.OrderBy(s => s.Header.Time).LastOrDefault(s => s.Header.Time < t);
+                    if (snapMarker != null)
+                    {
+                        player.JumpToTime(snapMarker.Header.Time);
+                    }
+                };
+                nextBtn.clicked += () =>
+                {
+                    var t = player.GetCurrentPlayTimeInNanoseconds();
+                    var snapMarker = markerSamples.OrderBy(s => s.Header.Time).FirstOrDefault(s => s.Header.Time > t);
+                    if (snapMarker != null)
+                    {
+                        player.JumpToTime(snapMarker.Header.Time);
+                    }
+                };
+                MarkersListView.Q<ScrollView>().Add(entry);
             }
         }
 
-        public void CreatePhysiologicalTracks()
+        public void RefreshPhysiologicalTracks()
         {
+            Timeline.ClearTracks();
+            
             var physioSignalsLoader = player.GetPhysiologicalSignalsLoader();
 
             var tracks = new Dictionary<string, TimelinePhysiologicalSignalTrackElement[]>();
@@ -191,12 +261,14 @@ namespace PLUME.UI
 
                 if (channelFormat == "string")
                     continue;
-
+                
+                Random.InitState(streamName.GetHashCode());
                 var streamColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
                 var channelsTrack = new TimelinePhysiologicalSignalTrackElement[channelCount];
 
                 for (var channelIdx = 0; channelIdx < channelCount; channelIdx++)
                 {
+                    Random.InitState((streamName + channelIdx).GetHashCode());
                     var channelColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
                     channelsTrack[channelIdx] = new TimelinePhysiologicalSignalTrackElement();
                     channelsTrack[channelIdx].SetName(streamName);
@@ -331,29 +403,6 @@ namespace PLUME.UI
             RecordsCollapseBar.Inflate();
             TimelineCollapseBar.Inflate();
             AnalysisCollapseBar.Inflate();
-        }
-
-        public void RefreshAssetLoadingPanel()
-        {
-            var isLoading = !player.GetPlayerAssets().IsLoaded() || !player.MarkersLoaded() ||
-                                       !player.PhysiologicalSignalsLoaded();
-            
-            ViewerPanel.style.display = isLoading ? DisplayStyle.None : DisplayStyle.Flex;
-            LoadingPanel.style.display = isLoading ? DisplayStyle.Flex : DisplayStyle.None;
-
-            if (!player.GetPlayerAssets().IsLoaded())
-            {
-                LoadingPanel.Q<ProgressBar>("progress-bar").value = player.GetPlayerAssets().GetLoadingProgress();
-                LoadingPanel.Q<ProgressBar>("progress-bar").title = "Loading asset bundle...";
-            } else if (!player.MarkersLoaded())
-            {
-                LoadingPanel.Q<ProgressBar>("progress-bar").value = 0;
-                LoadingPanel.Q<ProgressBar>("progress-bar").title = "Loading markers...";
-            }else if (!player.PhysiologicalSignalsLoaded())
-            {
-                LoadingPanel.Q<ProgressBar>("progress-bar").value = 0;
-                LoadingPanel.Q<ProgressBar>("progress-bar").title = "Loading physiological markers...";
-            }
         }
     }
 }

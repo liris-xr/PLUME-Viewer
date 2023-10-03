@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Globalization;
-using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
 using UnityEngine;
@@ -15,6 +13,8 @@ namespace PLUME
         public TypeRegistryProvider typeRegistryProvider;
 
         public string recordPath;
+        public string assetBundlePath;
+
         public bool loop;
 
         private float _playSpeed = 1;
@@ -23,8 +23,8 @@ namespace PLUME
         public PlayerModule[] PlayerModules { get; private set; }
 
         private BufferedAsyncRecordLoader _recordLoader;
-        private FilteredRecordLoader _markersLoader;
-        private FilteredRecordLoader _physioSignalsLoader;
+        private BufferedAsyncRecordLoader _markersLoader;
+        private BufferedAsyncRecordLoader _physioSignalsLoader;
 
         private PlayerContext _playerContext;
         private bool _isPlaying;
@@ -38,9 +38,6 @@ namespace PLUME
         public Camera topViewCamera;
         public Camera sceneMainCamera;
 
-        private Task _markersLoadingTask;
-        private Task _physioSignalsLoadingTask;
-        
         [RuntimeInitializeOnLoadMethod]
         public static void OnInitialize()
         {
@@ -48,50 +45,34 @@ namespace PLUME
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
         }
-        
+
         private void Awake()
         {
             PlayerModules = FindObjectsOfType<PlayerModule>();
-            _assets = new PlayerAssets(Path.Combine(Application.streamingAssetsPath, "plume_asset_bundle_windows"));
-            
-            _markersLoader = new FilteredRecordLoader(new RecordReader(recordPath),
-                sample => sample.Payload.Is(Marker.Descriptor), typeRegistryProvider.GetTypeRegistry());
-            _markersLoadingTask = Task.Run(() => _markersLoader.Load());
-            
-            _physioSignalsLoader = new FilteredRecordLoader(new RecordReader(recordPath),
+            _assets = new PlayerAssets(assetBundlePath);
+
+            _markersLoader = new BufferedAsyncRecordLoader(new RecordReader(recordPath),
+                typeRegistryProvider.GetTypeRegistry(),
+                sample => sample.Payload.Is(Marker.Descriptor));
+
+            _physioSignalsLoader = new BufferedAsyncRecordLoader(new RecordReader(recordPath),
+                typeRegistryProvider.GetTypeRegistry(),
                 sample => sample.Payload.Is(StreamOpen.Descriptor)
                           || sample.Payload.Is(StreamClose.Descriptor)
-                          || sample.Payload.Is(StreamSample.Descriptor),
-                typeRegistryProvider.GetTypeRegistry());
-            _physioSignalsLoadingTask = Task.Run(() => _physioSignalsLoader.Load());
-            
-            _recordLoader = new BufferedAsyncRecordLoader(new RecordReader(recordPath), typeRegistryProvider.GetTypeRegistry());
-            _recordLoader.StartLoading();
+                          || sample.Payload.Is(StreamSample.Descriptor)
+            );
 
+            _recordLoader =
+                new BufferedAsyncRecordLoader(new RecordReader(recordPath), typeRegistryProvider.GetTypeRegistry());
+            
+            _markersLoader.StartLoading();
+            _physioSignalsLoader.StartLoading();
+            _recordLoader.StartLoading();
+            
             _playerContext = PlayerContext.NewContext("MainPlayerContext", _assets);
 
             transform.parent = null;
             DontDestroyOnLoad(this);
-        }
-
-        public bool MarkersLoaded()
-        {
-            return _markersLoadingTask.IsCompleted;
-        }
-        
-        public bool PhysiologicalSignalsLoaded()
-        {
-            return _physioSignalsLoadingTask.IsCompleted;
-        }
-        
-        public FilteredRecordLoader GetPhysiologicalSignalsLoader()
-        {
-            return _physioSignalsLoader;
-        }
-        
-        public FilteredRecordLoader GetMarkersLoader()
-        {
-            return _markersLoader;
         }
 
         public PlayerAssets GetPlayerAssets()
@@ -103,7 +84,7 @@ namespace PLUME
         {
             if (_isPlaying)
             {
-                PlayForward((ulong) (Time.fixedDeltaTime * _playSpeed * 1_000_000_000));
+                PlayForward((ulong)(Time.fixedDeltaTime * _playSpeed * 1_000_000_000));
             }
         }
 
@@ -119,7 +100,7 @@ namespace PLUME
             _isPlaying = true;
 
             foreach (var playerModule in PlayerModules) playerModule.Reset();
-            
+
             return true;
         }
 
@@ -167,14 +148,14 @@ namespace PLUME
         private void PlayForward(ulong durationNanoseconds)
         {
             var endTime = _currentTimeNanoseconds + durationNanoseconds;
-            
+
             _isLoading = true;
             var samples = _recordLoader.SamplesInTimeRangeAsync(_currentTimeNanoseconds, endTime).Result;
             _isLoading = false;
 
             _playerContext.PlaySamples(PlayerModules, samples);
 
-            _currentTimeNanoseconds = Math.Clamp(endTime + 1, 0, _recordLoader.Duration + 1);
+            _currentTimeNanoseconds = Math.Clamp(endTime, 0, _recordLoader.Duration + 1);
 
             if (endTime > _recordLoader.Duration)
             {
@@ -205,12 +186,12 @@ namespace PLUME
         {
             return _playSpeed;
         }
-         
+
         public bool IsPlaying()
         {
             return _isPlaying;
         }
-        
+
         public bool IsLoading()
         {
             return _isLoading;
@@ -220,12 +201,22 @@ namespace PLUME
         {
             return _recordLoader.Duration;
         }
-        
+
         public BufferedAsyncRecordLoader GetRecordLoader()
         {
             return _recordLoader;
         }
 
+        public BufferedAsyncRecordLoader GetMarkersLoader()
+        {
+            return _markersLoader;
+        }
+        
+        public BufferedAsyncRecordLoader GetPhysiologicalSignalsLoader()
+        {
+            return _physioSignalsLoader;
+        }
+        
         public ulong GetCurrentPlayTimeInNanoseconds()
         {
             return _currentTimeNanoseconds;
@@ -235,6 +226,5 @@ namespace PLUME
         {
             return _playerContext;
         }
-
     }
 }

@@ -14,6 +14,9 @@ namespace PLUME.UI.Analysis
         public Action<PositionHeatmapAnalysisResult, bool> toggledResultVisibility;
 
         public Button GenerateButton { get; private set; }
+        public ProgressBar GenerationProgressBar { get; private set; }
+        public VisualElement GeneratingPanel { get; private set; }
+        public Button CancelButton { get; private set; }
         public TextField ProjectionCasterIdTextField { get; private set; }
         public TextField ProjectionReceiversIdsTextField { get; private set; }
         public Toggle IncludeReceiversChildrenToggle { get; private set; }
@@ -24,6 +27,9 @@ namespace PLUME.UI.Analysis
             base.Awake();
 
             GenerateButton = Options.Q<Button>("generate-btn");
+            GeneratingPanel = Options.Q("generating");
+            CancelButton = GeneratingPanel.Q<Button>("cancel-btn");
+            GenerationProgressBar = GeneratingPanel.Q<ProgressBar>("progress-bar");
             ProjectionCasterIdTextField = Options.Q<TextField>("projection-caster");
             ProjectionReceiversIdsTextField = Options.Q<TextField>("projection-receivers");
             IncludeReceiversChildrenToggle = Options.Q<Toggle>("include-receivers-children");

@@ -52,7 +52,9 @@ namespace PLUME
 
         public MeshSampler meshSampler;
 
+        public PlayerContext _generationContext;
         public bool IsGenerating { get; private set; }
+        public float GenerationProgress { get; private set; }
 
         private Camera _projectionCamera;
 
@@ -102,6 +104,12 @@ namespace PLUME
                     $"{nameof(parameters.StartTime)} should be less or equal to {nameof(parameters.EndTime)}.");
             }
 
+            if (player.IsPlaying())
+            {
+                player.PausePlaying();
+            }
+            
+            GenerationProgress = 0;
             IsGenerating = true;
 
             var samplesMinValueBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
@@ -111,7 +119,7 @@ namespace PLUME
 
             var projectionKernel = projectionShader.FindKernel("project_std_normal_distribution");
 
-            var ctx = PlayerContext.NewContext("GenerateHeatmapContext_" + Guid.NewGuid(), assets);
+            _generationContext = PlayerContext.NewContext("GenerateHeatmapContext_" + Guid.NewGuid(), assets);
 
             // key: mesh record id, value: sampled mesh containing values
             var meshSamplerResults = new Dictionary<int, MeshSamplerResult>();
@@ -131,7 +139,7 @@ namespace PLUME
 
             if (parameters.StartTime > 0)
             {
-                yield return PlaySamplesInTimeRange(loader, ctx, 0, parameters.StartTime - 1u);
+                yield return PlaySamplesInTimeRange(loader, _generationContext, 0, parameters.StartTime - 1u);
             }
 
             var currentTime = parameters.StartTime;
@@ -140,14 +148,14 @@ namespace PLUME
             {
                 var startTime = currentTime;
                 var endTime = currentTime + projectionSamplingInterval;
-                yield return PlaySamplesInTimeRange(loader, ctx, startTime, endTime);
+                yield return PlaySamplesInTimeRange(loader, _generationContext, startTime, endTime);
                 
-                var replayProjectionCasterId = ctx.GetReplayInstanceId(parameters.CasterIdentifier);
+                var replayProjectionCasterId = _generationContext.GetReplayInstanceId(parameters.CasterIdentifier);
                 var replayProjectionReceiversIds = new List<int>();
 
                 foreach (var receiversIdentifier in parameters.ReceiversIdentifiers)
                 {
-                    var replayId = ctx.GetReplayInstanceId(receiversIdentifier);
+                    var replayId = _generationContext.GetReplayInstanceId(receiversIdentifier);
                     if (!replayId.HasValue) continue;
                     
                     if(!replayProjectionReceiversIds.Contains(replayId.Value))
@@ -155,7 +163,7 @@ namespace PLUME
 
                     if (!parameters.IncludeReceiversChildren) continue;
                     
-                    var go = ctx.FindGameObjectByInstanceId(replayId.Value);
+                    var go = _generationContext.FindGameObjectByInstanceId(replayId.Value);
 
                     foreach (var goInstanceId in go.GetComponentsInChildren<Renderer>().Select(r => r.gameObject.GetInstanceID()))
                     {
@@ -168,19 +176,19 @@ namespace PLUME
                 {
                     if (currentTime >= parameters.StartTime && currentTime <= parameters.EndTime)
                     {
-                        var projectionCaster = ctx.FindGameObjectByInstanceId(replayProjectionCasterId.Value);
+                        var projectionCaster = _generationContext.FindGameObjectByInstanceId(replayProjectionCasterId.Value);
 
                         if (projectionCaster != null)
                         {
                             var projectionReceiversGameObjects = replayProjectionReceiversIds
-                                .Select(replayId => ctx.FindGameObjectByInstanceId(replayId))
+                                .Select(replayId => _generationContext.FindGameObjectByInstanceId(replayId))
                                 .Where(t => t != null)
                                 .Select(t => t.gameObject)
                                 .ToArray();
 
                             if (projectionReceiversGameObjects.Length > 0)
                             {
-                                ProjectCurrentPosition(ctx, projectionCaster,
+                                ProjectCurrentPosition(_generationContext, projectionCaster,
                                     projectionReceiversGameObjects,
                                     meshSamplerResults, projectionKernel);
                             }
@@ -189,12 +197,16 @@ namespace PLUME
                 }
 
                 currentTime = endTime + 1;
+                GenerationProgress = (currentTime - parameters.StartTime) / (float)(parameters.EndTime - parameters.StartTime);
             }
-
+            
+            GenerationProgress = 1;
+            
             QualitySettings.vSyncCount = prevVSyncCount;
             Application.targetFrameRate = prevTargetFrameRate;
 
-            PlayerContext.Destroy(ctx);
+            PlayerContext.Destroy(_generationContext);
+            _generationContext = null;
 
             PlayerContext.Activate(player.GetPlayerContext());
             IsGenerating = false;
@@ -234,7 +246,6 @@ namespace PLUME
 
             projectionShader.SetMatrix("view_mtx", _projectionCamera.worldToCameraMatrix);
 
-            // TODO: Handle children of projection receivers as well
             foreach (var go in projectionReceiversGameObjects)
             {
                 var hasRenderer = go.TryGetComponent<Renderer>(out var r);
@@ -287,6 +298,18 @@ namespace PLUME
             }
         }
 
+        public void CancelGenerate()
+        {
+            if (_generationContext != null)
+            {
+                PlayerContext.Destroy(_generationContext);
+                _generationContext = null;
+            }
+
+            PlayerContext.Activate(player.GetPlayerContext());
+            IsGenerating = false;
+        }
+        
         private MeshSamplerResult GetOrCreateMeshSamplerResult(PlayerContext ctx, GameObject go, Mesh mesh, IDictionary<int, MeshSamplerResult> meshSamplerResults)
         {
             var gameObjectIdentifier = ctx.GetRecordIdentifier(go.GetInstanceID());
@@ -361,7 +384,7 @@ namespace PLUME
                 {
                     foreach (var playerModule in player.PlayerModules)
                     {
-                        playerModule.PlaySample(player.GetPlayerContext(), sample);
+                        playerModule.PlaySample(ctx, sample);
                     }
                 }
             }

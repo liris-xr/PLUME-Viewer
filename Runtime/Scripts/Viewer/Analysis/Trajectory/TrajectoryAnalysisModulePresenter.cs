@@ -10,8 +10,8 @@ namespace PLUME.UI.Analysis
         public void Start()
         {
             ui.GenerateButton.clicked += OnClickGenerate;
-            ui.ObjectIdTextField.value = "30558";
-            ui.MarkersTextField.value = "";
+            ui.ObjectIdTextField.value = "882be9d0-c9cc-4b78-b6b3-1d5419f4cd83";
+            ui.MarkersTextField.value = "Egg Pick Up";
             ui.TeleportationToleranceTextField.value = "0.1";
             ui.TeleportationSegments.value = false;
             ui.DecimationToleranceTextField.value = "0.01";
@@ -36,10 +36,12 @@ namespace PLUME.UI.Analysis
             var startTime = ui.TimeRange.StartTime;
             var endTime = ui.TimeRange.EndTime;
             
+            ui.GenerateButton.text = "Generating...";
             ui.GenerateButton.SetEnabled(false);
 
             var onFinishCallback = new Action<TrajectoryAnalysisModuleResult>(result =>
             {
+                ui.GenerateButton.text = "Generate";
                 ui.GenerateButton.SetEnabled(true);
                 module.AddResult(result);
                 module.SetResultVisibility(result, true);

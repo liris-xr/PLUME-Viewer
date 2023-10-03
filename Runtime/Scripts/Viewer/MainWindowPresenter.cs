@@ -5,6 +5,7 @@ using UnityEngine.UIElements;
 
 namespace PLUME.UI
 {
+    // TODO: refactor by splitting into multiple classes
     [RequireComponent(typeof(MainWindowUI))]
     public class MainWindowPresenter : MonoBehaviour
     {
@@ -12,6 +13,8 @@ namespace PLUME.UI
         public FreeCamera freeCamera;
 
         private MainWindowUI _mainWindowUI;
+
+        private bool _loading = true;
 
         private void Awake()
         {
@@ -39,22 +42,7 @@ namespace PLUME.UI
             _mainWindowUI.IncreaseSpeedButton.clicked += OnClickIncreaseSpeed;
             _mainWindowUI.ToggleMaximizePreviewButton.toggled += OnClickToggleMaximizePreview;
 
-            _mainWindowUI.CreateMarkers();
-            _mainWindowUI.CreatePhysiologicalTracks();
-
-            _mainWindowUI.RefreshAssetLoadingPanel();
-            _mainWindowUI.RefreshTimelineScale();
-            _mainWindowUI.RefreshTimelineTimeIndicator();
-            _mainWindowUI.RefreshTimelineCursor();
-            _mainWindowUI.RefreshPlayPauseButton();
-            _mainWindowUI.RefreshSpeed();
-
             _mainWindowUI.Timeline.focusable = true;
-            _mainWindowUI.Timeline.Focus();
-            
-            // By default, show 30s of the record in the timeline
-            _mainWindowUI.Timeline.ShowTimePeriod(0, 30_000_000_000);
-
             player.GetPlayerContext().updatedHierarchy += OnHierarchyUpdateEvent;
         }
 
@@ -139,6 +127,7 @@ namespace PLUME.UI
                 }
                 case HierarchyUpdateResetEvent:
                 {
+                    _mainWindowUI.HierarchyTree.ClearSelection();
                     _mainWindowUI.HierarchyTree.SetRootItems(new List<TreeViewItemData<Transform>>());
                     _mainWindowUI.HierarchyTree.Rebuild();
                     break;
@@ -235,9 +224,58 @@ namespace PLUME.UI
             _mainWindowUI.RefreshPlayPauseButton();
         }
 
+        private void ShowViewerPanel()
+        {
+            _mainWindowUI.ViewerPanel.style.display = DisplayStyle.Flex;
+            _mainWindowUI.LoadingPanel.style.display = DisplayStyle.None;
+            
+            _mainWindowUI.RefreshTimelineScale();
+            _mainWindowUI.RefreshTimelineTimeIndicator();
+            _mainWindowUI.RefreshTimelineCursor();
+            _mainWindowUI.RefreshPlayPauseButton();
+            _mainWindowUI.RefreshSpeed();
+            
+            _mainWindowUI.RefreshMarkers();
+            _mainWindowUI.RefreshPhysiologicalTracks();
+            
+            // By default, show 30s of the record in the timeline
+            _mainWindowUI.Timeline.ShowTimePeriod(0, 30_000_000_000);
+            _mainWindowUI.Timeline.Focus();
+            
+            _mainWindowUI.HierarchyTree.ClearSelection();
+        }
+        
         public void Update()
         {
-            _mainWindowUI.RefreshAssetLoadingPanel();
+            if (_loading)
+            {
+                var isLoading = !player.GetPlayerAssets().IsLoaded() || !player.GetMarkersLoader().FinishedLoading || !player.GetPhysiologicalSignalsLoader().FinishedLoading;
+
+                if (isLoading)
+                {
+                    _mainWindowUI.ViewerPanel.style.display = DisplayStyle.None;
+                    _mainWindowUI.LoadingPanel.style.display = DisplayStyle.Flex;
+                    
+                    if (!player.GetPlayerAssets().IsLoaded())
+                    {
+                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").value = player.GetPlayerAssets().GetLoadingProgress();
+                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").title = "Loading asset bundle...";
+                    }
+                    else if (!player.GetMarkersLoader().FinishedLoading)
+                    {
+                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").value = 0;
+                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").title = "Loading markers...";
+                    }
+                    else if (!player.GetPhysiologicalSignalsLoader().FinishedLoading)
+                    {
+                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").value = 0;
+                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").title = "Loading physiological signals...";
+                    }
+                } else {
+                    ShowViewerPanel();
+                    _loading = false;
+                }
+            }
             
             if (!_mainWindowUI.IsTimeIndicatorFocused())
             {

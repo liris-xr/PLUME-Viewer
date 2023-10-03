@@ -110,15 +110,27 @@ namespace PLUME
             _markers.Add(markerElement);
             _markersContainer.Add(markerElement);
         }
+        
+        public void ClearMarkers()
+        {
+            _markers.Clear();
+            _markersContainer.Clear();
+        }
 
         public void AddTrack(TimelinePhysiologicalSignalTrackElement physiologicalSignalTrack)
         {
             _tracks.Add(physiologicalSignalTrack);
-
-            _tracksPlaceholder.style.display = DisplayStyle.None;
-
             _tracksContainer.Add(physiologicalSignalTrack);
+            _tracksPlaceholder.style.display = DisplayStyle.None;
             _tracksContainer.style.display = DisplayStyle.Flex;
+        }
+        
+        public void ClearTracks()
+        {
+            _tracks.Clear();
+            _tracksContainer.Clear();
+            _tracksPlaceholder.style.display = DisplayStyle.Flex;
+            _tracksContainer.style.display = DisplayStyle.None;
         }
 
         public void KeepTimeCursorInView()

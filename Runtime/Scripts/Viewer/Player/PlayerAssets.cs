@@ -61,7 +61,7 @@ namespace PLUME
             if (!_assetBundleCreateRequest.isDone)
                 throw new Exception("Asset bundle is not fully loaded yet.");
             
-            var assets = _assetBundleCreateRequest.assetBundle.LoadAssetWithSubAssets(assetPath, type);
+            var assets = GetAssetBundle().LoadAssetWithSubAssets(assetPath, type);
             return assets.FirstOrDefault(asset => asset.name == assetName);
         }
 

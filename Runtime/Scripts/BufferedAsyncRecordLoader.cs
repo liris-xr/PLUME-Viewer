@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using Google.Protobuf.WellKnownTypes;
 using PLUME.Sample;
@@ -19,21 +20,18 @@ namespace PLUME
 
         private readonly OrderedSamplesList _samplesBuffer;
         private readonly Thread _loadingThread;
-        private bool _finishedLoading;
-
+        public bool FinishedLoading { get; private set; }
         public ulong SamplesCount { get; private set; }
         public ulong Duration { get; private set; }
 
         private bool _closed;
+        
+        private readonly Func<PackedSample, bool> _filter;
 
-        public BufferedAsyncRecordLoader(RecordReader reader, MessageDescriptor[] descriptors, bool autoStart = true) :
-            this(reader, TypeRegistry.FromMessages(descriptors), autoStart)
-        {
-        }
-
-        public BufferedAsyncRecordLoader(RecordReader reader, TypeRegistry typeRegistry, bool autoStart = true)
+        public BufferedAsyncRecordLoader(RecordReader reader, TypeRegistry typeRegistry, Func<PackedSample, bool> filter = null, bool autoStart = true)
         {
             _reader = reader;
+            _filter = filter;
             _signals = new List<SemaphoreSlim>();
             _samplesBuffer = new OrderedSamplesList();
             _typeRegistry = typeRegistry;
@@ -59,7 +57,6 @@ namespace PLUME
 
             var versionStr =
                 $"{recordHeader.RecorderVersion.Name} v{recordHeader.RecorderVersion.Major}.{recordHeader.RecorderVersion.Minor}.{recordHeader.RecorderVersion.Patch}";
-            Debug.Log($"Loading record {recordHeader.Identifier}. Recorded with version {versionStr}. Duration: {recordMetadata.Duration/1000000000.0:0.000}s");
 
             if (recordMetadata == null)
             {
@@ -77,7 +74,7 @@ namespace PLUME
 
             PackedSample sample;
 
-            while (!_finishedLoading)
+            while (!FinishedLoading)
             {
                 try
                 {
@@ -85,9 +82,11 @@ namespace PLUME
                 }
                 catch (Exception)
                 {
-                    _finishedLoading = true;
+                    FinishedLoading = true;
                     break;
                 }
+                
+                if (_filter != null && !_filter.Invoke(sample)) continue;
                 
                 // Skip samples without timestamp
                 if (sample.Header == null)
@@ -152,7 +151,7 @@ namespace PLUME
                         return _samplesBuffer[index] as UnpackedSample;
                     }
 
-                    if (_finishedLoading)
+                    if (FinishedLoading)
                     {
                         lock (_signals)
                         {
@@ -181,9 +180,8 @@ namespace PLUME
                 lock (_samplesBuffer)
                 {
                     var lastLoadedSample = _samplesBuffer.LastOrDefault();
-                    var finishedLoading = _finishedLoading;
 
-                    if ((lastLoadedSample != null && lastLoadedSample.Header.Time >= time) || finishedLoading)
+                    if ((lastLoadedSample != null && lastLoadedSample.Header.Time >= time) || FinishedLoading)
                     {
                         lock (_signals)
                         {
@@ -221,6 +219,22 @@ namespace PLUME
                 samples.Add(sample);
                 idx++;
             } while (true);
+        }
+        
+        public UnpackedSample[] All()
+        {
+            lock (_samplesBuffer)
+            {
+                return _samplesBuffer.ToArray();
+            }
+        }
+        
+        public UnpackedSample[] AllOfType<T>() where T : IMessage
+        {
+            lock (_samplesBuffer)
+            {
+                return _samplesBuffer.Where(sample => sample.Payload is T).ToArray();
+            }
         }
 
         public void Close()
