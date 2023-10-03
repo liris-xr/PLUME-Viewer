@@ -1,6 +1,6 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
-using System.Reflection;
 using PLUME.Sample.Unity;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -9,10 +9,13 @@ namespace PLUME
 {
     public class PlayerAssets
     {
+        private AssetBundle _assetBundle;
+        private readonly string _assetBundlePath;
         private readonly AssetBundleCreateRequest _assetBundleCreateRequest;
 
         public PlayerAssets(string assetBundlePath)
         {
+            _assetBundlePath = assetBundlePath;
             _assetBundleCreateRequest = AssetBundle.LoadFromFileAsync(assetBundlePath);
         }
 
@@ -79,6 +82,20 @@ namespace PLUME
                 "Quad" => Resources.GetBuiltinResource<Mesh>("Quad.fbx"),
                 _ => null
             };
+        }
+
+        public AssetBundle GetAssetBundle()
+        {
+            if (_assetBundle != null) return _assetBundle;
+            
+            if (!_assetBundleCreateRequest.isDone)
+            {
+                return null;
+            }
+
+            var assetBundleName = Path.GetFileName(_assetBundlePath);
+            _assetBundle = AssetBundle.GetAllLoadedAssetBundles().FirstOrDefault(bundle => bundle.name == assetBundleName);
+            return _assetBundle;
         }
     }
 }

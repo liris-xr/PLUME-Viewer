@@ -219,7 +219,7 @@ namespace PLUME
             {
                 if (!go.TryGetComponent<Renderer>(out var goRenderer)) continue;
                 wasRendererEnabled.Add(goRenderer, goRenderer.enabled);
-                goRenderer.enabled = projectionReceiversGameObjects.Contains(go);
+                goRenderer.enabled = goRenderer.enabled && projectionReceiversGameObjects.Contains(go);
             }
             
             _projectionCamera.Render();
