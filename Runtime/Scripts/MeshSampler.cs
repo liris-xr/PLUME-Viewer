@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.UIElements;
 
 namespace PLUME
 {
@@ -63,11 +64,15 @@ namespace PLUME
         /// local space (based on vertices positions and calculated triangles' area).
         /// </param>
         /// 
+        /// <param name="worldScale"> Lossy world scale of the object. This is used to take into account any stretching
+        /// of meshes that would result in more samples to be generated.
+        /// </param>
+        /// 
         /// <returns>
         /// Return the generated <see cref="MeshSamplerResult"/>. The responsability for releasing the generating buffer
         /// is left to the calling method.
         /// </returns>
-        public MeshSamplerResult Sample(Mesh mesh, float samplesPerSquareMeter)
+        public MeshSamplerResult Sample(Mesh mesh, float samplesPerSquareMeter, Vector3 worldScale)
         {
             using var totalSamplesCountBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
             using var trianglesMaxResolutionBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
@@ -94,7 +99,9 @@ namespace PLUME
             var trianglesSamplesIndexOffsetBuffer =
                 new ComputeBuffer((int) nTriangles, Marshal.SizeOf(typeof(uint)));
 
-            ComputeTrianglesResolution(meshSamplingShader, samplesPerSquareMeter,
+            ComputeTrianglesResolution(meshSamplingShader,
+                worldScale,
+                samplesPerSquareMeter,
                 nTriangles,
                 totalSamplesCountBuffer,
                 trianglesResolutionBuffer,
@@ -150,7 +157,9 @@ namespace PLUME
         }
 
         private static void ComputeTrianglesResolution(
-            ComputeShader shader, float samplesPerSqMeter,
+            ComputeShader shader,
+            Vector3 worldScale,
+            float samplesPerSqMeter,
             uint nTriangles,
             ComputeBuffer totalSamplesCountBuffer,
             ComputeBuffer trianglesResolutionBuffer,
@@ -162,6 +171,7 @@ namespace PLUME
             int vertexBufferPositionOffset)
         {
             var computeTrianglesResolutionsKernel = shader.FindKernel("compute_triangles_resolution");
+            shader.SetVector("scale", worldScale);
             shader.SetInt("n_triangles", (int) nTriangles);
             shader.SetFloat("samples_density", samplesPerSqMeter);
             shader.SetBuffer(computeTrianglesResolutionsKernel, "index_buffer", indexBuffer);

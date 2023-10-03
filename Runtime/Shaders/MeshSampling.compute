@@ -4,6 +4,7 @@
 
 uint n_triangles;
 uint n_samples;
+float3 scale;
 RWStructuredBuffer<uint> total_samples_count_buffer;
 RWStructuredBuffer<uint> triangles_resolution_buffer;
 RWStructuredBuffer<uint> triangles_max_resolution_buffer;
@@ -33,9 +34,9 @@ void compute_triangles_resolution(const uint id : SV_DispatchThreadID)
         return;
         
     const uint3 triangle_indices = load_triangle_indices(triangle_index);
-    const float3 pos0 = load_vertex_position(triangle_indices[0]);
-    const float3 pos1 = load_vertex_position(triangle_indices[1]);
-    const float3 pos2 = load_vertex_position(triangle_indices[2]);
+    const float3 pos0 = load_vertex_position(triangle_indices[0]) * scale;
+    const float3 pos1 = load_vertex_position(triangle_indices[1]) * scale;
+    const float3 pos2 = load_vertex_position(triangle_indices[2]) * scale;
 
     const float triangle_area = length(cross(pos1 - pos0, pos2 - pos0)) / 2.0;
 

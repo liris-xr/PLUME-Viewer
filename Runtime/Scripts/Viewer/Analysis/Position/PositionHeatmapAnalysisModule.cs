@@ -251,18 +251,8 @@ namespace PLUME
 
                     if (mesh == null || mesh.vertexBufferCount == 0)
                         continue;
-
-                    var gameObjectIdentifier = ctx.GetRecordIdentifier(go.GetInstanceID());
-                    var meshRecordIdentifier = ctx.GetRecordIdentifier(mesh.GetInstanceID());
                     
-                    if (gameObjectIdentifier == null)
-                        continue;
-                    if (meshRecordIdentifier == null)
-                        continue;
-                    
-                    // Two GameObjects might have the same sharedMesh. We add the gameObjectIdentifier as a discriminator.
-                    var meshSamplerResultHash = HashCode.Combine(gameObjectIdentifier, meshRecordIdentifier);
-                    var meshSamplerResult = GetOrCreateMeshSamplerResult(meshSamplerResultHash, mesh, meshSamplerResults);
+                    var meshSamplerResult = GetOrCreateMeshSamplerResult(ctx, go, mesh, meshSamplerResults);
 
                     if (meshSamplerResult == null)
                         continue;
@@ -297,15 +287,24 @@ namespace PLUME
             }
         }
 
-        private MeshSamplerResult GetOrCreateMeshSamplerResult(int meshSamplerResultHash, Mesh mesh, IDictionary<int, MeshSamplerResult> meshSamplerResults)
+        private MeshSamplerResult GetOrCreateMeshSamplerResult(PlayerContext ctx, GameObject go, Mesh mesh, IDictionary<int, MeshSamplerResult> meshSamplerResults)
         {
+            var gameObjectIdentifier = ctx.GetRecordIdentifier(go.GetInstanceID());
+            var meshIdentifier = ctx.GetRecordIdentifier(mesh.GetInstanceID());
+                    
+            if (gameObjectIdentifier == null || meshIdentifier == null)
+                return null;
+            
+            // Two GameObjects might have the same sharedMesh. We add the gameObjectIdentifier as a discriminator.
+            var meshSamplerResultHash = HashCode.Combine(gameObjectIdentifier, meshIdentifier);
+            
             if (mesh == null || mesh.vertexBufferCount == 0)
                 return null;
 
             if (meshSamplerResults.TryGetValue(meshSamplerResultHash, out var result))
                 return result;
-
-            var meshSamplerResult = meshSampler.Sample(mesh, samplesPerSquareMeter);
+            
+            var meshSamplerResult = meshSampler.Sample(mesh, samplesPerSquareMeter, go.transform.lossyScale);
             meshSamplerResults.Add(meshSamplerResultHash, meshSamplerResult);
             return meshSamplerResult;
         }
