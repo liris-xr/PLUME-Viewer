@@ -3,12 +3,14 @@ using System.Globalization;
 using System.Threading;
 using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
+using PLUME.Viewer;
 using UnityEngine;
+using Color = UnityEngine.Color;
 
 namespace PLUME
 {
     [DisallowMultipleComponent]
-    public class Player : MonoBehaviour
+    public class Player : SingletonMonoBehaviour<Player>
     {
         public TypeRegistryProvider typeRegistryProvider;
 
@@ -32,11 +34,13 @@ namespace PLUME
 
         private bool _isLoading;
 
-        public Camera currentCamera;
+        public RenderTexture PreviewRenderTexture { get; private set; }
+        
+        private FreeCamera _freeCamera;
+        private TopViewCamera _topViewCamera;
+        private SceneMainCamera _sceneMainCamera;
 
-        public Camera freeCamera;
-        public Camera topViewCamera;
-        public Camera sceneMainCamera;
+        private PreviewCamera _currentCamera;
 
         [RuntimeInitializeOnLoadMethod]
         public static void OnInitialize()
@@ -46,8 +50,30 @@ namespace PLUME
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
         }
 
-        private void Awake()
+        private new void Awake()
         {
+            base.Awake();
+            
+            PreviewRenderTexture = RenderTexture.GetTemporary(1920, 1080);
+            
+            var t = transform;
+            var freeCameraGo = new GameObject("FreeCamera") { transform = { parent = t } };
+            var topViewCameraGo = new GameObject("TopViewCamera") { transform = { parent = t } };
+            var sceneMainCameraGo = new GameObject("SceneMainCamera") { transform = { parent = t } };
+            _freeCamera = freeCameraGo.AddComponent<FreeCamera>();
+            _topViewCamera = topViewCameraGo.AddComponent<TopViewCamera>();
+            _sceneMainCamera = sceneMainCameraGo.AddComponent<SceneMainCamera>();
+            
+            _freeCamera.SetPreviewRenderTexture(PreviewRenderTexture);
+            _topViewCamera.SetPreviewRenderTexture(PreviewRenderTexture);
+            _sceneMainCamera.SetPreviewRenderTexture(PreviewRenderTexture);
+            SetCurrentPreviewCamera(_freeCamera);
+            
+            _freeCamera.transform.localPosition = new UnityEngine.Vector3(-2.24f, 1.84f, 0.58f);
+            _freeCamera.transform.localRotation = UnityEngine.Quaternion.Euler(25f, -140f, 0f);
+            _topViewCamera.transform.position = new UnityEngine.Vector3(0, 3.25f, -4);
+            _topViewCamera.GetCamera().orthographicSize = 7;
+            
             PlayerModules = FindObjectsOfType<PlayerModule>();
             _assets = new PlayerAssets(assetBundlePath);
 
@@ -70,11 +96,27 @@ namespace PLUME
             _recordLoader.StartLoading();
             
             _playerContext = PlayerContext.NewContext("MainPlayerContext", _assets);
-
-            transform.parent = null;
-            DontDestroyOnLoad(this);
         }
 
+        public void SetCurrentPreviewCamera(PreviewCamera camera)
+        {
+            var rt = RenderTexture.active;
+            RenderTexture.active = PreviewRenderTexture;
+            GL.Clear(true, true, Color.clear);
+            RenderTexture.active = rt;
+            
+            _freeCamera.SetEnabled(false);
+            _topViewCamera.SetEnabled(false);
+            _sceneMainCamera.SetEnabled(false);
+            _currentCamera = camera;
+            camera.SetEnabled(true);
+        }
+
+        public PreviewCamera GetCurrentPreviewCamera()
+        {
+            return _currentCamera;
+        }
+        
         public PlayerAssets GetPlayerAssets()
         {
             return _assets;
@@ -86,6 +128,11 @@ namespace PLUME
             {
                 PlayForward((ulong)(Time.fixedDeltaTime * _playSpeed * 1_000_000_000));
             }
+        }
+
+        public void OnDestroy()
+        {
+            PreviewRenderTexture.Release();
         }
 
         public bool TogglePlaying()
@@ -225,6 +272,21 @@ namespace PLUME
         public PlayerContext GetPlayerContext()
         {
             return _playerContext;
+        }
+
+        public FreeCamera GetFreeCamera()
+        {
+            return _freeCamera;
+        }
+        
+        public TopViewCamera GetTopViewCamera()
+        {
+            return _topViewCamera;
+        }
+
+        public SceneMainCamera GetSceneMainCamera()
+        {
+            return _sceneMainCamera;
         }
     }
 }

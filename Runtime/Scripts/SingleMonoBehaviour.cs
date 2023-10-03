@@ -16,6 +16,8 @@ namespace PLUME
             else
             {
                 Instance = this as T;
+                
+                transform.parent = null;
                 DontDestroyOnLoad(gameObject);
             }
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using PLUME.Viewer;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -10,7 +11,6 @@ namespace PLUME.UI
     public class MainWindowPresenter : MonoBehaviour
     {
         public Player player;
-        public FreeCamera freeCamera;
 
         private MainWindowUI _mainWindowUI;
 
@@ -25,10 +25,13 @@ namespace PLUME.UI
         {
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<FocusInEvent>(OnPreviewRenderFocused);
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<FocusOutEvent>(OnPreviewRenderUnfocused);
+            
+            _mainWindowUI.PreviewRender.RegisterCallback<MouseEnterEvent>(OnPreviewRenderMouseEnter);
+            _mainWindowUI.PreviewRender.RegisterCallback<MouseLeaveEvent>(OnPreviewRenderMouseLeave);
+            
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<NavigationMoveEvent>(OnPreviewRenderNavigationMove);
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<KeyDownEvent>(OnPreviewRenderKeyDown);
-            _mainWindowUI.PreviewRender.style.backgroundImage =
-                Background.FromRenderTexture(freeCamera.GetRenderTexture());
+            _mainWindowUI.PreviewRender.style.backgroundImage = Background.FromRenderTexture(player.PreviewRenderTexture);
 
             _mainWindowUI.Timeline.RegisterCallback<KeyDownEvent>(OnPlayPauseKeyDown);
             _mainWindowUI.PlayPauseButton.RegisterCallback<KeyDownEvent>(OnPlayPauseKeyDown);
@@ -41,9 +44,33 @@ namespace PLUME.UI
             _mainWindowUI.DecreaseSpeedButton.clicked += OnClickDecreaseSpeed;
             _mainWindowUI.IncreaseSpeedButton.clicked += OnClickIncreaseSpeed;
             _mainWindowUI.ToggleMaximizePreviewButton.toggled += OnClickToggleMaximizePreview;
+            
 
+            _mainWindowUI.CameraEnumField.SetValueWithoutNotify(player.GetCurrentPreviewCamera().GetCameraType());
+            _mainWindowUI.CameraEnumField.RegisterValueChangedCallback(OnCameraSelectionChanged);
+            
             _mainWindowUI.Timeline.focusable = true;
             player.GetPlayerContext().updatedHierarchy += OnHierarchyUpdateEvent;
+        }
+
+        private void OnCameraSelectionChanged(ChangeEvent<Enum> evt)
+        {
+            var cameraType = (PreviewCameraType) evt.newValue;
+
+            switch (cameraType)
+            {
+                case PreviewCameraType.Free:
+                    player.SetCurrentPreviewCamera(player.GetFreeCamera());
+                    break;
+                case PreviewCameraType.TopView:
+                    player.SetCurrentPreviewCamera(player.GetTopViewCamera());
+                    break;
+                case PreviewCameraType.Main:
+                    player.SetCurrentPreviewCamera(player.GetSceneMainCamera());
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         private void OnHierarchyUpdateEvent(IHierarchyUpdateEvent evt)
@@ -174,19 +201,46 @@ namespace PLUME.UI
             evt.PreventDefault();
         }
 
+        private void OnPreviewRenderMouseEnter(MouseEnterEvent evt)
+        {
+            if (player.GetTopViewCamera() != null)
+            {
+                player.GetTopViewCamera().ZoomDisabled = false;
+            }
+        }
+        
+        private void OnPreviewRenderMouseLeave(MouseLeaveEvent evt)
+        {
+            if (player.GetTopViewCamera() != null)
+            {
+                player.GetTopViewCamera().ZoomDisabled = true;
+            }
+        }
+
         private void OnPreviewRenderFocused(FocusInEvent evt)
         {
-            if (freeCamera != null)
+            if (player.GetFreeCamera() != null)
             {
-                freeCamera.Disabled = false;
+                player.GetFreeCamera().InputDisabled = false;
+            }
+            
+            if (player.GetTopViewCamera() != null)
+            {
+                player.GetTopViewCamera().InputDisabled = false;
             }
         }
 
         private void OnPreviewRenderUnfocused(FocusOutEvent evt)
         {
-            if (freeCamera != null)
+            if (player.GetFreeCamera() != null)
             {
-                freeCamera.Disabled = true;
+                player.GetFreeCamera().InputDisabled = true;
+            }
+            
+            if (player.GetTopViewCamera() != null)
+            {
+                player.GetTopViewCamera().InputDisabled = true;
+                player.GetTopViewCamera().ZoomDisabled = true;
             }
         }
 
@@ -276,6 +330,10 @@ namespace PLUME.UI
                     _loading = false;
                 }
             }
+
+            _mainWindowUI.PreviewRender.Q<Label>("free-camera-instructions").style.display =
+                player.GetCurrentPreviewCamera() is FreeCamera ? DisplayStyle.Flex : DisplayStyle.None;
+            _mainWindowUI.PreviewRender.Q<Label>("top-view-camera-instructions").style.display = player.GetCurrentPreviewCamera() is TopViewCamera ? DisplayStyle.Flex : DisplayStyle.None;
             
             if (!_mainWindowUI.IsTimeIndicatorFocused())
             {

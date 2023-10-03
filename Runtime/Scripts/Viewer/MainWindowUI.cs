@@ -36,6 +36,7 @@ namespace PLUME.UI
         public Button DecreaseSpeedButton { get; private set; }
         public Button IncreaseSpeedButton { get; private set; }
         public TextField SpeedTextField { get; private set; }
+        public EnumField CameraEnumField { get; private set; }
 
         public ToggleButton ToggleMaximizePreviewButton { get; private set; }
         public VisualElement Preview { get; private set; }
@@ -74,6 +75,7 @@ namespace PLUME.UI
             DecreaseSpeedButton = MediaController.Q<Button>("decrease-speed-btn");
             IncreaseSpeedButton = MediaController.Q<Button>("increase-speed-btn");
             SpeedTextField = MediaController.Q<TextField>("speed-textfield");
+            CameraEnumField = MediaController.Q<EnumField>("camera-selection");
 
             ToggleMaximizePreviewButton = MediaController.Q<ToggleButton>("toggle-maximize-preview-btn");
             Preview = ViewerPanel.Q("preview");

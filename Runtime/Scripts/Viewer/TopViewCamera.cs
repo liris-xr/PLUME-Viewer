@@ -7,19 +7,14 @@ using UnityEngine.InputSystem;
 namespace PLUME
 {
     [RequireComponent(typeof(Camera))]
-    public class FreeCamera : PreviewCamera
+    public class TopViewCamera : PreviewCamera
     {
         [NonSerialized]
         public bool InputDisabled = true;
+        [NonSerialized]
+        public bool ZoomDisabled = true;
 
         private Camera _camera;
-        
-        private const float MouseSensitivityMultiplier = 0.01f;
-
-        /// <summary>
-        /// Rotation speed when using the mouse.
-        /// </summary>
-        public float lookSpeedMouse = 4.0f;
 
         /// <summary>
         /// Movement speed.
@@ -36,21 +31,22 @@ namespace PLUME
         /// </summary>
         public float turbo = 10.0f;
 
-        private InputAction _lookAction;
         private InputAction _moveAction;
         private InputAction _speedAction;
         private InputAction _yMoveAction;
+        private InputAction _zoomAction;
 
-        private float _inputRotateAxisX, _inputRotateAxisY;
         private float _inputChangeSpeed;
-        private float _inputVertical, _inputHorizontal, _inputYAxis;
-        private bool _leftShiftBoost, _leftShift, _fire1;
+        private float _inputVertical, _inputHorizontal, _inputYAxis, _scrollYAxis;
+        private bool _leftShiftBoost, _leftShift;
 
         private void Awake()
         {
             _camera = GetComponent<Camera>();
+            _camera.orthographic = true;
+            _camera.transform.rotation = Quaternion.LookRotation(Vector3.down);
         }
-
+        
         public override void SetPreviewRenderTexture(RenderTexture previewRenderTexture)
         {
             base.SetPreviewRenderTexture(previewRenderTexture);
@@ -64,12 +60,12 @@ namespace PLUME
 
         private void RegisterInputs()
         {
-            var map = new InputActionMap("Free Camera");
-
-            _lookAction = map.AddAction("look", binding: "<Mouse>/delta");
+            var map = new InputActionMap("Top View Camera");
+            
             _moveAction = map.AddAction("move");
             _speedAction = map.AddAction("speed");
             _yMoveAction = map.AddAction("yMove");
+            _zoomAction = map.AddAction("zoom", binding: "<Mouse>/scroll");
 
             _moveAction.AddCompositeBinding("Dpad")
                 .With("Up", "<Keyboard>/w")
@@ -90,20 +86,14 @@ namespace PLUME
                 .With("Down", "<Keyboard>/q");
 
             _moveAction.Enable();
-            _lookAction.Enable();
             _speedAction.Enable();
             _yMoveAction.Enable();
+            _zoomAction.Enable();
         }
 
         private void UpdateInputs()
         {
-            _inputRotateAxisX = 0.0f;
-            _inputRotateAxisY = 0.0f;
             _leftShiftBoost = false;
-
-            var lookDelta = _lookAction.ReadValue<Vector2>();
-            _inputRotateAxisX = lookDelta.x * lookSpeedMouse * MouseSensitivityMultiplier;
-            _inputRotateAxisY = lookDelta.y * lookSpeedMouse * MouseSensitivityMultiplier;
 
             _leftShift = Keyboard.current?.leftShiftKey?.isPressed ?? false;
             _inputChangeSpeed = _speedAction.ReadValue<Vector2>().y;
@@ -112,14 +102,12 @@ namespace PLUME
             _inputVertical = moveDelta.y;
             _inputHorizontal = moveDelta.x;
             _inputYAxis = _yMoveAction.ReadValue<Vector2>().y;
+            _scrollYAxis = _zoomAction.ReadValue<Vector2>().y;
         }
 
         private void Update()
         {
             if (InputDisabled)
-                return;
-
-            if (Mouse.current?.rightButton?.isPressed == false)
                 return;
 
             UpdateInputs();
@@ -130,36 +118,29 @@ namespace PLUME
                 if (moveSpeed < moveSpeedIncrement) moveSpeed = moveSpeedIncrement;
             }
 
-            var moved = _inputRotateAxisX != 0.0f || _inputRotateAxisY != 0.0f || _inputVertical != 0.0f ||
-                        _inputHorizontal != 0.0f || _inputYAxis != 0.0f;
+            var moved = _inputVertical != 0.0f || _inputHorizontal != 0.0f || _inputYAxis != 0.0f || (!ZoomDisabled && _scrollYAxis != 0.0f);
             if (moved)
             {
-                var localEulerAngles = transform.localEulerAngles;
-                var rotationX = localEulerAngles.x;
-                var newRotationY = localEulerAngles.y + _inputRotateAxisX;
-
-                // Weird clamping code due to weird Euler angle mapping...
-                var newRotationX = (rotationX - _inputRotateAxisY);
-                if (rotationX <= 90.0f && newRotationX >= 0.0f)
-                    newRotationX = Mathf.Clamp(newRotationX, 0.0f, 90.0f);
-                if (rotationX >= 270.0f)
-                    newRotationX = Mathf.Clamp(newRotationX, 270.0f, 360.0f);
-
                 var t = transform;
-                t.localRotation = Quaternion.Euler(newRotationX, newRotationY, t.localEulerAngles.z);
 
-                var speed = Time.deltaTime * this.moveSpeed;
+                if (!ZoomDisabled)
+                {
+                    var zoom = Math.Sign(_scrollYAxis) * -0.5f;
+                    _camera.orthographicSize = Math.Max(_camera.orthographicSize + zoom, 1);
+                }
+
+                var speed = Time.deltaTime * moveSpeed;
                 if (_leftShiftBoost && _leftShift)
                     speed *= turbo;
-
+                
                 var position = t.position;
-                position += t.forward * (speed * _inputVertical);
-                position += t.right * (speed * _inputHorizontal);
-                position += Vector3.up * (speed * _inputYAxis);
+                position.x += speed * _inputHorizontal;
+                position.y += speed * _inputYAxis;
+                position.z += speed * _inputVertical;
                 t.position = position;
             }
         }
-
+        
         public override Camera GetCamera()
         {
             return _camera;
@@ -173,7 +154,7 @@ namespace PLUME
 
         public override PreviewCameraType GetCameraType()
         {
-            return PreviewCameraType.Free;
+            return PreviewCameraType.TopView;
         }
     }
 }

@@ -167,7 +167,7 @@ namespace PLUME
         {
             foreach (var trajectory in _trajectories)
             {
-                trajectory.UpdateMarkersCamera(player.currentCamera);
+                trajectory.UpdateMarkersCamera(player.GetCurrentPreviewCamera().GetCamera());
             }
         }
 

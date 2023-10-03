@@ -237,6 +237,11 @@ namespace PLUME
         {
             return _gameObjectsByInstanceId.Values;
         }
+        
+        public IEnumerable<Component> GetAllComponents()
+        {
+            return _componentByInstanceId.Values;
+        }
 
         public GameObject GetOrCreateGameObjectByIdentifier(TransformGameObjectIdentifier id)
         {
