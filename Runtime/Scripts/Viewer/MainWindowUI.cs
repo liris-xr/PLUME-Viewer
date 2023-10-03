@@ -49,7 +49,7 @@ namespace PLUME.UI
         public CollapseBarElement AnalysisCollapseBar { get; private set; }
 
         public VisualElement AnalysisContainer { get; private set; }
-        
+        public VisualElement MarkersContainer { get; private set; }
         public VisualElement MarkersListView { get; private set; }
 
         public TwoPaneSplitView VerticalSplitView { get; private set; }
@@ -118,7 +118,8 @@ namespace PLUME.UI
 
             AnalysisContainer = ViewerPanel.Q("analysis-container");
 
-            MarkersListView = ViewerPanel.Q("markers").Q<ListView>("markers-list");
+            MarkersContainer = ViewerPanel.Q("markers");
+            MarkersListView = MarkersContainer.Q<ListView>("markers-list");
             
             VerticalSplitView = ViewerPanel.Q<TwoPaneSplitView>("vertical-pane-split-view");
             HorizontalSplitView1 = ViewerPanel.Q<TwoPaneSplitView>("horizontal-pane-split-view-1");
@@ -199,12 +200,26 @@ namespace PLUME.UI
             foreach (var (markerLabel, markerSamples) in groupedMarkerSamples.OrderBy(pair => pair.Key))
             {
                 var entry = markerEntryUxml.Instantiate().Q("markers-list-entry");
-
+                
+                var showAllBtn = MarkersContainer.Q<Button>("show-all");
+                var hideAllBtn = MarkersContainer.Q<Button>("hide-all");
+                
                 var prevBtn = entry.Q("marker-snap").Q<Button>("prev");
                 var nextBtn = entry.Q("marker-snap").Q<Button>("next");
                 
                 entry.Q("marker-color").style.backgroundColor = markerColors[markerLabel];
                 entry.Q<Label>("marker-label").text = markerLabel;
+
+                showAllBtn.clicked += () =>
+                {
+                    entry.Q<Toggle>("marker-toggle").value = true;
+                };
+                
+                hideAllBtn.clicked += () =>
+                {
+                    entry.Q<Toggle>("marker-toggle").value = false;
+                };
+                
                 entry.Q<Toggle>("marker-toggle").value = true;
                 entry.Q<Toggle>("marker-toggle").RegisterValueChangedCallback(evt =>
                 {
