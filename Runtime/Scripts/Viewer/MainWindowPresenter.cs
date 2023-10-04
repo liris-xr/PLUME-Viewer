@@ -45,7 +45,6 @@ namespace PLUME.UI
             _mainWindowUI.IncreaseSpeedButton.clicked += OnClickIncreaseSpeed;
             _mainWindowUI.ToggleMaximizePreviewButton.toggled += OnClickToggleMaximizePreview;
             
-
             _mainWindowUI.CameraEnumField.SetValueWithoutNotify(player.GetCurrentPreviewCamera().GetCameraType());
             _mainWindowUI.CameraEnumField.RegisterValueChangedCallback(OnCameraSelectionChanged);
             
@@ -66,7 +65,7 @@ namespace PLUME.UI
                     player.SetCurrentPreviewCamera(player.GetTopViewCamera());
                     break;
                 case PreviewCameraType.Main:
-                    player.SetCurrentPreviewCamera(player.GetSceneMainCamera());
+                    player.SetCurrentPreviewCamera(player.GetMainCamera());
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -293,7 +292,7 @@ namespace PLUME.UI
             _mainWindowUI.RefreshPhysiologicalTracks();
             
             // By default, show 30s of the record in the timeline
-            _mainWindowUI.Timeline.ShowTimePeriod(0, 30_000_000_000);
+            _mainWindowUI.Timeline.ShowTimePeriod(0, 60_000_000_000);
             _mainWindowUI.Timeline.Focus();
             
             _mainWindowUI.HierarchyTree.ClearSelection();
@@ -330,7 +329,15 @@ namespace PLUME.UI
                     _loading = false;
                 }
             }
+            
+            var isGenerating = player.GetModuleGenerating() != null;
+            _mainWindowUI.PlayPauseButton.SetEnabled(!isGenerating);
+            _mainWindowUI.StopButton.SetEnabled(!isGenerating);
+            _mainWindowUI.DecreaseSpeedButton.SetEnabled(!isGenerating);
+            _mainWindowUI.IncreaseSpeedButton.SetEnabled(!isGenerating);
 
+            _mainWindowUI.PreviewRender.Q<Label>("generating-label").style.display = isGenerating ? DisplayStyle.Flex : DisplayStyle.None;
+            
             _mainWindowUI.PreviewRender.Q<Label>("free-camera-instructions").style.display =
                 player.GetCurrentPreviewCamera() is FreeCamera ? DisplayStyle.Flex : DisplayStyle.None;
             _mainWindowUI.PreviewRender.Q<Label>("top-view-camera-instructions").style.display = player.GetCurrentPreviewCamera() is TopViewCamera ? DisplayStyle.Flex : DisplayStyle.None;

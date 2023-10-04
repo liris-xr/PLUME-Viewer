@@ -103,14 +103,16 @@ namespace PLUME
                 throw new Exception(
                     $"{nameof(parameters.StartTime)} should be less or equal to {nameof(parameters.EndTime)}.");
             }
-
-            if (player.IsPlaying())
-            {
-                player.PausePlaying();
-            }
             
+            if (player.GetModuleGenerating() != null)
+            {
+                Debug.LogWarning("Another module is already generating");
+                yield break;
+            }
+
             GenerationProgress = 0;
             IsGenerating = true;
+            player.SetModuleGenerating(this);
 
             var samplesMinValueBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
             var samplesMaxValueBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
@@ -210,6 +212,10 @@ namespace PLUME
 
             PlayerContext.Activate(player.GetPlayerContext());
             IsGenerating = false;
+            
+            if(player.GetModuleGenerating() == this)
+                player.SetModuleGenerating(null);
+            
             finishCallback(result);
         }
 
@@ -308,6 +314,9 @@ namespace PLUME
 
             PlayerContext.Activate(player.GetPlayerContext());
             IsGenerating = false;
+            
+            if(player.GetModuleGenerating() == this)
+                player.SetModuleGenerating(null);
         }
         
         private MeshSamplerResult GetOrCreateMeshSamplerResult(PlayerContext ctx, GameObject go, Mesh mesh, IDictionary<int, MeshSamplerResult> meshSamplerResults)
@@ -352,7 +361,7 @@ namespace PLUME
             projectionShader.SetBuffer(projectionKernel, "samples_min_value", samplesMinValueBuffer);
             projectionShader.SetBuffer(projectionKernel, "samples_max_value", samplesMaxValueBuffer);
         }
-
+        
         private void LateUpdate()
         {
             var activeContext = PlayerContext.GetActiveContext();
@@ -501,9 +510,29 @@ namespace PLUME
 
             if (result == _visibleResult)
             {
-                _cachedMeshSamplerResultPropertyBlocks.Clear();
+                foreach (var meshSamplerResult in result.SamplerResults.Values)
+                {
+                    _cachedMeshSamplerResultPropertyBlocks.Remove(meshSamplerResult);
+                }
                 SetVisibleResult(null);
             }
+        }
+        
+        public void SetVisibleResult(PositionHeatmapAnalysisResult result)
+        {
+            var prevVisibleResult = _visibleResult;
+            
+            _visibleResult = result;
+            
+            if (result == null && prevVisibleResult != null)
+            {
+                RestoreRecordMaterials(player.GetPlayerContext());
+            }
+        }
+
+        public PositionHeatmapAnalysisResult GetVisibleResult()
+        {
+            return _visibleResult;
         }
 
         private void OnDestroy()
@@ -516,22 +545,7 @@ namespace PLUME
             _projectionCamera.targetTexture.Release();
             _projectionCamera.targetTexture = null;
         }
-
-        public void SetVisibleResult(PositionHeatmapAnalysisResult result)
-        {
-            _visibleResult = result;
-
-            if (result == null)
-            {
-                RestoreRecordMaterials(player.GetPlayerContext());
-            }
-        }
-
-        public PositionHeatmapAnalysisResult GetVisibleResult()
-        {
-            return _visibleResult;
-        }
-
+        
         public override void Dispose()
         {
             foreach (var result in GetResults())

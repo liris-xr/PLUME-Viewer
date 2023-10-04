@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace PLUME.UI.Analysis
 {
@@ -13,16 +14,31 @@ namespace PLUME.UI.Analysis
             ui.ObjectIdTextField.value = "882be9d0-c9cc-4b78-b6b3-1d5419f4cd83";
             ui.MarkersTextField.value = "Egg Pick Up";
             ui.TeleportationToleranceTextField.value = "0.1";
-            ui.TeleportationSegments.value = false;
+            ui.TeleportationSegments.value = true;
             ui.DecimationToleranceTextField.value = "0.01";
             ui.IncludeRotations.value = false;
-            ui.MarkersTextField.value = "";
 
             ui.clickedDeleteResult += OnClickDeleteResult;
             ui.toggledResultVisibility += OnToggleResultVisibility;
 
             ui.RefreshTimeRangeLimits();
             ui.TimeRange.Reset();
+            
+            player.onGeneratingModuleChanged += generatingModule =>
+            {
+                // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being shown
+                if (generatingModule != null)
+                {
+                    var visibleResults = new List<TrajectoryAnalysisModuleResult>(module.GetVisibleResults());
+
+                    foreach (var result in visibleResults)
+                    {
+                        module.SetResultVisibility(result, false);
+                    }
+                    
+                    ui.RefreshResults();
+                }
+            };
         }
 
         private void OnClickGenerate()
@@ -61,6 +77,13 @@ namespace PLUME.UI.Analysis
             StartCoroutine(module.GenerateTrajectory(player.GetRecordLoader(), parameters, onFinishCallback));
         }
 
+        public void FixedUpdate()
+        {
+            // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being generated
+            var otherModuleGenerating = player.GetModuleGenerating() != null && player.GetModuleGenerating() != module;
+            ui.GenerateButton.SetEnabled(!otherModuleGenerating);
+        }
+
         private void OnClickDeleteResult(TrajectoryAnalysisModuleResult result)
         {
             module.RemoveResult(result);
@@ -69,7 +92,12 @@ namespace PLUME.UI.Analysis
 
         private void OnToggleResultVisibility(TrajectoryAnalysisModuleResult result, bool visible)
         {
-            module.SetResultVisibility(result, visible);
+            // Disable show/hide when generating
+            if (player.GetModuleGenerating() == null)
+            {
+                module.SetResultVisibility(result, visible);
+            }
+
             ui.RefreshResults();
         }
     }

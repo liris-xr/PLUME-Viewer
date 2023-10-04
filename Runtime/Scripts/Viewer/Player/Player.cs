@@ -6,6 +6,8 @@ using PLUME.Sample.LSL;
 using PLUME.Viewer;
 using UnityEngine;
 using Color = UnityEngine.Color;
+using Quaternion = UnityEngine.Quaternion;
+using Vector3 = UnityEngine.Vector3;
 
 namespace PLUME
 {
@@ -38,9 +40,15 @@ namespace PLUME
         
         private FreeCamera _freeCamera;
         private TopViewCamera _topViewCamera;
-        private SceneMainCamera _sceneMainCamera;
+        private MainCamera _mainCamera;
 
         private PreviewCamera _currentCamera;
+
+        private AnalysisModule _generatingModule;
+        private AnalysisModule _visibleHeatmapModule;
+
+        public Action<AnalysisModule> onGeneratingModuleChanged;
+        public Action<AnalysisModule> onVisibleHeatmapModuleChanged;
 
         [RuntimeInitializeOnLoadMethod]
         public static void OnInitialize()
@@ -62,16 +70,16 @@ namespace PLUME
             var sceneMainCameraGo = new GameObject("SceneMainCamera") { transform = { parent = t } };
             _freeCamera = freeCameraGo.AddComponent<FreeCamera>();
             _topViewCamera = topViewCameraGo.AddComponent<TopViewCamera>();
-            _sceneMainCamera = sceneMainCameraGo.AddComponent<SceneMainCamera>();
+            _mainCamera = sceneMainCameraGo.AddComponent<MainCamera>();
             
-            _freeCamera.SetPreviewRenderTexture(PreviewRenderTexture);
-            _topViewCamera.SetPreviewRenderTexture(PreviewRenderTexture);
-            _sceneMainCamera.SetPreviewRenderTexture(PreviewRenderTexture);
-            SetCurrentPreviewCamera(_freeCamera);
+            _freeCamera.PreviewRenderTexture = PreviewRenderTexture;
+            _topViewCamera.PreviewRenderTexture = PreviewRenderTexture;
+            _mainCamera.PreviewRenderTexture = PreviewRenderTexture;
+            SetCurrentPreviewCamera(_mainCamera);
             
-            _freeCamera.transform.localPosition = new UnityEngine.Vector3(-2.24f, 1.84f, 0.58f);
-            _freeCamera.transform.localRotation = UnityEngine.Quaternion.Euler(25f, -140f, 0f);
-            _topViewCamera.transform.position = new UnityEngine.Vector3(0, 3.25f, -4);
+            _freeCamera.transform.localPosition = new Vector3(-2.24f, 1.84f, 0.58f);
+            _freeCamera.transform.localRotation = Quaternion.Euler(25f, -140f, 0f);
+            _topViewCamera.transform.position = new Vector3(0, 3.25f, -4);
             _topViewCamera.GetCamera().orthographicSize = 7;
             
             PlayerModules = FindObjectsOfType<PlayerModule>();
@@ -107,7 +115,7 @@ namespace PLUME
             
             _freeCamera.SetEnabled(false);
             _topViewCamera.SetEnabled(false);
-            _sceneMainCamera.SetEnabled(false);
+            _mainCamera.SetEnabled(false);
             _currentCamera = camera;
             camera.SetEnabled(true);
         }
@@ -127,6 +135,11 @@ namespace PLUME
             if (_isPlaying)
             {
                 PlayForward((ulong)(Time.fixedDeltaTime * _playSpeed * 1_000_000_000));
+            }
+            
+            if (GetModuleGenerating() != null && _isPlaying)
+            {
+                PausePlaying();
             }
         }
 
@@ -284,9 +297,31 @@ namespace PLUME
             return _topViewCamera;
         }
 
-        public SceneMainCamera GetSceneMainCamera()
+        public MainCamera GetMainCamera()
         {
-            return _sceneMainCamera;
+            return _mainCamera;
+        }
+
+        public void SetModuleGenerating(AnalysisModule module)
+        {
+            _generatingModule = module;
+            onGeneratingModuleChanged?.Invoke(module);
+        }
+
+        public AnalysisModule GetModuleGenerating()
+        {
+            return _generatingModule;
+        }
+        
+        public void SetVisibleHeatmapModule(AnalysisModule module)
+        {
+            _visibleHeatmapModule = module;
+            onVisibleHeatmapModuleChanged?.Invoke(module);
+        }
+        
+        public AnalysisModule GetVisibleHeatmapModule()
+        {
+            return _visibleHeatmapModule;
         }
     }
 }

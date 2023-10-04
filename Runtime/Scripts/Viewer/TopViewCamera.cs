@@ -46,12 +46,6 @@ namespace PLUME
             _camera.orthographic = true;
             _camera.transform.rotation = Quaternion.LookRotation(Vector3.down);
         }
-        
-        public override void SetPreviewRenderTexture(RenderTexture previewRenderTexture)
-        {
-            base.SetPreviewRenderTexture(previewRenderTexture);
-            _camera.targetTexture = previewRenderTexture;
-        }
 
         private void OnEnable()
         {
@@ -145,13 +139,18 @@ namespace PLUME
         {
             return _camera;
         }
-        
+
         public override void SetEnabled(bool enabled)
         {
-            this.enabled = enabled;
-            GetCamera().enabled = enabled;
-        }
+            var cam = GetCamera();
 
+            if (cam != null)
+            {
+                cam.targetTexture = enabled ? PreviewRenderTexture : null;
+                cam.enabled = enabled;
+            }
+        }
+        
         public override PreviewCameraType GetCameraType()
         {
             return PreviewCameraType.TopView;

@@ -25,6 +25,26 @@ namespace PLUME.UI.Analysis
 
             ui.RefreshTimeRangeLimits();
             ui.TimeRange.Reset();
+            
+            player.onVisibleHeatmapModuleChanged += visibleModule =>
+            {
+                // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being shown
+                if (visibleModule != null && visibleModule != module)
+                {
+                    module.SetVisibleResult(null);
+                    ui.RefreshResults();
+                }
+            };
+            
+            player.onGeneratingModuleChanged += generatingModule =>
+            {
+                // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being shown
+                if (generatingModule != null && generatingModule != module)
+                {
+                    module.SetVisibleResult(null);
+                    ui.RefreshResults();
+                }
+            };
         }
 
         private void OnClickGenerate()
@@ -45,6 +65,12 @@ namespace PLUME.UI.Analysis
             {
                 module.AddResult(result);
                 module.SetVisibleResult(result);
+                
+                if (player.GetVisibleHeatmapModule() != module)
+                {
+                    player.SetVisibleHeatmapModule(module);
+                }
+                
                 ui.RefreshResults();
             });
 
@@ -61,11 +87,14 @@ namespace PLUME.UI.Analysis
             module.SetVisibleResult(null);
             ui.RefreshResults();
         }
-
+        
         public void FixedUpdate()
         {
+            // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being generated
+            var otherModuleGenerating = player.GetModuleGenerating() != null && player.GetModuleGenerating() != module;
+            
             ui.GenerateButton.style.display = module.IsGenerating ? DisplayStyle.None : DisplayStyle.Flex;
-            ui.GenerateButton.SetEnabled(!module.IsGenerating);
+            ui.GenerateButton.SetEnabled(!module.IsGenerating && !otherModuleGenerating);
 
             ui.GeneratingPanel.style.display = module.IsGenerating ? DisplayStyle.Flex : DisplayStyle.None;
             ui.CancelButton.SetEnabled(module.IsGenerating);
@@ -78,17 +107,40 @@ namespace PLUME.UI.Analysis
 
         private void OnClickDeleteResult(PositionHeatmapAnalysisResult result)
         {
+            if (module.GetVisibleResult() == result && player.GetVisibleHeatmapModule() == module)
+            {
+                player.SetVisibleHeatmapModule(null);
+            }
+            
             module.RemoveResult(result);
             ui.RefreshResults();
         }
 
         private void OnToggleResultVisibility(PositionHeatmapAnalysisResult result, bool visible)
         {
-            if (visible)
-                module.SetVisibleResult(result);
-            else if (module.GetVisibleResult() == result)
-                module.SetVisibleResult(null);
+            // Disable show/hide when generating
+            if (player.GetModuleGenerating() == null)
+            {
+                if (visible)
+                {
+                    module.SetVisibleResult(result);
 
+                    if (player.GetVisibleHeatmapModule() != module)
+                    {
+                        player.SetVisibleHeatmapModule(module);
+                    }
+                }
+                else if (module.GetVisibleResult() == result)
+                {
+                    module.SetVisibleResult(null);
+
+                    if (player.GetVisibleHeatmapModule() == module)
+                    {
+                        player.SetVisibleHeatmapModule(null);
+                    }
+                }
+            }
+            
             ui.RefreshResults();
         }
     }
