@@ -22,6 +22,8 @@
             <ui:VisualElement name="hspacer" class="horizontal-spacer" style="max-width: 5px; flex-grow: 0; min-width: 2px;" />
             <ui:EnumField label="Camera:" type="PLUME.Viewer.PreviewCameraType, fr.liris.plume.viewer" name="camera-selection" style="width: 150px;" />
             <ui:VisualElement name="hspacer" class="horizontal-spacer" style="max-width: 5px; flex-grow: 0; min-width: 2px;" />
+            <ui:Button text="Auto Adjust View" parse-escape-sequences="true" display-tooltip-when-elided="true" name="reset-view" enable-rich-text="false" />
+            <ui:VisualElement name="hspacer" class="horizontal-spacer" style="max-width: 5px; flex-grow: 0; min-width: 2px;" />
             <ui:VisualElement name="extras-group" class="media-controller__btn-group" style="flex-direction: row; flex-shrink: 0;">
                 <PLUME.ToggleButton name="toggle-maximize-preview-btn" class="media-controller__btn">
                     <ui:VisualElement name="img" picking-mode="Ignore" class="img" />

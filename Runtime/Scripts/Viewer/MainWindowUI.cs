@@ -32,6 +32,7 @@ namespace PLUME.UI
         public VisualElement MediaController { get; private set; }
         public ToggleButton PlayPauseButton { get; private set; }
         public Button StopButton { get; private set; }
+        public Button ResetViewButton { get; private set; }
 
         public Button DecreaseSpeedButton { get; private set; }
         public Button IncreaseSpeedButton { get; private set; }
@@ -71,6 +72,7 @@ namespace PLUME.UI
             MediaController = ViewerPanel.Q<VisualElement>("media-controller");
             PlayPauseButton = MediaController.Q<ToggleButton>("play-pause-btn");
             StopButton = MediaController.Q<Button>("stop-btn");
+            ResetViewButton = MediaController.Q<Button>("reset-view");
 
             DecreaseSpeedButton = MediaController.Q<Button>("decrease-speed-btn");
             IncreaseSpeedButton = MediaController.Q<Button>("increase-speed-btn");

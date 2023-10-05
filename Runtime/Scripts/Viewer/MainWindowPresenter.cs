@@ -47,11 +47,29 @@ namespace PLUME.UI
             
             _mainWindowUI.CameraEnumField.SetValueWithoutNotify(player.GetCurrentPreviewCamera().GetCameraType());
             _mainWindowUI.CameraEnumField.RegisterValueChangedCallback(OnCameraSelectionChanged);
+
+            RefreshResetViewButton();
+            _mainWindowUI.ResetViewButton.clicked += OnClickResetView;
             
             _mainWindowUI.Timeline.focusable = true;
             player.GetPlayerContext().updatedHierarchy += OnHierarchyUpdateEvent;
         }
 
+        private void OnClickResetView()
+        {
+            var cam = player.GetCurrentPreviewCamera();
+
+            if (cam != null)
+            {
+                cam.ResetView();
+            }
+        }
+        
+        private void RefreshResetViewButton()
+        {
+            _mainWindowUI.ResetViewButton.SetEnabled(player.GetCurrentPreviewCamera().GetCameraType() != PreviewCameraType.Main);
+        }
+        
         private void OnCameraSelectionChanged(ChangeEvent<Enum> evt)
         {
             var cameraType = (PreviewCameraType) evt.newValue;
@@ -70,6 +88,8 @@ namespace PLUME.UI
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+            
+            RefreshResetViewButton();
         }
 
         private void OnHierarchyUpdateEvent(IHierarchyUpdateEvent evt)

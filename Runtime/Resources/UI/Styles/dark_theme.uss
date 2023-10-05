@@ -1231,6 +1231,14 @@
     border-radius: 3px;
 }
 
+.unity-base-dropdown .unity-base-dropdown__item .unity-base-dropdown__checkmark {
+    display: none;
+}
+
+.unity-base-dropdown .unity-base-dropdown__item:checked .unity-base-dropdown__checkmark {
+    display: flex;
+}>
+
 .unity-base-dropdown__item {
     flex-direction: row;
     -unity-text-align: middle-left;

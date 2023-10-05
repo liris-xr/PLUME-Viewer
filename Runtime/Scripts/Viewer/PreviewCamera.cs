@@ -13,6 +13,8 @@ namespace PLUME.Viewer
         public abstract void SetEnabled(bool enabled);
 
         public abstract PreviewCameraType GetCameraType();
+
+        public abstract void ResetView();
     }
 
     public enum PreviewCameraType

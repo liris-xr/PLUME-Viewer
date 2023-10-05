@@ -104,6 +104,10 @@ namespace PLUME
             if (InputDisabled)
                 return;
 
+            // Disable inputs if the camera is not selected
+            if (Player.Instance.GetCurrentPreviewCamera() != this)
+                return;
+            
             UpdateInputs();
 
             if (_inputChangeSpeed != 0.0f)
@@ -154,6 +158,12 @@ namespace PLUME
         public override PreviewCameraType GetCameraType()
         {
             return PreviewCameraType.TopView;
+        }
+
+        public override void ResetView()
+        {
+            transform.position = new Vector3(0, 3.25f, -4);
+            GetCamera().orthographicSize = 7;
         }
     }
 }

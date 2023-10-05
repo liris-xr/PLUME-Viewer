@@ -113,9 +113,13 @@ namespace PLUME
             if (InputDisabled)
                 return;
 
+            // Disable inputs if the camera is not selected
+            if (Player.Instance.GetCurrentPreviewCamera() != this)
+                return;
+            
             if (Mouse.current?.rightButton?.isPressed == false)
                 return;
-
+            
             UpdateInputs();
 
             if (_inputChangeSpeed != 0.0f)
@@ -173,6 +177,26 @@ namespace PLUME
         public override PreviewCameraType GetCameraType()
         {
             return PreviewCameraType.Free;
+        }
+
+        public override void ResetView()
+        {
+            var cam = Player.Instance.GetMainCamera().GetCamera();
+            
+            if (cam == null)
+            {
+                transform.position = new Vector3(-2.24f, 1.84f, 0.58f);
+                transform.rotation = Quaternion.Euler(25f, -140f, 0f);
+            }
+            else
+            {
+                var t = transform;
+                var camTransform = cam.transform;
+                t.position = camTransform.position;
+                var eulerAngles = camTransform.rotation.eulerAngles;
+                eulerAngles.z = 0;
+                t.rotation = Quaternion.Euler(eulerAngles);
+            }
         }
     }
 }

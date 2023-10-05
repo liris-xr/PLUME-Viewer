@@ -33,5 +33,10 @@ namespace PLUME
         {
             return PreviewCameraType.Main;
         }
+
+        public override void ResetView()
+        {
+            
+        }
     }
 }

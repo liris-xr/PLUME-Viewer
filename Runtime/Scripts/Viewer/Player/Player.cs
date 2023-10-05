@@ -77,8 +77,8 @@ namespace PLUME
             _mainCamera.PreviewRenderTexture = PreviewRenderTexture;
             SetCurrentPreviewCamera(_mainCamera);
             
-            _freeCamera.transform.localPosition = new Vector3(-2.24f, 1.84f, 0.58f);
-            _freeCamera.transform.localRotation = Quaternion.Euler(25f, -140f, 0f);
+            _freeCamera.transform.position = new Vector3(-2.24f, 1.84f, 0.58f);
+            _freeCamera.transform.rotation = Quaternion.Euler(25f, -140f, 0f);
             _topViewCamera.transform.position = new Vector3(0, 3.25f, -4);
             _topViewCamera.GetCamera().orthographicSize = 7;
             
