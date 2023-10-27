@@ -36,14 +36,13 @@ namespace PLUME
 
             try
             {
-                return RecordMetadata.Parser.ParseDelimitedFrom(metadataStream);
+                var metadata = RecordMetadata.Parser.ParseDelimitedFrom(metadataStream);
+                metadataStream.Close();
+                return metadata;
             }
-            catch (EndOfStreamException)
+            catch (Exception)
             {
-                return null;
-            }
-            catch (InvalidProtocolBufferException)
-            {
+                metadataStream.Close();
                 return null;
             }
         }
@@ -78,7 +77,7 @@ namespace PLUME
 
         public void Dispose()
         {
-            Close();
+            _samplesStream.Dispose();
         }
     }
 }

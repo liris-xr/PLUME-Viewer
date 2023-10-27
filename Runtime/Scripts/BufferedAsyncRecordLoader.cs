@@ -241,7 +241,7 @@ namespace PLUME
         {
             if (_closed)
                 return;
-
+            
             _loadingThread.Interrupt();
             lock (_samplesBuffer)
             {
@@ -253,7 +253,7 @@ namespace PLUME
 
         public void Dispose()
         {
-            Close();
+            _reader.Dispose();
         }
     }
 }

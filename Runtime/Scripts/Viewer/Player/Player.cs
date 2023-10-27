@@ -12,7 +12,7 @@ using Vector3 = UnityEngine.Vector3;
 namespace PLUME
 {
     [DisallowMultipleComponent]
-    public class Player : SingletonMonoBehaviour<Player>
+    public class Player : SingletonMonoBehaviour<Player>, IDisposable
     {
         public TypeRegistryProvider typeRegistryProvider;
 
@@ -37,7 +37,7 @@ namespace PLUME
         private bool _isLoading;
 
         public RenderTexture PreviewRenderTexture { get; private set; }
-        
+
         private FreeCamera _freeCamera;
         private TopViewCamera _topViewCamera;
         private MainCamera _mainCamera;
@@ -61,9 +61,9 @@ namespace PLUME
         private new void Awake()
         {
             base.Awake();
-            
+
             PreviewRenderTexture = RenderTexture.GetTemporary(1920, 1080);
-            
+
             var t = transform;
             var freeCameraGo = new GameObject("FreeCamera") { transform = { parent = t } };
             var topViewCameraGo = new GameObject("TopViewCamera") { transform = { parent = t } };
@@ -71,17 +71,17 @@ namespace PLUME
             _freeCamera = freeCameraGo.AddComponent<FreeCamera>();
             _topViewCamera = topViewCameraGo.AddComponent<TopViewCamera>();
             _mainCamera = sceneMainCameraGo.AddComponent<MainCamera>();
-            
+
             _freeCamera.PreviewRenderTexture = PreviewRenderTexture;
             _topViewCamera.PreviewRenderTexture = PreviewRenderTexture;
             _mainCamera.PreviewRenderTexture = PreviewRenderTexture;
             SetCurrentPreviewCamera(_mainCamera);
-            
+
             _freeCamera.transform.position = new Vector3(-2.24f, 1.84f, 0.58f);
             _freeCamera.transform.rotation = Quaternion.Euler(25f, -140f, 0f);
             _topViewCamera.transform.position = new Vector3(0, 3.25f, -4);
             _topViewCamera.GetCamera().orthographicSize = 7;
-            
+
             PlayerModules = FindObjectsOfType<PlayerModule>();
             _assets = new PlayerAssets(assetBundlePath);
 
@@ -98,11 +98,11 @@ namespace PLUME
 
             _recordLoader =
                 new BufferedAsyncRecordLoader(new RecordReader(recordPath), typeRegistryProvider.GetTypeRegistry());
-            
+
             _markersLoader.StartLoading();
             _physioSignalsLoader.StartLoading();
             _recordLoader.StartLoading();
-            
+
             _playerContext = PlayerContext.NewContext("MainPlayerContext", _assets);
         }
 
@@ -112,7 +112,7 @@ namespace PLUME
             RenderTexture.active = PreviewRenderTexture;
             GL.Clear(true, true, Color.clear);
             RenderTexture.active = rt;
-            
+
             _freeCamera.SetEnabled(false);
             _topViewCamera.SetEnabled(false);
             _mainCamera.SetEnabled(false);
@@ -124,7 +124,7 @@ namespace PLUME
         {
             return _currentCamera;
         }
-        
+
         public PlayerAssets GetPlayerAssets()
         {
             return _assets;
@@ -136,7 +136,7 @@ namespace PLUME
             {
                 PlayForward((ulong)(Time.fixedDeltaTime * _playSpeed * 1_000_000_000));
             }
-            
+
             if (GetModuleGenerating() != null && _isPlaying)
             {
                 PausePlaying();
@@ -146,6 +146,10 @@ namespace PLUME
         public void OnDestroy()
         {
             PreviewRenderTexture.Release();
+
+            _recordLoader?.Dispose();
+            _markersLoader?.Dispose();
+            _physioSignalsLoader?.Dispose();
         }
 
         public bool TogglePlaying()
@@ -271,12 +275,12 @@ namespace PLUME
         {
             return _markersLoader;
         }
-        
+
         public BufferedAsyncRecordLoader GetPhysiologicalSignalsLoader()
         {
             return _physioSignalsLoader;
         }
-        
+
         public ulong GetCurrentPlayTimeInNanoseconds()
         {
             return _currentTimeNanoseconds;
@@ -291,7 +295,7 @@ namespace PLUME
         {
             return _freeCamera;
         }
-        
+
         public TopViewCamera GetTopViewCamera()
         {
             return _topViewCamera;
@@ -312,16 +316,23 @@ namespace PLUME
         {
             return _generatingModule;
         }
-        
+
         public void SetVisibleHeatmapModule(AnalysisModule module)
         {
             _visibleHeatmapModule = module;
             onVisibleHeatmapModuleChanged?.Invoke(module);
         }
-        
+
         public AnalysisModule GetVisibleHeatmapModule()
         {
             return _visibleHeatmapModule;
+        }
+
+        public void Dispose()
+        {
+            _recordLoader?.Dispose();
+            _markersLoader?.Dispose();
+            _physioSignalsLoader?.Dispose();
         }
     }
 }

@@ -548,6 +548,9 @@ namespace PLUME
 
         public bool RemoveIdentifierCorrespondence(string recordIdentifier)
         {
+            if (recordIdentifier == null)
+                return false;
+            
             var result = true;
 
             if (_idMap.TryGetValue(recordIdentifier, out var instanceId))
