@@ -1,0 +1,32 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/position_heatmap_module.uss?fileID=7433441132597879392&amp;guid=5bdf89c930640cf429376d6e120cb9e3&amp;type=3#position_heatmap_module" />
+    <ui:VisualElement class="result-entry">
+        <ui:Label text="#1" display-tooltip-when-elided="true" name="result-index" class="result-index" />
+        <ui:VisualElement name="result-fields" class="result-fields">
+            <ui:VisualElement name="xr-camera" class="result-field">
+                <ui:Label text="XR Camera ID" class="result-field__label" />
+                <ui:Label text="Value" name="value" class="result-field__value" />
+            </ui:VisualElement>
+            <ui:VisualElement name="projection-receivers" class="result-field">
+                <ui:Label text="Projection receivers IDs" class="result-field__label" />
+                <ui:Label text="Value" name="value" class="result-field__value" style="text-overflow: ellipsis; flex-shrink: 1; max-height: 100px; overflow: hidden;" />
+            </ui:VisualElement>
+            <ui:VisualElement name="start-time" class="result-field">
+                <ui:Label text="Start time" class="result-field__label" />
+                <ui:Label text="Value" name="value" class="result-field__value" />
+            </ui:VisualElement>
+            <ui:VisualElement name="end-time" class="result-field">
+                <ui:Label text="End time" class="result-field__label" />
+                <ui:Label text="Value" name="value" class="result-field__value" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="result-controls" class="result-controls">
+            <PLUME.ToggleButton name="show-btn" class="result-controls__btn">
+                <ui:VisualElement class="img" />
+            </PLUME.ToggleButton>
+            <ui:Button display-tooltip-when-elided="true" name="delete-btn" class="result-controls__btn">
+                <ui:VisualElement class="img" style="background-image: resource(&apos;UI/Images/delete&apos;);" />
+            </ui:Button>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

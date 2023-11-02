@@ -1,0 +1,11 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Packages/fr.liris.plume/Runtime/Resources/UI/Styles/position_heatmap_module.uss?fileID=7433441132597879392&amp;guid=5bdf89c930640cf429376d6e120cb9e3&amp;type=3#position_heatmap_module" />
+    <ui:VisualElement>
+        <ui:TextField picking-mode="Ignore" label="Interactor(s)" text="Enter Instance ID" is-delayed="true" name="interactors" style="color: rgb(255, 255, 255);" />
+        <ui:TextField picking-mode="Ignore" label="Interactable(s)" text="Enter Instance ID" is-delayed="true" name="interactables" style="color: rgb(255, 255, 255);" />
+        <ui:DropdownField label="Dropdown" index="-1" choices="Hover, Select, Activate" name="interaction-type" />
+        <ui:Label text="Time range:" display-tooltip-when-elided="true" class="unity-base-field__label" style="padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; margin-left: 3px;" />
+        <PLUME.TimeRangeElement name="time-range" style="padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px;" />
+        <ui:Button text="Generate" display-tooltip-when-elided="true" name="generate-btn" />
+    </ui:VisualElement>
+</ui:UXML>
