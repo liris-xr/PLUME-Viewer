@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using PLUME.Sample.Unity;
@@ -50,7 +51,7 @@ namespace PLUME.Viewer.Analysis
 
         public Shader defaultHeatmapShader;
 
-        public PLUME.Player player;
+        public Player player;
 
         public MeshSampler meshSampler;
 
@@ -442,6 +443,7 @@ namespace PLUME.Viewer.Analysis
                 return result;
 
             var meshSamplerResult = meshSampler.Sample(mesh, samplesPerSquareMeter, go.transform.lossyScale);
+            meshSamplerResult.Name = go.name + "_" + (uint) meshSamplerResultHash;
             meshSamplerResults.Add(meshSamplerResultHash, meshSamplerResult);
             return meshSamplerResult;
         }
@@ -632,6 +634,115 @@ namespace PLUME.Viewer.Analysis
             return newPropertyBlock;
         }
 
+                private Vector3 SampleIndexToBarycentricWeights(uint sampleIdx, uint triangleResolution)
+        {
+            var row = (uint)Math.Ceiling((-3 + Math.Sqrt(8.0 * sampleIdx + 9.0)) / 2.0);
+            var col = sampleIdx - row * (row + 1) / 2u;
+
+            var wi = col / (float)triangleResolution;
+            var wj = 1 - row / (float)triangleResolution;
+            var wk = 1 - (wi + wj);
+
+            return new Vector3(wi, wj, wk);
+        }
+        
+        public void ExportResult(EyeGazeAnalysisResult result)
+        {
+            var resultIdx = GetResultIndex(result);
+            var outputDir = $"Outputs/Analysis/EyeGazeHeatmaps/{resultIdx}";
+            
+            if (!Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+            
+            foreach (var (hash, samplerResult) in result.SamplerResults)
+            {
+                string filePath;
+                
+                if (samplerResult.Name != null)
+                {
+                    filePath = $"{outputDir}/heatmap_{samplerResult.Name}.ply";
+                }
+                else
+                {
+                    filePath = $"{outputDir}/heatmap_{(uint) hash}.ply";
+                }
+
+                var w = File.CreateText(filePath);
+                
+                // Write PLY file header for a point cloud
+                w.WriteLine("ply");
+                w.WriteLine("format ascii 1.0");
+                w.WriteLine("element vertex " + samplerResult.NSamples);
+                w.WriteLine("property float x");
+                w.WriteLine("property float y");
+                w.WriteLine("property float z");
+                w.WriteLine("property float value");
+                w.WriteLine("end_header");
+                
+                // Get the values from the GPU to the CPU
+                var samplesValueArr = new float[samplerResult.NSamples];
+                samplerResult.SampleValuesBuffer.GetData(samplesValueArr);
+                
+                // Extract unity VertexBuffer data
+                var verticesArr = new byte[samplerResult.VertexBuffer.count * samplerResult.VertexBuffer.stride];
+                samplerResult.VertexBuffer.GetData(verticesArr);
+                // From the vertex buffer data, extract all vertices positions
+                var verticesPositionsArr = new Vector3[samplerResult.VertexBuffer.count];
+                for (var i = 0; i < samplerResult.VertexBuffer.count; ++i)
+                {
+                    var vertex = new Vector3(
+                        BitConverter.ToSingle(verticesArr, i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset),
+                        BitConverter.ToSingle(verticesArr, i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset + 4),
+                        BitConverter.ToSingle(verticesArr, i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset + 8)
+                    );
+                    verticesPositionsArr[i] = vertex;
+                }
+                
+                var indicesArr = new ushort[samplerResult.IndexBuffer.count];
+                samplerResult.IndexBuffer.GetData(indicesArr);
+                
+                // For each triangle, get the triangle resolution
+                var trianglesResolutionArr = new uint[samplerResult.NTriangles];
+                samplerResult.TrianglesResolutionBuffer.GetData(trianglesResolutionArr);
+                
+                var trianglesSamplesIndexOffsetArr = new uint[samplerResult.NTriangles];
+                samplerResult.TrianglesSamplesIndexOffsetBuffer.GetData(trianglesSamplesIndexOffsetArr);
+
+                for (var triangleIdx = 0; triangleIdx < samplerResult.NTriangles; ++triangleIdx)
+                {
+                    var triangleResolution = trianglesResolutionArr[triangleIdx];
+                    var sampleIndexOffset = trianglesSamplesIndexOffsetArr[triangleIdx];
+
+                    // nth triangle formula
+                    var nSamples = (triangleResolution + 1) * (triangleResolution + 2) / 2u;
+                    
+                    for (var sampleIdx = 0u; sampleIdx < nSamples; sampleIdx++)
+                    {
+                        var barycentricWeights = SampleIndexToBarycentricWeights(sampleIdx, triangleResolution);
+
+                        var v0 = verticesPositionsArr[indicesArr[triangleIdx * 3]];
+                        var v1 = verticesPositionsArr[indicesArr[triangleIdx * 3 + 1]];
+                        var v2 = verticesPositionsArr[indicesArr[triangleIdx * 3 + 2]];
+
+                        var samplePos =
+                            v0 * barycentricWeights.x +
+                            v1 * barycentricWeights.y +
+                            v2 * barycentricWeights.z;
+                        
+                        var sampleValue = samplesValueArr[sampleIndexOffset + sampleIdx];
+                        
+                        // Write the sample to the PLY file
+                        w.WriteLine($"{samplePos.x} {samplePos.y} {samplePos.z} {sampleValue}");
+                    }
+                }
+                
+                w.Close();
+                Debug.Log("PLY file exported to " + Path.GetFullPath(filePath));
+            }
+        }
+        
         public override void RemoveResult(EyeGazeAnalysisResult result)
         {
             base.RemoveResult(result);

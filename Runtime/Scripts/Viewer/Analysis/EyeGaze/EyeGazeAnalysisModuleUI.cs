@@ -12,6 +12,7 @@ namespace PLUME.Viewer.Analysis
         public VisualTreeAsset resultEntryTemplate;
 
         public Action<EyeGazeAnalysisResult> clickedDeleteResult;
+        public Action<EyeGazeAnalysisResult> clickedExportResult;
         public Action<EyeGazeAnalysisResult, bool> toggledResultVisibility;
         
         public Button GenerateButton { get; private set; }
@@ -72,6 +73,7 @@ namespace PLUME.Viewer.Analysis
 
                 resultEntry.Q<Label>("result-index").text = $"#{resultIdx + 1}";
                 resultEntry.Q<Button>("delete-btn").clicked += () => clickedDeleteResult?.Invoke(result);
+                resultEntry.Q<Button>("export-btn").clicked += () => clickedExportResult?.Invoke(result);
                 resultEntry.Q<ToggleButton>("show-btn").toggled +=
                     state => toggledResultVisibility?.Invoke(result, state);
                 resultEntry.Q<ToggleButton>("show-btn").SetStateWithoutNotify(module.GetVisibleResult() == result);

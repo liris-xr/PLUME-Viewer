@@ -24,6 +24,9 @@
             <PLUME.ToggleButton name="show-btn" class="result-controls__btn">
                 <ui:VisualElement class="img" />
             </PLUME.ToggleButton>
+            <ui:Button display-tooltip-when-elided="true" name="export-btn" class="result-controls__btn">
+                <ui:VisualElement class="img" style="background-image: resource(&apos;UI/Images/download&apos;);" />
+            </ui:Button>
             <ui:Button display-tooltip-when-elided="true" name="delete-btn" class="result-controls__btn">
                 <ui:VisualElement class="img" style="background-image: resource(&apos;UI/Images/delete&apos;);" />
             </ui:Button>

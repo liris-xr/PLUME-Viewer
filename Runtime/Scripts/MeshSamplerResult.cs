@@ -1,4 +1,5 @@
 ﻿using System;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace PLUME
@@ -6,6 +7,7 @@ namespace PLUME
     public class MeshSamplerResult : IDisposable
     {
         public readonly uint NTriangles;
+        public readonly uint NVertices;
         public readonly uint NSamples;
         public readonly uint NSamplesMaxPerTriangle;
 
@@ -21,12 +23,15 @@ namespace PLUME
 
         public readonly ComputeBuffer SampleValuesBuffer;
 
-        public MeshSamplerResult(uint nTriangles, uint nSamples, uint nSamplesMaxPerTriangle,
+        [CanBeNull] public string Name;
+
+        public MeshSamplerResult(uint nTriangles, uint nVertices, uint nSamples, uint nSamplesMaxPerTriangle,
             GraphicsBuffer indexBuffer, int indexBufferStride, GraphicsBuffer vertexBuffer, int vertexBufferStride,
             int vertexBufferPositionOffset, ComputeBuffer sampleValuesBuffer, ComputeBuffer trianglesResolutionBuffer,
             ComputeBuffer trianglesSamplesIndexOffsetBuffer)
         {
             NTriangles = nTriangles;
+            NVertices = nVertices;
             NSamples = nSamples;
             NSamplesMaxPerTriangle = nSamplesMaxPerTriangle;
             IndexBuffer = indexBuffer;

@@ -31,7 +31,8 @@ namespace PLUME.Viewer.Analysis
         public ComputeBuffer MaxValueBuffer { get; }
 
         /// <summary>
-        /// List of generated samples for the projection receivers. The key is the mesh ID in the record.
+        /// List of generated samples for the projection receivers. The key is the hash between the GameObject
+        /// identifier and mesh identifier in the record.
         /// </summary>
         public readonly Dictionary<int, MeshSamplerResult> SamplerResults = new();
 

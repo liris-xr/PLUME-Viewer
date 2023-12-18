@@ -88,6 +88,7 @@ namespace PLUME
             var indexBufferStride = indexBuffer.stride;
 
             var nTriangles = (uint) (indexBuffer.count / 3);
+            var nVertices = (uint) vertexBuffer.count;
 
             // Specifically set the initial values to 0 in the buffer to prevent undefined behaviour of InterlockedMax and InterlockedAdd
             var totalSamplesCountArr = new uint[] {0};
@@ -131,7 +132,7 @@ namespace PLUME
             trianglesMaxResolutionBuffer.GetData(triangleResolutionMaxArr);
             var nSamplesMaxPerTriangle = NthTriangleFormula(triangleResolutionMaxArr[0]);
 
-            var sampledMesh = new MeshSamplerResult(nTriangles, nSamples, nSamplesMaxPerTriangle, indexBuffer,
+            var sampledMesh = new MeshSamplerResult(nTriangles, nVertices, nSamples, nSamplesMaxPerTriangle, indexBuffer,
                 indexBufferStride, vertexBuffer, vertexBufferStride,
                 vertexBufferPositionOffset, sampleValuesBuffer,
                 trianglesResolutionBuffer,

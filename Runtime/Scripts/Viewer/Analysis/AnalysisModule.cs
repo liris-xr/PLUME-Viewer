@@ -41,6 +41,11 @@ namespace PLUME
         {
             _results.Remove(result);
         }
+        
+        public virtual int GetResultIndex(T result)
+        {
+            return _results.IndexOf(result);
+        }
 
         public IEnumerator<T> GetResultsEnumerator()
         {
