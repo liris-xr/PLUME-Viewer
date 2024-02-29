@@ -2,13 +2,17 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Xml.Linq;
 using PLUME.Sample;
 using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
+using PLUME.Sample.Unity;
+using PLUME.Viewer;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Color = UnityEngine.Color;
+using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 using Vector2 = UnityEngine.Vector2;
 
@@ -45,7 +49,7 @@ namespace PLUME.UI
         public VisualElement PreviewRender { get; private set; }
 
         public TreeView HierarchyTree { get; private set; }
-
+        
         public CollapseBarElement RecordsCollapseBar { get; private set; }
         public CollapseBarElement TimelineCollapseBar { get; private set; }
         public CollapseBarElement AnalysisCollapseBar { get; private set; }
@@ -85,7 +89,6 @@ namespace PLUME.UI
             PreviewRender = PreviewRenderAspectRatio.Q<VisualElement>("render");
 
             HierarchyTree = ViewerPanel.Q<TreeView>("hierarchy-tree");
-            HierarchyTree.SetRootItems(new List<TreeViewItemData<Transform>>());
             HierarchyTree.makeItem = () =>
             {
                 var container = new VisualElement();
@@ -102,14 +105,21 @@ namespace PLUME.UI
                 element.Q<Label>("name").style.color = t.gameObject.activeInHierarchy
                     ? new StyleColor(Color.white)
                     : new StyleColor(Color.gray);
+                
+                // Dirty fix for selection not working in tree view
+                element.RegisterCallback<MouseDownEvent>(_ =>
+                {
+                    HierarchyTree.SetSelection(i);
+                });
             };
+            HierarchyTree.SetRootItems(new List<TreeViewItemData<Transform>>());
             
             HierarchyTree.RegisterCallback<KeyDownEvent>(evt =>
             {
                 if (evt.ctrlKey && evt.keyCode == KeyCode.C)
                 {
                     var selectedItems = HierarchyTree.GetSelectedItems<Transform>();
-
+                
                     GUIUtility.systemCopyBuffer = string.Join(",",
                         selectedItems.Select(t =>
                             player.GetPlayerContext().GetRecordIdentifier(t.data.gameObject.GetInstanceID())));

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PLUME.Sample;
 using PLUME.Sample.Unity;
+using PLUME.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -206,10 +207,7 @@ namespace PLUME
             var t = GetOrCreateTransformByIdentifier(transformIdentifier);
             var parent = GetOrCreateTransformByIdentifier(parentTransformIdentifier);
             t.SetParent(parent);
-            var transformGuid = transformIdentifier.ComponentId;
-            var parentTransformGuid = parentTransformIdentifier.ComponentId;
-            updatedHierarchy?.Invoke(new HierarchyUpdateParentEvent(transformGuid, parentTransformGuid,
-                t.GetSiblingIndex()));
+            updatedHierarchy?.Invoke(new HierarchyUpdateParentEvent(transformIdentifier.ParentId, parentTransformIdentifier.ParentId, t.GetSiblingIndex()));
         }
 
         public void SetSiblingIndex(ComponentIdentifier transformIdentifier, int siblingIndex)
@@ -217,14 +215,14 @@ namespace PLUME
             var t = GetOrCreateTransformByIdentifier(transformIdentifier);
             t.SetSiblingIndex(siblingIndex);
             updatedHierarchy?.Invoke(
-                new HierarchyUpdateSiblingIndexEvent(transformIdentifier.ComponentId, siblingIndex));
+                new HierarchyUpdateSiblingIndexEvent(transformIdentifier.ParentId, siblingIndex));
         }
 
         public void SetActive(GameObjectIdentifier id, bool active)
         {
             var go = GetOrCreateGameObjectByIdentifier(id);
             go.SetActive(active);
-            updatedHierarchy?.Invoke(new HierarchyUpdateEnabledEvent(id.TransformId, active));
+            updatedHierarchy?.Invoke(new HierarchyUpdateEnabledEvent(id, active));
         }
 
         private void EnableRootGameObjects()
@@ -305,7 +303,7 @@ namespace PLUME
             _transformsByInstanceId[newTransform.GetInstanceID()] = newTransform;
             TryAddIdentifierCorrespondence(id.GameObjectId, newGameObject.GetInstanceID());
             TryAddIdentifierCorrespondence(id.TransformId, newTransform.GetInstanceID());
-            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(id.TransformId));
+            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(id));
             return newGameObject;
         }
 
@@ -355,7 +353,7 @@ namespace PLUME
             _transformsByInstanceId[newTransform.GetInstanceID()] = newTransform;
             TryAddIdentifierCorrespondence(transformGuid, newTransform.GetInstanceID());
             TryAddIdentifierCorrespondence(gameObjectGuid, newGameObject.GetInstanceID());
-            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(transformGuid));
+            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(id.ParentId));
             return newTransform;
         }
 
@@ -405,7 +403,7 @@ namespace PLUME
             _transformsByInstanceId[newTransform.GetInstanceID()] = newTransform;
             TryAddIdentifierCorrespondence(transformGuid, newTransform.GetInstanceID());
             TryAddIdentifierCorrespondence(gameObjectGuid, newGameObject.GetInstanceID());
-            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(transformGuid));
+            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(id.ParentId));
             return newTransform;
         }
 
@@ -472,56 +470,31 @@ namespace PLUME
                 _gameObjectsByInstanceId.Remove(go.GetInstanceID());
                 _gameObjectsTagByInstanceId.Remove(go.GetInstanceID());
                 _transformsByInstanceId.Remove(go.transform.GetInstanceID());
+                
+                var children = go.GetComponentsInChildren<Component>();
 
-                foreach (var component in go.GetComponents<Component>())
+                foreach (var child in children)
                 {
-                    _componentByInstanceId.Remove(component.GetInstanceID());
-                    RemoveIdentifierCorrespondence(GetRecordIdentifier(component.GetInstanceID()));
+                    if (child is Transform childTransform)
+                    {
+                        var childTransformInstanceId = childTransform.GetInstanceID();
+                        var childGameObjectInstanceId = childTransform.gameObject.GetInstanceID();
+                        _transformsByInstanceId.Remove(childTransformInstanceId);
+                        _gameObjectsByInstanceId.Remove(childGameObjectInstanceId);
+                        _gameObjectsTagByInstanceId.Remove(childGameObjectInstanceId);
+                        RemoveIdentifierCorrespondence(GetRecordIdentifier(childTransformInstanceId));
+                        RemoveIdentifierCorrespondence(GetRecordIdentifier(childGameObjectInstanceId));
+                    }
+                    else
+                    {
+                        var childComponentInstanceId = child.GetInstanceID();
+                        _componentByInstanceId.Remove(childComponentInstanceId);
+                        RemoveIdentifierCorrespondence(GetRecordIdentifier(childComponentInstanceId));
+                    }
                 }
-
-                updatedHierarchy?.Invoke(new HierarchyUpdateDestroyTransformEvent(id.TransformId));
+                
+                updatedHierarchy?.Invoke(new HierarchyUpdateDestroyTransformEvent(id));
                 Object.DestroyImmediate(go);
-            }
-
-            var gameObjectsToRemove = new List<int>();
-            var transformsToRemove = new List<int>();
-            var componentsToRemove = new List<int>();
-
-            foreach (var (instanceId, gameObject) in _gameObjectsByInstanceId)
-            {
-                if (gameObject == null)
-                    gameObjectsToRemove.Add(instanceId);
-            }
-
-            foreach (var (instanceId, transform) in _transformsByInstanceId)
-            {
-                if (transform == null)
-                    transformsToRemove.Add(instanceId);
-            }
-
-            foreach (var (instanceId, component) in _componentByInstanceId)
-            {
-                if (component == null)
-                    componentsToRemove.Add(instanceId);
-            }
-
-            foreach (var gameObjectInstanceId in gameObjectsToRemove)
-            {
-                _gameObjectsByInstanceId.Remove(gameObjectInstanceId);
-                _gameObjectsTagByInstanceId.Remove(gameObjectInstanceId);
-            }
-
-            foreach (var transformInstanceId in transformsToRemove)
-            {
-                var recordIdentifier = GetRecordIdentifier(transformInstanceId);
-                _transformsByInstanceId.Remove(transformInstanceId);
-                if (recordIdentifier != null)
-                    updatedHierarchy?.Invoke(new HierarchyUpdateDestroyTransformEvent(recordIdentifier));
-            }
-
-            foreach (var componentInstanceId in componentsToRemove)
-            {
-                _componentByInstanceId.Remove(componentInstanceId);
             }
 
             RemoveIdentifierCorrespondence(id.GameObjectId);

@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using PLUME.Sample.Unity;
 using PLUME.Viewer;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -51,8 +54,7 @@ namespace PLUME.UI
 
             RefreshResetViewButton();
             _mainWindowUI.ResetViewButton.clicked += OnClickResetView;
-
-            _mainWindowUI.Timeline.focusable = true;
+            
             player.GetPlayerContext().updatedHierarchy += OnHierarchyUpdateEvent;
         }
 
@@ -90,11 +92,11 @@ namespace PLUME.UI
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-
+            
             RefreshResetViewButton();
         }
-
-        private void OnHierarchyUpdateEvent(IHierarchyUpdateEvent evt)
+        
+        public void OnHierarchyUpdateEvent(IHierarchyUpdateEvent evt)
         {
             var controller = _mainWindowUI.HierarchyTree.viewController;
             var ctx = player.GetPlayerContext();
@@ -103,34 +105,34 @@ namespace PLUME.UI
             {
                 case HierarchyUpdateCreateTransformEvent createEvt:
                 {
-                    var id = createEvt.transformIdentifier.GetHashCode();
-                    var instanceId = player.GetPlayerContext().GetReplayInstanceId(createEvt.transformIdentifier);
-
+                    var id = createEvt.gameObjectIdentifier.GetHashCode();
+                    var instanceId = player.GetPlayerContext().GetReplayInstanceId(createEvt.gameObjectIdentifier.GameObjectId);
+                    
                     if (instanceId.HasValue)
                     {
-                        var t = ObjectExtensions.FindObjectFromInstanceID(instanceId.Value) as Transform;
-
-                        if (t != null)
-                        {
-                            var itemData = new TreeViewItemData<Transform>(id, t);
-                            _mainWindowUI.HierarchyTree.AddItem(itemData);
-                        }
+                        var go = ObjectExtensions.FindObjectFromInstanceID(instanceId.Value) as GameObject;
+                        
+                        if (go == null)
+                            return;
+                        
+                        var itemData = new TreeViewItemData<Transform>(id, go.transform);
+                        _mainWindowUI.HierarchyTree.AddItem(itemData);
                     }
 
                     break;
                 }
                 case HierarchyUpdateDestroyTransformEvent destroyEvt:
                 {
-                    var id = destroyEvt.transformIdentifier.GetHashCode();
+                    var id = destroyEvt.gameObjectIdentifier.GameObjectId.GetHashCode();
                     _mainWindowUI.HierarchyTree.TryRemoveItem(id);
                     break;
                 }
                 case HierarchyUpdateSiblingIndexEvent siblingUpdateEvt:
                 {
-                    var id = siblingUpdateEvt.transformIdentifier.GetHashCode();
-
+                    var id = siblingUpdateEvt.gameObjectIdentifier.GameObjectId.GetHashCode();
+                    
                     var t = _mainWindowUI.HierarchyTree.GetItemDataForId<Transform>(id);
-
+                    
                     if (t != null)
                     {
                         if (t.parent == null)
@@ -139,39 +141,39 @@ namespace PLUME.UI
                         }
                         else
                         {
-                            var parentId = ctx.GetRecordIdentifier(t.parent.GetInstanceID()).GetHashCode();
+                            var parentId = ctx.GetRecordIdentifier(t.parent.gameObject.GetInstanceID()).GetHashCode();
                             controller.Move(id, parentId, siblingUpdateEvt.siblingIndex);
                         }
                     }
-
+                    
                     break;
                 }
                 case HierarchyUpdateEnabledEvent enabledUpdateEvt:
                 {
-                    var id = enabledUpdateEvt.transformIdentifier.GetHashCode();
+                    var id = enabledUpdateEvt.gameObjectIdentifier.GameObjectId.GetHashCode();
                     var index = controller.GetIndexForId(id);
                     if (index != -1)
                     {
                         _mainWindowUI.HierarchyTree.RefreshItem(index);
                     }
-
+                
                     break;
                 }
                 case HierarchyUpdateParentEvent updateParentEvt:
                 {
-                    var id = updateParentEvt.transformIdentifier.GetHashCode();
-
+                    var id = updateParentEvt.gameObjectIdentifier.GameObjectId.GetHashCode();
+                    
                     // Null Guid
-                    if (updateParentEvt.parentTransformIdentifier == "00000000-0000-0000-0000-000000000000")
+                    if (updateParentEvt.parentIdentifier.GameObjectId == "00000000-0000-0000-0000-000000000000")
                     {
                         controller.Move(id, -1, updateParentEvt.siblingIdx);
                     }
                     else
                     {
-                        var parentId = updateParentEvt.parentTransformIdentifier.GetHashCode();
+                        var parentId = updateParentEvt.parentIdentifier.GameObjectId.GetHashCode();
                         controller.Move(id, parentId, updateParentEvt.siblingIdx);
                     }
-
+                    
                     break;
                 }
                 case HierarchyUpdateResetEvent:

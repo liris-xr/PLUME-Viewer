@@ -1,4 +1,6 @@
-﻿namespace PLUME
+﻿using PLUME.Sample.Unity;
+
+namespace PLUME
 {
     public interface IHierarchyUpdateEvent
     {
@@ -10,59 +12,59 @@
 
     public class HierarchyUpdateSiblingIndexEvent : IHierarchyUpdateEvent
     {
-        public readonly string transformIdentifier;
+        public readonly GameObjectIdentifier gameObjectIdentifier;
         public readonly int siblingIndex;
 
-        public HierarchyUpdateSiblingIndexEvent(string transformIdentifier, int siblingIndex)
+        public HierarchyUpdateSiblingIndexEvent(GameObjectIdentifier gameObjectIdentifier, int siblingIndex)
         {
-            this.transformIdentifier = transformIdentifier;
+            this.gameObjectIdentifier = gameObjectIdentifier;
             this.siblingIndex = siblingIndex;
         }
     }
 
     public class HierarchyUpdateParentEvent : IHierarchyUpdateEvent
     {
-        public readonly string transformIdentifier;
-        public readonly string parentTransformIdentifier;
+        public readonly GameObjectIdentifier gameObjectIdentifier;
+        public readonly GameObjectIdentifier parentIdentifier;
         public readonly int siblingIdx;
 
-        public HierarchyUpdateParentEvent(string transformIdentifier, string parentTransformIdentifier, int siblingIdx)
+        public HierarchyUpdateParentEvent(GameObjectIdentifier gameObjectIdentifier, GameObjectIdentifier parentIdentifier, int siblingIdx)
         {
-            this.transformIdentifier = transformIdentifier;
-            this.parentTransformIdentifier = parentTransformIdentifier;
+            this.gameObjectIdentifier = gameObjectIdentifier;
+            this.parentIdentifier = parentIdentifier;
             this.siblingIdx = siblingIdx;
         }
     }
 
     public class HierarchyUpdateEnabledEvent : IHierarchyUpdateEvent
     {
-        public readonly string transformIdentifier;
+        public readonly GameObjectIdentifier gameObjectIdentifier;
         public readonly bool enabled;
 
-        public HierarchyUpdateEnabledEvent(string transformIdentifier, bool enabled)
+        public HierarchyUpdateEnabledEvent(GameObjectIdentifier gameObjectIdentifier, bool enabled)
         {
-            this.transformIdentifier = transformIdentifier;
+            this.gameObjectIdentifier = gameObjectIdentifier;
             this.enabled = enabled;
         }
     }
 
     public class HierarchyUpdateCreateTransformEvent : IHierarchyUpdateEvent
     {
-        public readonly string transformIdentifier;
+        public readonly GameObjectIdentifier gameObjectIdentifier;
 
-        public HierarchyUpdateCreateTransformEvent(string transformIdentifier)
+        public HierarchyUpdateCreateTransformEvent(GameObjectIdentifier gameObjectIdentifier)
         {
-            this.transformIdentifier = transformIdentifier;
+            this.gameObjectIdentifier = gameObjectIdentifier;
         }
     }
 
     public class HierarchyUpdateDestroyTransformEvent : IHierarchyUpdateEvent
     {
-        public readonly string transformIdentifier;
+        public readonly GameObjectIdentifier gameObjectIdentifier;
 
-        public HierarchyUpdateDestroyTransformEvent(string transformIdentifier)
+        public HierarchyUpdateDestroyTransformEvent(GameObjectIdentifier gameObjectIdentifier)
         {
-            this.transformIdentifier = transformIdentifier;
+            this.gameObjectIdentifier = gameObjectIdentifier;
         }
     }
 }
