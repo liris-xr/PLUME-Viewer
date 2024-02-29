@@ -23,7 +23,7 @@ Shader "Unlit/InteractionHeatmap"
             #pragma fragment frag
 
             #include "UnityCG.cginc"
-            
+
             uniform float _Shading;
 
             struct appdata
@@ -38,7 +38,7 @@ Shader "Unlit/InteractionHeatmap"
                 float4 pos_world : TEXCOORD0;
                 float3 normal_dir : TEXCOORD1;
             };
-            
+
             int _InteractionCount;
             int _MaxInteractionCount;
             float4 _StartColor;
@@ -81,7 +81,6 @@ Shader "Unlit/InteractionHeatmap"
                 float light = saturate(dot(normal_direction, light_direction));
                 return float4(color.xyz * (light + 0.5f), 1);
             }
-            
             ENDCG
         }
     }

@@ -1,19 +1,22 @@
 using UnityEngine;
 
-public class MarkerBillboardFX : MonoBehaviour
+namespace PLUME.Viewer.Analysis.Trajectory
 {
-    public new Camera camera;
-
-    private Quaternion _originalRotation;
-
-    private void Start()
+    public class MarkerBillboardFX : MonoBehaviour
     {
-        _originalRotation = transform.rotation;
-    }
+        public new Camera camera;
 
-    private void Update()
-    {
-        if (camera != null)
-            transform.rotation = camera.transform.rotation * _originalRotation;
+        private Quaternion _originalRotation;
+
+        private void Start()
+        {
+            _originalRotation = transform.rotation;
+        }
+
+        private void Update()
+        {
+            if (camera != null)
+                transform.rotation = camera.transform.rotation * _originalRotation;
+        }
     }
 }

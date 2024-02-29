@@ -2,7 +2,7 @@
 using PLUME.Sample;
 using UnityEngine;
 
-namespace PLUME
+namespace PLUME.Viewer.Player
 {
     public abstract class PlayerModule<T> : PlayerModule where T : IMessage
     {

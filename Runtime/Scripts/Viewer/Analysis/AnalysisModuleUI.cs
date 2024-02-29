@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace PLUME.UI.Analysis
+namespace PLUME.Viewer.Analysis
 {
     public abstract class AnalysisModuleUI<T> : MonoBehaviour where T : AnalysisModule
     {

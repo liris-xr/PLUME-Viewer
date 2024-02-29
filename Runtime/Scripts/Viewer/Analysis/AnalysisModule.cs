@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace PLUME
+namespace PLUME.Viewer.Analysis
 {
     public abstract class AnalysisModule : MonoBehaviour
     {

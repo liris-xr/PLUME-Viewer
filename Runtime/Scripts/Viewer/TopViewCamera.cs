@@ -1,10 +1,9 @@
 ﻿#define USE_INPUT_SYSTEM
 using System;
-using PLUME.Viewer;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace PLUME
+namespace PLUME.Viewer
 {
     [RequireComponent(typeof(Camera))]
     public class TopViewCamera : PreviewCamera
@@ -103,7 +102,7 @@ namespace PLUME
                 return;
 
             // Disable inputs if the camera is not selected
-            if (Player.Instance.GetCurrentPreviewCamera() != this)
+            if (Player.Player.Instance.GetCurrentPreviewCamera() != this)
                 return;
 
             UpdateInputs();

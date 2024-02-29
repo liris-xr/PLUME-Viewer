@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Linq;
-using PLUME.UI.Analysis;
+using PLUME.UI.Element;
 using UnityEngine.UIElements;
 
-namespace PLUME.Viewer.Analysis
+namespace PLUME.Viewer.Analysis.EyeGaze
 {
     public class EyeGazeAnalysisModuleUI : AnalysisModuleWithResultsUI<EyeGazeAnalysisModule, EyeGazeAnalysisResult>
     {
-        public Player player;
+        public Player.Player player;
 
         public VisualTreeAsset resultEntryTemplate;
 

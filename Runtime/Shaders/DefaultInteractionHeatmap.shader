@@ -20,7 +20,7 @@ Shader "Unlit/DefaultInteractionHeatmap"
             #pragma fragment frag
 
             #include "UnityCG.cginc"
-            
+
             uniform float _Shading;
 
             struct appdata
@@ -35,7 +35,7 @@ Shader "Unlit/DefaultInteractionHeatmap"
                 float4 pos_world : TEXCOORD0;
                 float3 normal_dir : TEXCOORD1;
             };
-            
+
             float4 _StartColor;
 
             v2f vert(appdata v)

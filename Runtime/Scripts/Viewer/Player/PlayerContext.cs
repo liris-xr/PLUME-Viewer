@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using PLUME.Sample;
 using PLUME.Sample.Unity;
-using PLUME.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
-namespace PLUME
+namespace PLUME.Viewer.Player
 {
     public class PlayerContext
     {
@@ -207,7 +206,8 @@ namespace PLUME
             var t = GetOrCreateTransformByIdentifier(transformIdentifier);
             var parent = GetOrCreateTransformByIdentifier(parentTransformIdentifier);
             t.SetParent(parent);
-            updatedHierarchy?.Invoke(new HierarchyUpdateParentEvent(transformIdentifier.ParentId, parentTransformIdentifier.ParentId, t.GetSiblingIndex()));
+            updatedHierarchy?.Invoke(new HierarchyUpdateParentEvent(transformIdentifier.ParentId,
+                parentTransformIdentifier.ParentId, t.GetSiblingIndex()));
         }
 
         public void SetSiblingIndex(ComponentIdentifier transformIdentifier, int siblingIndex)
@@ -470,7 +470,7 @@ namespace PLUME
                 _gameObjectsByInstanceId.Remove(go.GetInstanceID());
                 _gameObjectsTagByInstanceId.Remove(go.GetInstanceID());
                 _transformsByInstanceId.Remove(go.transform.GetInstanceID());
-                
+
                 var children = go.GetComponentsInChildren<Component>();
 
                 foreach (var child in children)
@@ -492,7 +492,7 @@ namespace PLUME
                         RemoveIdentifierCorrespondence(GetRecordIdentifier(childComponentInstanceId));
                     }
                 }
-                
+
                 updatedHierarchy?.Invoke(new HierarchyUpdateDestroyTransformEvent(id));
                 Object.DestroyImmediate(go);
             }

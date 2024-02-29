@@ -55,7 +55,7 @@
                 else
                 {
                     o.clip_pos = o.vertex;
-                    
+
                     #if defined(UNITY_REVERSED_Z)
                     #if UNITY_REVERSED_Z == 1
                     //D3d with reversed Z => remap [near, 0] -> [0, 1]

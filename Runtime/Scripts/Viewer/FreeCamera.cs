@@ -1,10 +1,9 @@
 ﻿#define USE_INPUT_SYSTEM
 using System;
-using PLUME.Viewer;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace PLUME
+namespace PLUME.Viewer
 {
     [RequireComponent(typeof(Camera))]
     public class FreeCamera : PreviewCamera
@@ -113,7 +112,7 @@ namespace PLUME
                 return;
 
             // Disable inputs if the camera is not selected
-            if (Player.Instance.GetCurrentPreviewCamera() != this)
+            if (Player.Player.Instance.GetCurrentPreviewCamera() != this)
                 return;
 
             if (Mouse.current?.rightButton?.isPressed == false)
@@ -180,7 +179,7 @@ namespace PLUME
 
         public override void ResetView()
         {
-            var cam = Player.Instance.GetMainCamera().GetCamera();
+            var cam = Player.Player.Instance.GetMainCamera().GetCamera();
 
             if (cam == null)
             {

@@ -6,10 +6,11 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using PLUME.Sample.Unity;
 using PLUME.Sample.Unity.XRITK;
+using PLUME.Viewer.Player;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 
-namespace PLUME.Viewer.Analysis
+namespace PLUME.Viewer.Analysis.EyeGaze
 {
     public class EyeGazeAnalysisModule : AnalysisModuleWithResults<EyeGazeAnalysisResult>
     {
@@ -51,7 +52,7 @@ namespace PLUME.Viewer.Analysis
 
         public Shader defaultHeatmapShader;
 
-        public Player player;
+        public Player.Player player;
 
         public MeshSampler meshSampler;
 
@@ -524,7 +525,7 @@ namespace PLUME.Viewer.Analysis
             {
                 foreach (var sample in frame.Data)
                 {
-                    if (sample.Payload is MeshRendererUpdate or SkinnedMeshRendererUpdate)
+                    if (sample.Payload is RendererUpdate or SkinnedMeshRendererUpdate)
                     {
                         foreach (var playerModule in player.PlayerModules)
                         {

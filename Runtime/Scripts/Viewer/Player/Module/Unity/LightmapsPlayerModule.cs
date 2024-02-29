@@ -3,7 +3,7 @@ using PLUME.Sample.Unity;
 using UnityEngine;
 using LightmapData = UnityEngine.LightmapData;
 
-namespace PLUME
+namespace PLUME.Viewer.Player.Module.Unity
 {
     public class LightmapsPlayerModule : PlayerModule
     {

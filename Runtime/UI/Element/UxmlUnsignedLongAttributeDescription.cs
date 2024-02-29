@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using UnityEngine.UIElements;
 
-namespace PLUME
+namespace PLUME.UI.Element
 {
     public class UxmlUnsignedLongAttributeDescription : TypedUxmlAttributeDescription<ulong>
     {

@@ -3,11 +3,11 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace PLUME.Viewer.Analysis
+namespace PLUME.Viewer.Analysis.EyeGaze
 {
     public class EyeGazeAnalysisModulePresenter : MonoBehaviour
     {
-        public Player player;
+        public Player.Player player;
 
         public EyeGazeAnalysisModule module;
         public EyeGazeAnalysisModuleUI ui;

@@ -3,13 +3,13 @@ using System.Globalization;
 using System.Threading;
 using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
-using PLUME.Viewer;
+using PLUME.Viewer.Analysis;
 using UnityEngine;
 using Color = UnityEngine.Color;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 
-namespace PLUME
+namespace PLUME.Viewer.Player
 {
     [DisallowMultipleComponent]
     public class Player : SingletonMonoBehaviour<Player>, IDisposable

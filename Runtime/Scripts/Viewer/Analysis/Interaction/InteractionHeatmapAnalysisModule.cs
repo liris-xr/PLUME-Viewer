@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using PLUME.Sample.Unity;
 using PLUME.Sample.Unity.XRITK;
+using PLUME.Viewer.Player;
 using UnityEngine;
 
-namespace PLUME
+namespace PLUME.Viewer.Analysis.Interaction
 {
     public class InteractionHeatmapAnalysisModule : AnalysisModuleWithResults<InteractionHeatmapAnalysisResult>
     {
-        public Player player;
+        public Player.Player player;
 
         public Shader interactionHeatmapShader;
         public Shader defaultHeatmapShader;
@@ -147,7 +148,7 @@ namespace PLUME
             {
                 foreach (var data in frame.Data)
                 {
-                    if (data.Payload is MeshRendererUpdate or SkinnedMeshRendererUpdate)
+                    if (data.Payload is RendererUpdate or SkinnedMeshRendererUpdate)
                     {
                         foreach (var playerModule in player.PlayerModules)
                         {

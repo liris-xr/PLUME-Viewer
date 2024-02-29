@@ -2,7 +2,7 @@ using PLUME.Sample;
 using PLUME.Sample.Unity;
 using UnityEngine;
 
-namespace PLUME
+namespace PLUME.Viewer.Player.Module.Unity
 {
     public class TerrainColliderPlayerModule : PlayerModule
     {

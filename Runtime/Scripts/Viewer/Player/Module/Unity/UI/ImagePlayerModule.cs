@@ -3,7 +3,7 @@ using PLUME.Sample.Unity.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace PLUME.UI
+namespace PLUME.Viewer.Player.Module.Unity.UI
 {
     public class ImagePlayerModule : PlayerModule
     {

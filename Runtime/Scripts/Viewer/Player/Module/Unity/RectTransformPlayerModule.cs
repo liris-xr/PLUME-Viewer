@@ -1,7 +1,7 @@
 ﻿using PLUME.Sample;
 using PLUME.Sample.Unity;
 
-namespace PLUME
+namespace PLUME.Viewer.Player.Module.Unity
 {
     public class RectTransformPlayerModule : PlayerModule
     {

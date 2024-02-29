@@ -1,4 +1,4 @@
-﻿namespace PLUME
+﻿namespace PLUME.Viewer.Analysis.Trajectory
 {
     public struct TrajectoryAnalysisModuleParameters
     {

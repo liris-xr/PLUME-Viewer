@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace PLUME
+namespace PLUME.Viewer
 {
     [RequireComponent(typeof(Camera))]
     public class OrthoCameraController : MonoBehaviour

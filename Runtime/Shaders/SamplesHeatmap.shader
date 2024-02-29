@@ -23,7 +23,7 @@
             #include "Math.cginc"
 
             uniform float _Shading;
-            
+
             StructuredBuffer<uint> triangles_resolution_buffer;
             StructuredBuffer<uint> triangles_samples_index_offset_buffer;
             StructuredBuffer<float> samples_value_buffer;
@@ -136,7 +136,7 @@
             {
                 // Prevent MSAA from over-interpolating values
                 i.barycentric_weights = saturate(i.barycentric_weights);
-                
+
                 // Ensures that barycentric coordinates adds up to 1.
                 // This compensates floating point interpolation inaccuracies.
                 i.barycentric_weights.z = 1.0 - (i.barycentric_weights.x + i.barycentric_weights.y);
@@ -176,13 +176,14 @@
                     const float val2 = samples_value_buffer[offset + idx2];
                     w = float3(1, 1, 1) - w;
                     color = fixation_density_to_color(val0 * w.x + val1 * w.y + val2 * w.z);
-                } else
+                }
+                else
                 {
                     const uint idx = scaled_barycentric_weights_to_sample_idx(b, triangle_resolution);
                     const float val = samples_value_buffer[offset + idx];
                     color = fixation_density_to_color(val);
                 }
-                
+
                 if (!_Shading)
                 {
                     return color;

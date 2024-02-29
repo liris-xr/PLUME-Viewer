@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace PLUME.Viewer.Analysis
+namespace PLUME.Viewer.Analysis.EyeGaze
 {
     // cf. https://developer.tobii.com/xr/learn/technical-information/coordinate-systems/#eye-tracking-coordinate-system
     public enum EyeGazeCoordinateSystem

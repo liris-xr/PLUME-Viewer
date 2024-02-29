@@ -2,7 +2,7 @@
 using PLUME.Sample.Unity.UI;
 using UnityEngine;
 
-namespace PLUME.UI
+namespace PLUME.Viewer.Player.Module.Unity.UI
 {
     public class CanvasPlayerModule : PlayerModule
     {

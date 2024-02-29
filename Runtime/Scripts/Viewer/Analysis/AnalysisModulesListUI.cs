@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace PLUME.UI.Analysis
+namespace PLUME.Viewer.Analysis
 {
     public class AnalysisModulesListUI : MonoBehaviour
     {

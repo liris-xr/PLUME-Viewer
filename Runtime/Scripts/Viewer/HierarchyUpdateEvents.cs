@@ -1,6 +1,6 @@
 ﻿using PLUME.Sample.Unity;
 
-namespace PLUME
+namespace PLUME.Viewer
 {
     public interface IHierarchyUpdateEvent
     {
@@ -28,7 +28,8 @@ namespace PLUME
         public readonly GameObjectIdentifier parentIdentifier;
         public readonly int siblingIdx;
 
-        public HierarchyUpdateParentEvent(GameObjectIdentifier gameObjectIdentifier, GameObjectIdentifier parentIdentifier, int siblingIdx)
+        public HierarchyUpdateParentEvent(GameObjectIdentifier gameObjectIdentifier,
+            GameObjectIdentifier parentIdentifier, int siblingIdx)
         {
             this.gameObjectIdentifier = gameObjectIdentifier;
             this.parentIdentifier = parentIdentifier;

@@ -3,15 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using PLUME.Sample.Common;
+using PLUME.Viewer.Player;
 using UnityEngine;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 
-namespace PLUME
+namespace PLUME.Viewer.Analysis.Trajectory
 {
     public class TrajectoryAnalysisModule : AnalysisModuleWithResults<TrajectoryAnalysisModuleResult>
     {
-        public Player player;
+        public Player.Player player;
 
         public Material fullLineMaterial;
         public Material dottedLineMaterial;

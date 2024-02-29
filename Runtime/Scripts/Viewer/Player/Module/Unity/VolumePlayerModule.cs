@@ -2,7 +2,7 @@
 using PLUME.Sample.Unity.URP;
 using UnityEngine.Rendering;
 
-namespace PLUME
+namespace PLUME.Viewer.Player.Module.Unity
 {
     public class VolumePlayerModule : PlayerModule
     {

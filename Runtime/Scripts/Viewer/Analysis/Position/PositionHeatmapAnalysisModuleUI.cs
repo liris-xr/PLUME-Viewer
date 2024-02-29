@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Linq;
+using PLUME.UI.Element;
 using UnityEngine.UIElements;
 
-namespace PLUME.UI.Analysis
+namespace PLUME.Viewer.Analysis.Position
 {
     public class PositionHeatmapAnalysisModuleUI : AnalysisModuleWithResultsUI<PositionHeatmapAnalysisModule,
         PositionHeatmapAnalysisResult>
     {
-        public Player player;
+        public Player.Player player;
 
         public VisualTreeAsset resultEntryTemplate;
 

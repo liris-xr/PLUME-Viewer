@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace PLUME
+namespace PLUME.Viewer.Analysis.Interaction
 {
     public enum InteractionType
     {

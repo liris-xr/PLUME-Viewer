@@ -3,12 +3,12 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace PLUME.UI.Analysis
+namespace PLUME.Viewer.Analysis.Position
 {
     public class PositionHeatmapAnalysisModulePresenter : AnalysisModuleWithResultsPresenter<
         PositionHeatmapAnalysisModule, PositionHeatmapAnalysisResult, PositionHeatmapAnalysisModuleUI>
     {
-        public Player player;
+        public Player.Player player;
 
         private Coroutine _generationCoroutine;
 

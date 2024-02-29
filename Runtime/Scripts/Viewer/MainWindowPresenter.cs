@@ -1,19 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using PLUME.Sample.Unity;
-using PLUME.Viewer;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace PLUME.UI
+namespace PLUME.Viewer
 {
     // TODO: refactor by splitting into multiple classes
     [RequireComponent(typeof(MainWindowUI))]
     public class MainWindowPresenter : MonoBehaviour
     {
-        public Player player;
+        public Player.Player player;
 
         private MainWindowUI _mainWindowUI;
 
@@ -54,7 +50,7 @@ namespace PLUME.UI
 
             RefreshResetViewButton();
             _mainWindowUI.ResetViewButton.clicked += OnClickResetView;
-            
+
             player.GetPlayerContext().updatedHierarchy += OnHierarchyUpdateEvent;
         }
 
@@ -92,10 +88,10 @@ namespace PLUME.UI
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
+
             RefreshResetViewButton();
         }
-        
+
         public void OnHierarchyUpdateEvent(IHierarchyUpdateEvent evt)
         {
             var controller = _mainWindowUI.HierarchyTree.viewController;
@@ -106,15 +102,16 @@ namespace PLUME.UI
                 case HierarchyUpdateCreateTransformEvent createEvt:
                 {
                     var id = createEvt.gameObjectIdentifier.GetHashCode();
-                    var instanceId = player.GetPlayerContext().GetReplayInstanceId(createEvt.gameObjectIdentifier.GameObjectId);
-                    
+                    var instanceId = player.GetPlayerContext()
+                        .GetReplayInstanceId(createEvt.gameObjectIdentifier.GameObjectId);
+
                     if (instanceId.HasValue)
                     {
                         var go = ObjectExtensions.FindObjectFromInstanceID(instanceId.Value) as GameObject;
-                        
+
                         if (go == null)
                             return;
-                        
+
                         var itemData = new TreeViewItemData<Transform>(id, go.transform);
                         _mainWindowUI.HierarchyTree.AddItem(itemData);
                     }
@@ -130,9 +127,9 @@ namespace PLUME.UI
                 case HierarchyUpdateSiblingIndexEvent siblingUpdateEvt:
                 {
                     var id = siblingUpdateEvt.gameObjectIdentifier.GameObjectId.GetHashCode();
-                    
+
                     var t = _mainWindowUI.HierarchyTree.GetItemDataForId<Transform>(id);
-                    
+
                     if (t != null)
                     {
                         if (t.parent == null)
@@ -145,7 +142,7 @@ namespace PLUME.UI
                             controller.Move(id, parentId, siblingUpdateEvt.siblingIndex);
                         }
                     }
-                    
+
                     break;
                 }
                 case HierarchyUpdateEnabledEvent enabledUpdateEvt:
@@ -156,13 +153,13 @@ namespace PLUME.UI
                     {
                         _mainWindowUI.HierarchyTree.RefreshItem(index);
                     }
-                
+
                     break;
                 }
                 case HierarchyUpdateParentEvent updateParentEvt:
                 {
                     var id = updateParentEvt.gameObjectIdentifier.GameObjectId.GetHashCode();
-                    
+
                     // Null Guid
                     if (updateParentEvt.parentIdentifier.GameObjectId == "00000000-0000-0000-0000-000000000000")
                     {
@@ -173,7 +170,7 @@ namespace PLUME.UI
                         var parentId = updateParentEvt.parentIdentifier.GameObjectId.GetHashCode();
                         controller.Move(id, parentId, updateParentEvt.siblingIdx);
                     }
-                    
+
                     break;
                 }
                 case HierarchyUpdateResetEvent:

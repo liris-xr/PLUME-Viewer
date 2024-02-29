@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace PLUME
+namespace PLUME.Viewer.Analysis
 {
     public abstract class AnalysisModuleResult
     {

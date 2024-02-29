@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace PLUME.UI.Analysis
+namespace PLUME.Viewer.Analysis.Trajectory
 {
     public class TrajectoryAnalysisModulePresenter : AnalysisModuleWithResultsPresenter<
         TrajectoryAnalysisModule, TrajectoryAnalysisModuleResult, TrajectoryAnalysisModuleUI>
     {
-        public Player player;
+        public Player.Player player;
 
         private Coroutine _generationCoroutine;
 

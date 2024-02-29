@@ -2,11 +2,11 @@ using System;
 using System.Linq;
 using UnityEngine;
 
-namespace PLUME.UI.Analysis
+namespace PLUME.Viewer.Analysis.Interaction
 {
     public class InteractionHeatmapAnalysisModulePresenter : MonoBehaviour
     {
-        public Player player;
+        public Player.Player player;
 
         public InteractionHeatmapAnalysisModule module;
         public InteractionHeatmapAnalysisModuleUI ui;

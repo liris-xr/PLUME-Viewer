@@ -2,7 +2,7 @@
 using PLUME.Sample;
 using PLUME.Sample.Unity.XRITK;
 
-namespace PLUME
+namespace PLUME.Viewer.Player.Module.XRITK
 {
     public class InputActionPlayerModule : PlayerModule
     {

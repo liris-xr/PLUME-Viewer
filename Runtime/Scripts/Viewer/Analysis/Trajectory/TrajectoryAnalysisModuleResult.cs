@@ -6,7 +6,7 @@ using PLUME.Sample.Common;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 
-namespace PLUME
+namespace PLUME.Viewer.Analysis.Trajectory
 {
     public class TrajectorySegmentPoint
     {

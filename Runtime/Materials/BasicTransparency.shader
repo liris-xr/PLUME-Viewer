@@ -6,7 +6,10 @@ Shader "Unlit/BasicTransparency"
     }
     SubShader
     {
-        Tags {"Queue"="Transparent" "RenderType"="Opaque"}
+        Tags
+        {
+            "Queue"="Transparent" "RenderType"="Opaque"
+        }
         ZWrite Off
         Cull Off
         Blend SrcAlpha OneMinusSrcAlpha
@@ -14,13 +17,13 @@ Shader "Unlit/BasicTransparency"
 
         Pass
         {
-            
+
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
 
             #include "UnityCG.cginc"
-            
+
             struct appdata
             {
                 float4 vertex : POSITION;
@@ -34,7 +37,7 @@ Shader "Unlit/BasicTransparency"
                 float4 vertex : SV_POSITION;
                 fixed4 color : COLOR0;
             };
-            
+
             sampler2D _MainTex;
             float4 _MainTex_ST;
 

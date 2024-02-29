@@ -21,7 +21,7 @@
             #include "UnityCG.cginc"
 
             uniform float _Shading;
-            
+
             struct appdata
             {
                 float4 vertex : POSITION;

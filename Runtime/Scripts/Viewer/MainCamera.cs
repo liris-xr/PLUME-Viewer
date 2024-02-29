@@ -1,9 +1,9 @@
 ﻿#define USE_INPUT_SYSTEM
 using System.Linq;
-using PLUME.Viewer;
+using PLUME.Viewer.Player;
 using UnityEngine;
 
-namespace PLUME
+namespace PLUME.Viewer
 {
     public class MainCamera : PreviewCamera
     {
@@ -21,8 +21,10 @@ namespace PLUME
 
             if (cam != null)
             {
-                cam.targetTexture = Player.Instance.GetCurrentPreviewCamera() == this ? PreviewRenderTexture : null;
-                cam.enabled = Player.Instance.GetCurrentPreviewCamera() == this;
+                cam.targetTexture = Player.Player.Instance.GetCurrentPreviewCamera() == this
+                    ? PreviewRenderTexture
+                    : null;
+                cam.enabled = Player.Player.Instance.GetCurrentPreviewCamera() == this;
             }
         }
 

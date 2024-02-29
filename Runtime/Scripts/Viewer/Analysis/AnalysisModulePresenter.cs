@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace PLUME.UI.Analysis
+namespace PLUME.Viewer.Analysis
 {
     public abstract class AnalysisModuleWithResultsPresenter<TU, TV, TW> : MonoBehaviour
         where TU : AnalysisModuleWithResults<TV>

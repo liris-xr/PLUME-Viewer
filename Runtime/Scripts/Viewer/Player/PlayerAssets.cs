@@ -5,7 +5,7 @@ using PLUME.Sample.Unity;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace PLUME
+namespace PLUME.Viewer.Player
 {
     public class PlayerAssets
     {

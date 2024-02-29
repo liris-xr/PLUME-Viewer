@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace PLUME
+namespace PLUME.Viewer.Analysis.Position
 {
     public struct PositionHeatmapAnalysisModuleParameters
     {

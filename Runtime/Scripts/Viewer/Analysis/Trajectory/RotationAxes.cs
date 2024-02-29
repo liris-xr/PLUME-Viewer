@@ -1,19 +1,22 @@
 using UnityEngine;
 
-[ExecuteInEditMode]
-public class RotationAxes : MonoBehaviour
+namespace PLUME.Viewer.Analysis.Trajectory
 {
-    private void Update()
+    [ExecuteInEditMode]
+    public class RotationAxes : MonoBehaviour
     {
-        if (transform.hasChanged)
+        private void Update()
         {
-            var lineRenderers = GetComponentsInChildren<LineRenderer>();
-            foreach (var lineRenderer in lineRenderers)
+            if (transform.hasChanged)
             {
-                lineRenderer.startWidth = transform.localScale.x;
-            }
+                var lineRenderers = GetComponentsInChildren<LineRenderer>();
+                foreach (var lineRenderer in lineRenderers)
+                {
+                    lineRenderer.startWidth = transform.localScale.x;
+                }
 
-            transform.hasChanged = false;
+                transform.hasChanged = false;
+            }
         }
     }
 }

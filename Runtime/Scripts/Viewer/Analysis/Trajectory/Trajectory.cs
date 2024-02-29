@@ -3,7 +3,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 
-namespace PLUME
+namespace PLUME.Viewer.Analysis.Trajectory
 {
     public class Trajectory : MonoBehaviour
     {

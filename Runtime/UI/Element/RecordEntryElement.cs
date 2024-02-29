@@ -1,7 +1,7 @@
 ﻿using UnityEngine.Scripting;
 using UnityEngine.UIElements;
 
-namespace PLUME
+namespace PLUME.UI.Element
 {
     public class RecordEntryElement : VisualElement
     {

@@ -2,7 +2,7 @@
 using PLUME.Sample.Unity.URP;
 using UnityEngine.Rendering.Universal;
 
-namespace PLUME.URP
+namespace PLUME.Viewer.Player.Module.Unity.URP
 {
     public class AdditionalCameraDataPlayerModule : PlayerModule
     {

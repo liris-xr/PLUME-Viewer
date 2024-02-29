@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
+using PLUME.UI.Element;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace PLUME.UI.Analysis
+namespace PLUME.Viewer.Analysis.Trajectory
 {
     public class
         TrajectoryAnalysisModuleUI : AnalysisModuleWithResultsUI<TrajectoryAnalysisModule,
         TrajectoryAnalysisModuleResult>
     {
-        public Player player;
+        public Player.Player player;
 
         public VisualTreeAsset resultEntryTemplate;
 
