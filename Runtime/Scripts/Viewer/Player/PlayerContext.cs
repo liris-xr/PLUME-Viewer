@@ -467,6 +467,8 @@ namespace PLUME.Viewer.Player
 
             if (go != null)
             {
+                updatedHierarchy?.Invoke(new HierarchyUpdateDestroyTransformEvent(id));
+                
                 _gameObjectsByInstanceId.Remove(go.GetInstanceID());
                 _gameObjectsTagByInstanceId.Remove(go.GetInstanceID());
                 _transformsByInstanceId.Remove(go.transform.GetInstanceID());
@@ -492,8 +494,7 @@ namespace PLUME.Viewer.Player
                         RemoveIdentifierCorrespondence(GetRecordIdentifier(childComponentInstanceId));
                     }
                 }
-
-                updatedHierarchy?.Invoke(new HierarchyUpdateDestroyTransformEvent(id));
+                
                 Object.DestroyImmediate(go);
             }
 

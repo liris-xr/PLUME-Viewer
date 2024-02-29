@@ -101,45 +101,53 @@ namespace PLUME.Viewer
             {
                 case HierarchyUpdateCreateTransformEvent createEvt:
                 {
-                    var id = createEvt.gameObjectIdentifier.GetHashCode();
                     var instanceId = player.GetPlayerContext()
                         .GetReplayInstanceId(createEvt.gameObjectIdentifier.GameObjectId);
 
-                    if (instanceId.HasValue)
-                    {
-                        var go = ObjectExtensions.FindObjectFromInstanceID(instanceId.Value) as GameObject;
+                    if (!instanceId.HasValue)
+                        return;
 
-                        if (go == null)
-                            return;
+                    var go = ObjectExtensions.FindObjectFromInstanceID(instanceId.Value) as GameObject;
 
-                        var itemData = new TreeViewItemData<Transform>(id, go.transform);
-                        _mainWindowUI.HierarchyTree.AddItem(itemData);
-                    }
+                    if (go == null)
+                        return;
+
+                    var itemData = new TreeViewItemData<GameObject>(instanceId.Value, go);
+                    _mainWindowUI.HierarchyTree.AddItem(itemData);
 
                     break;
                 }
                 case HierarchyUpdateDestroyTransformEvent destroyEvt:
                 {
-                    var id = destroyEvt.gameObjectIdentifier.GameObjectId.GetHashCode();
-                    _mainWindowUI.HierarchyTree.TryRemoveItem(id);
+                    var instanceId = player.GetPlayerContext()
+                        .GetReplayInstanceId(destroyEvt.gameObjectIdentifier.GameObjectId);
+
+                    if (!instanceId.HasValue)
+                        return;
+
+                    _mainWindowUI.HierarchyTree.TryRemoveItem(instanceId.Value);
                     break;
                 }
                 case HierarchyUpdateSiblingIndexEvent siblingUpdateEvt:
                 {
-                    var id = siblingUpdateEvt.gameObjectIdentifier.GameObjectId.GetHashCode();
+                    var instanceId = player.GetPlayerContext()
+                        .GetReplayInstanceId(siblingUpdateEvt.gameObjectIdentifier.GameObjectId);
 
-                    var t = _mainWindowUI.HierarchyTree.GetItemDataForId<Transform>(id);
+                    if (!instanceId.HasValue)
+                        return;
 
-                    if (t != null)
+                    var go = _mainWindowUI.HierarchyTree.GetItemDataForId<GameObject>(instanceId.Value);
+
+                    if (go != null)
                     {
-                        if (t.parent == null)
+                        if (go.transform.parent == null)
                         {
-                            controller.Move(id, -1, siblingUpdateEvt.siblingIndex);
+                            controller.Move(instanceId.Value, -1, siblingUpdateEvt.siblingIndex);
                         }
                         else
                         {
-                            var parentId = ctx.GetRecordIdentifier(t.parent.gameObject.GetInstanceID()).GetHashCode();
-                            controller.Move(id, parentId, siblingUpdateEvt.siblingIndex);
+                            var parentId = go.transform.parent.GetInstanceID();
+                            controller.Move(instanceId.Value, parentId, siblingUpdateEvt.siblingIndex);
                         }
                     }
 
@@ -147,8 +155,13 @@ namespace PLUME.Viewer
                 }
                 case HierarchyUpdateEnabledEvent enabledUpdateEvt:
                 {
-                    var id = enabledUpdateEvt.gameObjectIdentifier.GameObjectId.GetHashCode();
-                    var index = controller.GetIndexForId(id);
+                    var instanceId = player.GetPlayerContext()
+                        .GetReplayInstanceId(enabledUpdateEvt.gameObjectIdentifier.GameObjectId);
+
+                    if (!instanceId.HasValue)
+                        return;
+
+                    var index = controller.GetIndexForId(instanceId.Value);
                     if (index != -1)
                     {
                         _mainWindowUI.HierarchyTree.RefreshItem(index);
@@ -158,17 +171,26 @@ namespace PLUME.Viewer
                 }
                 case HierarchyUpdateParentEvent updateParentEvt:
                 {
-                    var id = updateParentEvt.gameObjectIdentifier.GameObjectId.GetHashCode();
+                    var instanceId = player.GetPlayerContext()
+                        .GetReplayInstanceId(updateParentEvt.gameObjectIdentifier.GameObjectId);
+
+                    if (!instanceId.HasValue)
+                        return;
 
                     // Null Guid
                     if (updateParentEvt.parentIdentifier.GameObjectId == "00000000-0000-0000-0000-000000000000")
                     {
-                        controller.Move(id, -1, updateParentEvt.siblingIdx);
+                        controller.Move(instanceId.Value, -1, updateParentEvt.siblingIdx);
                     }
                     else
                     {
-                        var parentId = updateParentEvt.parentIdentifier.GameObjectId.GetHashCode();
-                        controller.Move(id, parentId, updateParentEvt.siblingIdx);
+                        var parentId = player.GetPlayerContext()
+                            .GetReplayInstanceId(updateParentEvt.parentIdentifier.GameObjectId);
+                        
+                        if(!parentId.HasValue)
+                            return;
+                        
+                        controller.Move(instanceId.Value, parentId.Value, updateParentEvt.siblingIdx);
                     }
 
                     break;
@@ -176,7 +198,7 @@ namespace PLUME.Viewer
                 case HierarchyUpdateResetEvent:
                 {
                     _mainWindowUI.HierarchyTree.ClearSelection();
-                    _mainWindowUI.HierarchyTree.SetRootItems(new List<TreeViewItemData<Transform>>());
+                    _mainWindowUI.HierarchyTree.SetRootItems(new List<TreeViewItemData<GameObject>>());
                     _mainWindowUI.HierarchyTree.Rebuild();
                     break;
                 }

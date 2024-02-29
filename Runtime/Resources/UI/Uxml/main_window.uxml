@@ -10,27 +10,27 @@
         <ui:VisualElement name="loading-panel" class="panel-container-primary" style="flex-grow: 1; display: none;">
             <ui:VisualElement name="navbar" style="flex-grow: 0;">
                 <ui:VisualElement name="logo" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); height: 100%; max-height: 100%; min-height: 100%; align-items: flex-start; width: 80px; padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px;">
-                    <PLUME.AspectRatioContainerElement aspect-ratio-width="418" aspect-ratio-height="119" style="width: 100%; max-width: 100%; min-width: 100%; height: 100%; max-height: 100%; min-height: 100%;">
+                    <PLUME.UI.Element.AspectRatioContainerElement aspect-ratio-width="418" aspect-ratio-height="119" style="width: 100%; max-width: 100%; min-width: 100%; height: 100%; max-height: 100%; min-height: 100%;">
                         <ui:VisualElement name="Image" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); background-image: url(&quot;project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Images/logo-dark.png?fileID=2800000&amp;guid=8a27b2be8237e7647a8ce439f4a16f56&amp;type=3#logo-dark&quot;); max-width: 100%; max-height: 100%; left: auto; height: 100%; min-height: 100%; width: 100%; min-width: 100%; align-items: center; justify-content: center; align-self: center;" />
-                    </PLUME.AspectRatioContainerElement>
+                    </PLUME.UI.Element.AspectRatioContainerElement>
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement name="content" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); align-items: center; justify-content: center;">
-                <PLUME.AspectRatioContainerElement aspect-ratio-width="418" aspect-ratio-height="119" style="width: 200px; max-width: 200%; height: 80px; max-height: 80px;">
+                <PLUME.UI.Element.AspectRatioContainerElement aspect-ratio-width="418" aspect-ratio-height="119" style="width: 200px; max-width: 200%; height: 80px; max-height: 80px;">
                     <ui:VisualElement name="Image" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); background-image: url(&quot;project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Images/logo-dark.png?fileID=2800000&amp;guid=8a27b2be8237e7647a8ce439f4a16f56&amp;type=3#logo-dark&quot;); max-width: 100%; max-height: 100%; left: auto; height: 100%; min-height: 100%; width: 100%; min-width: 100%; align-items: center; justify-content: center; align-self: center;" />
-                </PLUME.AspectRatioContainerElement>
-                <PLUME.AspectRatioContainerElement aspect-ratio-width="1" aspect-ratio-height="1" style="flex-grow: 1; max-width: 200px; width: 200px; height: 200px; max-height: 200px;">
+                </PLUME.UI.Element.AspectRatioContainerElement>
+                <PLUME.UI.Element.AspectRatioContainerElement aspect-ratio-width="1" aspect-ratio-height="1" style="flex-grow: 1; max-width: 200px; width: 200px; height: 200px; max-height: 200px;">
                     <ui:VisualElement style="background-image: resource(&apos;UI/Images/dummy&apos;); -unity-background-scale-mode: scale-to-fit; flex-grow: 1;" />
-                </PLUME.AspectRatioContainerElement>
+                </PLUME.UI.Element.AspectRatioContainerElement>
                 <ui:ProgressBar value="0" title="Loading asset bundle..." name="progress-bar" high-value="1" style="flex-grow: 0; min-width: 200px; max-width: 500px; width: 500px; flex-shrink: 1; margin-top: 30px; margin-left: 0; margin-right: 0; margin-bottom: 0;" />
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="viewer" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); display: flex;">
             <ui:VisualElement name="navbar" style="flex-grow: 0;">
                 <ui:VisualElement name="logo" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); height: 100%; max-height: 100%; min-height: 100%; align-items: flex-start; width: 80px; padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px;">
-                    <PLUME.AspectRatioContainerElement aspect-ratio-width="418" aspect-ratio-height="119" style="width: 100%; max-width: 100%; min-width: 100%; height: 100%; max-height: 100%; min-height: 100%;">
+                    <PLUME.UI.Element.AspectRatioContainerElement aspect-ratio-width="418" aspect-ratio-height="119" style="width: 100%; max-width: 100%; min-width: 100%; height: 100%; max-height: 100%; min-height: 100%;">
                         <ui:VisualElement name="Image" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); background-image: url(&quot;project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Images/logo-dark.png?fileID=2800000&amp;guid=8a27b2be8237e7647a8ce439f4a16f56&amp;type=3#logo-dark&quot;); max-width: 100%; max-height: 100%; left: auto; height: 100%; min-height: 100%; width: 100%; min-width: 100%; align-items: center; justify-content: center; align-self: center;" />
-                    </PLUME.AspectRatioContainerElement>
+                    </PLUME.UI.Element.AspectRatioContainerElement>
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:TwoPaneSplitView fixed-pane-index="1" orientation="Vertical" fixed-pane-initial-dimension="300" name="vertical-pane-split-view">
@@ -43,12 +43,12 @@
                         <ui:TwoPaneSplitView fixed-pane-index="1" fixed-pane-initial-dimension="300" name="horizontal-pane-split-view-2">
                             <ui:VisualElement name="container" style="flex-grow: 1;">
                                 <ui:VisualElement name="top-container" style="flex-grow: 1; flex-direction: row;">
-                                    <PLUME.CollapseBarElement orientation="Vertical" name="records-collapse-bar" />
+                                    <PLUME.UI.Element.CollapseBarElement orientation="Vertical" name="records-collapse-bar" />
                                     <ui:Instance template="preview" name="preview-container" focusable="true" style="flex-grow: 1; display: flex; visibility: visible;" />
-                                    <PLUME.CollapseBarElement orientation="ReversedVertical" name="analysis-collapse-bar" />
+                                    <PLUME.UI.Element.CollapseBarElement orientation="ReversedVertical" name="analysis-collapse-bar" />
                                 </ui:VisualElement>
                                 <ui:VisualElement name="bottom-container">
-                                    <PLUME.CollapseBarElement orientation="ReversedHorizontal" name="timeline-collapse-bar" />
+                                    <PLUME.UI.Element.CollapseBarElement orientation="ReversedHorizontal" name="timeline-collapse-bar" />
                                 </ui:VisualElement>
                             </ui:VisualElement>
                             <ui:TwoPaneSplitView orientation="Vertical" fixed-pane-initial-dimension="300" name="vertical-pane-split-view" style="min-width: 200px;">
@@ -62,7 +62,7 @@
                     <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/timeline.uss?fileID=7433441132597879392&amp;guid=065e6bcb56164071a2a204af9ea21686&amp;type=3#timeline" />
                     <ui:VisualElement style="flex-grow: 1;">
                         <ui:VisualElement name="Header" class="panel-header" />
-                        <PLUME.TimelineElement name="timeline" focusable="true" style="flex-grow: 1;" />
+                        <PLUME.UI.Element.TimelineElement name="timeline" focusable="true" style="flex-grow: 1;" />
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:TwoPaneSplitView>

@@ -9,7 +9,7 @@
         <ui:Toggle label="Include children:" name="include-receivers-children" value="true"/>
         <ui:Label text="Time range:" display-tooltip-when-elided="true" class="unity-base-field__label"
                   style="padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; margin-left: 3px;"/>
-        <PLUME.TimeRangeElement name="time-range"
+        <PLUME.UI.Element.TimeRangeElement name="time-range"
                                 style="padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px;"/>
         <ui:Button text="Generate" display-tooltip-when-elided="true" name="generate-btn"/>
         <ui:VisualElement name="generating" style="flex-grow: 1; display: none;">

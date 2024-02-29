@@ -95,7 +95,7 @@ namespace PLUME.Viewer
             };
             HierarchyTree.bindItem = (element, i) =>
             {
-                var t = HierarchyTree.GetItemDataForIndex<Transform>(i);
+                var t = HierarchyTree.GetItemDataForIndex<GameObject>(i);
                 if (t == null)
                     return;
                 element.Q<Label>("name").text = t.gameObject.name;
@@ -106,17 +106,17 @@ namespace PLUME.Viewer
                 // Dirty fix for selection not working in tree view
                 element.RegisterCallback<MouseDownEvent>(_ => { HierarchyTree.SetSelection(i); });
             };
-            HierarchyTree.SetRootItems(new List<TreeViewItemData<Transform>>());
+            HierarchyTree.SetRootItems(new List<TreeViewItemData<GameObject>>());
 
             HierarchyTree.RegisterCallback<KeyDownEvent>(evt =>
             {
                 if (evt.ctrlKey && evt.keyCode == KeyCode.C)
                 {
-                    var selectedItems = HierarchyTree.GetSelectedItems<Transform>();
+                    var selectedItems = HierarchyTree.GetSelectedItems<GameObject>();
 
                     GUIUtility.systemCopyBuffer = string.Join(",",
                         selectedItems.Select(t =>
-                            player.GetPlayerContext().GetRecordIdentifier(t.data.gameObject.GetInstanceID())));
+                            player.GetPlayerContext().GetRecordIdentifier(t.data.GetInstanceID())));
                 }
             });
 

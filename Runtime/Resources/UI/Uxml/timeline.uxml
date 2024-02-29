@@ -7,11 +7,11 @@
                           style="flex-grow: 1; flex-direction: row; border-left-width: 0; border-right-width: 0; height: 50px; max-height: 50px; min-height: 50px;">
             <ui:VisualElement name="time-info-panel"
                               style="flex-grow: 0; height: 100%; align-items: center; justify-content: center; flex-shrink: 0; max-width: none; min-width: auto; width: 400px; background-color: rgb(48, 48, 48); border-right-width: 1px; border-left-color: rgb(35, 35, 35); border-right-color: rgb(35, 35, 35); border-top-color: rgb(35, 35, 35); border-bottom-color: rgb(35, 35, 35);">
-                <PLUME.TimeFieldElement name="time-field"/>
+                <PLUME.UI.Element.TimeFieldElement name="time-field"/>
             </ui:VisualElement>
             <ui:ScrollView horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden"
                            name="time-scale-scroll-view" style="height: 100%; width: auto; flex-grow: 1;">
-                <PLUME.TimeScaleElement name="time-scale" ticks-per-division="19" style="flex-grow: 1;"/>
+                <PLUME.UI.Element.TimeScaleElement name="time-scale" ticks-per-division="19" style="flex-grow: 1;"/>
             </ui:ScrollView>
             <ui:VisualElement name="spacer"
                               style="flex-grow: 0; background-color: rgb(48, 48, 48); width: 12px; flex-shrink: 0;"/>

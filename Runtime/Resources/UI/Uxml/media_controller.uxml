@@ -5,9 +5,9 @@
     <ui:VisualElement name="media-controller__container">
         <ui:VisualElement name="floating-container" style="max-width: none; flex-grow: 0;">
             <ui:VisualElement name="play-stop-group" class="media-controller__btn-group" style="flex-shrink: 0;">
-                <PLUME.ToggleButton name="play-pause-btn" class="media-controller__btn">
+                <PLUME.UI.Element.ToggleButton name="play-pause-btn" class="media-controller__btn">
                     <ui:VisualElement picking-mode="Ignore" name="img" class="img"/>
-                </PLUME.ToggleButton>
+                </PLUME.UI.Element.ToggleButton>
                 <ui:Button name="stop-btn" class="media-controller__btn">
                     <ui:VisualElement picking-mode="Ignore" name="img" class="img"
                                       style="background-image: resource(&apos;UI/Images/media-stop&apos;);"/>
@@ -34,9 +34,9 @@
                               style="max-width: 5px; flex-grow: 0; min-width: 2px;"/>
             <ui:VisualElement name="extras-group" class="media-controller__btn-group"
                               style="flex-direction: row; flex-shrink: 0;">
-                <PLUME.ToggleButton name="toggle-maximize-preview-btn" class="media-controller__btn">
+                <PLUME.UI.Element.ToggleButton name="toggle-maximize-preview-btn" class="media-controller__btn">
                     <ui:VisualElement name="img" picking-mode="Ignore" class="img"/>
-                </PLUME.ToggleButton>
+                </PLUME.UI.Element.ToggleButton>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

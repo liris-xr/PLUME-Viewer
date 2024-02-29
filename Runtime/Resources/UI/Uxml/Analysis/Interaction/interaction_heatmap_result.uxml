@@ -27,9 +27,9 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="result-controls" class="result-controls">
-            <PLUME.ToggleButton name="show-btn" class="result-controls__btn">
+            <PLUME.UI.Element.ToggleButton name="show-btn" class="result-controls__btn">
                 <ui:VisualElement class="img"/>
-            </PLUME.ToggleButton>
+            </PLUME.UI.Element.ToggleButton>
             <ui:Button display-tooltip-when-elided="true" name="delete-btn" class="result-controls__btn">
                 <ui:VisualElement class="img" style="background-image: resource(&apos;UI/Images/delete&apos;);"/>
             </ui:Button>

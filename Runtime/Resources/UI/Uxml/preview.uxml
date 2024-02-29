@@ -6,7 +6,7 @@
     <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/preview.uss?fileID=7433441132597879392&amp;guid=aae19869823c7c94cb5fd0a5f4f6137e&amp;type=3#preview"/>
     <ui:VisualElement name="preview" focusable="true">
         <ui:VisualElement name="render-container" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0);">
-            <PLUME.AspectRatioContainerElement name="aspect-ratio" class="panel-container-primary">
+            <PLUME.UI.Element.AspectRatioContainerElement name="aspect-ratio" class="panel-container-primary">
                 <ui:VisualElement name="render" focusable="true"
                                   style="flex-grow: 1; background-color: rgb(0, 0, 0); height: 100%; max-height: 100%; max-width: 100%; min-width: 100%; align-self: flex-start; top: 0; min-height: 100%; width: 100%; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; padding-left: 0; padding-right: 0; position: relative; left: 0; right: 0; bottom: 0; margin-left: 0; margin-right: 0; visibility: visible;">
                     <ui:Label tabindex="-1" text="&lt;b&gt;Controls:&lt;/b&gt; RMB pressed + W,A,S,D and Q,E "
@@ -21,7 +21,7 @@
                               display-tooltip-when-elided="true" name="generating-label" enable-rich-text="false"
                               style="position: absolute; font-size: 12px; color: rgb(255, 255, 255); display: flex; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; background-color: rgba(0, 143, 255, 0.47); left: 0; right: 0; bottom: 0; height: 20px; width: 100%; margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0; align-items: center; justify-content: center; -unity-text-align: middle-center; -unity-font-style: italic;"/>
                 </ui:VisualElement>
-            </PLUME.AspectRatioContainerElement>
+            </PLUME.UI.Element.AspectRatioContainerElement>
         </ui:VisualElement>
         <ui:Instance template="media_controller" name="media-controller"/>
     </ui:VisualElement>
