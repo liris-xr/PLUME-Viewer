@@ -15,11 +15,21 @@ namespace PLUME
                     ctx.GetOrCreateComponentByIdentifier<MeshFilter>(meshFilterCreate.Id);
                     break;
                 }
-                case MeshFilterUpdateMesh meshFilterUpdateMesh:
+                case MeshFilterDestroy meshFilterDestroy:
                 {
-                    var meshFilter = ctx.GetOrCreateComponentByIdentifier<MeshFilter>(meshFilterUpdateMesh.Id);
-                    meshFilter.sharedMesh = ctx.GetOrDefaultAssetByIdentifier<Mesh>(meshFilterUpdateMesh.MeshId);
-                    ctx.TryAddAssetIdentifierCorrespondence(meshFilterUpdateMesh.MeshId, meshFilter.sharedMesh);
+                    ctx.TryDestroyComponentByIdentifier(meshFilterDestroy.Id);
+                    break;
+                }
+                case MeshFilterUpdate meshFilterUpdate:
+                {
+                    var meshFilter = ctx.GetOrCreateComponentByIdentifier<MeshFilter>(meshFilterUpdate.Id);
+
+                    if (meshFilterUpdate.MeshId != null)
+                    {
+                        meshFilter.sharedMesh = ctx.GetOrDefaultAssetByIdentifier<Mesh>(meshFilterUpdate.MeshId);
+                        ctx.TryAddAssetIdentifierCorrespondence(meshFilterUpdate.MeshId, meshFilter.sharedMesh);
+                    }
+
                     break;
                 }
             }

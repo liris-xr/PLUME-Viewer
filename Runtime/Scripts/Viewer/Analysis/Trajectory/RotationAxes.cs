@@ -12,6 +12,7 @@ public class RotationAxes : MonoBehaviour
             {
                 lineRenderer.startWidth = transform.localScale.x;
             }
+
             transform.hasChanged = false;
         }
     }

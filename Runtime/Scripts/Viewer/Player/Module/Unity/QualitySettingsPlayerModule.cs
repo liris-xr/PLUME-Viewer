@@ -11,7 +11,8 @@ namespace PLUME
         {
             if (sample.Payload is QualitySettingsUpdate qualitySettingsUpdate)
             {
-                QualitySettings.renderPipeline = ctx.GetOrDefaultAssetByIdentifier<RenderPipelineAsset>(qualitySettingsUpdate.RenderPipelineAssetId);
+                QualitySettings.renderPipeline =
+                    ctx.GetOrDefaultAssetByIdentifier<RenderPipelineAsset>(qualitySettingsUpdate.RenderPipelineAssetId);
             }
         }
     }

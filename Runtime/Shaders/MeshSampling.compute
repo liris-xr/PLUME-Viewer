@@ -17,7 +17,7 @@ float samples_density; // Number of samples per square meter
 [numthreads(64,1,1)]
 void clear_samples_value(const uint id : SV_DispatchThreadID)
 {
-    if(id.x >= n_samples)
+    if (id.x >= n_samples)
         return;
 
     samples_value_buffer[id.x] = 0;
@@ -32,7 +32,7 @@ void compute_triangles_resolution(const uint id : SV_DispatchThreadID)
 
     if (triangle_index >= n_triangles)
         return;
-        
+
     const uint3 triangle_indices = load_triangle_indices(triangle_index);
     const float3 pos0 = load_vertex_position(triangle_indices[0]) * scale;
     const float3 pos1 = load_vertex_position(triangle_indices[1]) * scale;

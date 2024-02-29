@@ -24,7 +24,7 @@ namespace PLUME
         public new class UxmlTraits : VisualElement.UxmlTraits
         {
             private readonly UxmlEnumAttributeDescription<CollapseBarElementOrientation> _orientation = new()
-                {name = "orientation", defaultValue = CollapseBarElementOrientation.Vertical};
+                { name = "orientation", defaultValue = CollapseBarElementOrientation.Vertical };
 
             public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
             {
@@ -39,7 +39,7 @@ namespace PLUME
         public CollapseBarElementOrientation Orientation { get; set; }
 
         private readonly Button _toggleBtn;
-        
+
         private static readonly StyleSheet StyleSheet;
 
         private bool _isCollapsed;
@@ -105,7 +105,7 @@ namespace PLUME
             UpdateToggleButton();
             toggledCollapse?.Invoke(false);
         }
-        
+
         private void OnToggleButtonClick(ClickEvent evt)
         {
             _isCollapsed = !_isCollapsed;

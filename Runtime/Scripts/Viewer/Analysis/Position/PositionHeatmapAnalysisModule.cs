@@ -64,7 +64,10 @@ namespace PLUME
         private Material _segmentedObjectDepthMaterial;
 
         private PositionHeatmapAnalysisResult _visibleResult;
-        private readonly Dictionary<MeshSamplerResult, MaterialPropertyBlock> _cachedMeshSamplerResultPropertyBlocks = new();
+
+        private readonly Dictionary<MeshSamplerResult, MaterialPropertyBlock> _cachedMeshSamplerResultPropertyBlocks =
+            new();
+
         private readonly Dictionary<int, MaterialPropertyBlock> _cachedSegmentedObjectsDepthPropertyBlocks = new();
 
         private void Awake()
@@ -95,7 +98,7 @@ namespace PLUME
             _projectionCamera.targetTexture = segmentedObjectDepthTexture;
         }
 
-        public IEnumerator GenerateHeatmap(BufferedAsyncRecordLoader loader, PlayerAssets assets,
+        public IEnumerator GenerateHeatmap(BufferedAsyncFramesLoader loader, PlayerAssets assets,
             PositionHeatmapAnalysisModuleParameters parameters,
             Action<PositionHeatmapAnalysisResult> finishCallback)
         {
@@ -104,7 +107,7 @@ namespace PLUME
                 throw new Exception(
                     $"{nameof(parameters.StartTime)} should be less or equal to {nameof(parameters.EndTime)}.");
             }
-            
+
             if (player.GetModuleGenerating() != null)
             {
                 Debug.LogWarning("Another module is already generating");
@@ -127,7 +130,8 @@ namespace PLUME
             // key: mesh record id, value: sampled mesh containing values
             var meshSamplerResults = new Dictionary<int, MeshSamplerResult>();
 
-            var result = new PositionHeatmapAnalysisResult(parameters, samplesMinValueBuffer, samplesMaxValueBuffer, meshSamplerResults);
+            var result = new PositionHeatmapAnalysisResult(parameters, samplesMinValueBuffer, samplesMaxValueBuffer,
+                meshSamplerResults);
 
             SetVisibleResult(result);
 
@@ -142,7 +146,7 @@ namespace PLUME
 
             if (parameters.StartTime > 0)
             {
-                yield return PlaySamplesInTimeRange(loader, _generationContext, 0, parameters.StartTime - 1u);
+                yield return PlayFramesInTimeRange(loader, _generationContext, 0, parameters.StartTime - 1u);
             }
 
             var currentTime = parameters.StartTime;
@@ -151,8 +155,8 @@ namespace PLUME
             {
                 var startTime = currentTime;
                 var endTime = currentTime + projectionSamplingInterval;
-                yield return PlaySamplesInTimeRange(loader, _generationContext, startTime, endTime);
-                
+                yield return PlayFramesInTimeRange(loader, _generationContext, startTime, endTime);
+
                 var replayProjectionCasterId = _generationContext.GetReplayInstanceId(parameters.CasterIdentifier);
                 var replayProjectionReceiversIds = new List<int>();
 
@@ -160,26 +164,28 @@ namespace PLUME
                 {
                     var replayId = _generationContext.GetReplayInstanceId(receiversIdentifier);
                     if (!replayId.HasValue) continue;
-                    
-                    if(!replayProjectionReceiversIds.Contains(replayId.Value))
+
+                    if (!replayProjectionReceiversIds.Contains(replayId.Value))
                         replayProjectionReceiversIds.Add(replayId.Value);
 
                     if (!parameters.IncludeReceiversChildren) continue;
-                    
+
                     var go = _generationContext.FindGameObjectByInstanceId(replayId.Value);
 
-                    foreach (var goInstanceId in go.GetComponentsInChildren<Renderer>().Select(r => r.gameObject.GetInstanceID()))
+                    foreach (var goInstanceId in go.GetComponentsInChildren<Renderer>()
+                                 .Select(r => r.gameObject.GetInstanceID()))
                     {
-                        if(!replayProjectionReceiversIds.Contains(goInstanceId))
+                        if (!replayProjectionReceiversIds.Contains(goInstanceId))
                             replayProjectionReceiversIds.Add(goInstanceId);
                     }
                 }
-                
+
                 if (replayProjectionCasterId.HasValue && replayProjectionReceiversIds.Count > 0)
                 {
                     if (currentTime >= parameters.StartTime && currentTime <= parameters.EndTime)
                     {
-                        var projectionCaster = _generationContext.FindGameObjectByInstanceId(replayProjectionCasterId.Value);
+                        var projectionCaster =
+                            _generationContext.FindGameObjectByInstanceId(replayProjectionCasterId.Value);
 
                         if (projectionCaster != null)
                         {
@@ -200,11 +206,12 @@ namespace PLUME
                 }
 
                 currentTime = endTime + 1;
-                GenerationProgress = (currentTime - parameters.StartTime) / (float)(parameters.EndTime - parameters.StartTime);
+                GenerationProgress = (currentTime - parameters.StartTime) /
+                                     (float)(parameters.EndTime - parameters.StartTime);
             }
-            
+
             GenerationProgress = 1;
-            
+
             QualitySettings.vSyncCount = prevVSyncCount;
             Application.targetFrameRate = prevTargetFrameRate;
 
@@ -213,10 +220,10 @@ namespace PLUME
 
             PlayerContext.Activate(player.GetPlayerContext());
             IsGenerating = false;
-            
-            if(player.GetModuleGenerating() == this)
+
+            if (player.GetModuleGenerating() == this)
                 player.SetModuleGenerating(null);
-            
+
             finishCallback(result);
         }
 
@@ -230,7 +237,7 @@ namespace PLUME
                 projectionCasterGameObject.transform.position, Quaternion.Euler(90, 0, 0));
 
             var wasRendererEnabled = new Dictionary<Renderer, bool>();
-            
+
             // Render object depth with an extra channel containing their instance ID
             ApplySegmentedObjectsDepthMaterials(projectionReceiversGameObjects);
             // Only render projection receivers
@@ -240,9 +247,9 @@ namespace PLUME
                 wasRendererEnabled.Add(goRenderer, goRenderer.enabled);
                 goRenderer.enabled = goRenderer.enabled && projectionReceiversGameObjects.Contains(go);
             }
-            
+
             _projectionCamera.Render();
-            
+
             foreach (var go in ctx.GetAllGameObjects())
             {
                 if (!go.TryGetComponent<Renderer>(out var goRenderer)) continue;
@@ -269,7 +276,7 @@ namespace PLUME
 
                     if (mesh == null || mesh.vertexBufferCount == 0)
                         continue;
-                    
+
                     var meshSamplerResult = GetOrCreateMeshSamplerResult(ctx, go, mesh, meshSamplerResults);
 
                     if (meshSamplerResult == null)
@@ -315,41 +322,42 @@ namespace PLUME
 
             PlayerContext.Activate(player.GetPlayerContext());
             IsGenerating = false;
-            
-            if(player.GetModuleGenerating() == this)
+
+            if (player.GetModuleGenerating() == this)
                 player.SetModuleGenerating(null);
         }
-        
-        private MeshSamplerResult GetOrCreateMeshSamplerResult(PlayerContext ctx, GameObject go, Mesh mesh, IDictionary<int, MeshSamplerResult> meshSamplerResults)
+
+        private MeshSamplerResult GetOrCreateMeshSamplerResult(PlayerContext ctx, GameObject go, Mesh mesh,
+            IDictionary<int, MeshSamplerResult> meshSamplerResults)
         {
             var gameObjectIdentifier = ctx.GetRecordIdentifier(go.GetInstanceID());
             var meshIdentifier = ctx.GetRecordIdentifier(mesh.GetInstanceID());
-                    
+
             if (gameObjectIdentifier == null || meshIdentifier == null)
                 return null;
-            
+
             // Two GameObjects might have the same sharedMesh. We add the gameObjectIdentifier as a discriminator.
             var meshSamplerResultHash = HashCode.Combine(gameObjectIdentifier, meshIdentifier);
-            
+
             if (mesh == null || mesh.vertexBufferCount == 0)
                 return null;
 
             if (meshSamplerResults.TryGetValue(meshSamplerResultHash, out var result))
                 return result;
-            
+
             var meshSamplerResult = meshSampler.Sample(mesh, samplesPerSquareMeter, go.transform.lossyScale);
-            meshSamplerResult.Name = go.name + "_" + (uint) meshSamplerResultHash;
+            meshSamplerResult.Name = go.name + "_" + (uint)meshSamplerResultHash;
             meshSamplerResults.Add(meshSamplerResultHash, meshSamplerResult);
             return meshSamplerResult;
         }
 
-        private IEnumerator PlaySamplesInTimeRange(BufferedAsyncRecordLoader loader, PlayerContext ctx,
+        private IEnumerator PlayFramesInTimeRange(BufferedAsyncFramesLoader loader, PlayerContext ctx,
             ulong startTime,
             ulong endTime)
         {
-            var samplesLoadingTask = loader.SamplesInTimeRangeAsync(startTime, endTime);
-            yield return new WaitUntil(() => samplesLoadingTask.IsCompleted);
-            ctx.PlaySamples(player.PlayerModules, samplesLoadingTask.Result);
+            var framesLoadingTask = loader.FramesInTimeRangeAsync(startTime, endTime);
+            yield return new WaitUntil(() => framesLoadingTask.IsCompleted);
+            ctx.PlayFrames(player.PlayerModules, framesLoadingTask.Result);
         }
 
         private void PrepareProjectionShader(ComputeBuffer samplesMinValueBuffer, ComputeBuffer samplesMaxValueBuffer,
@@ -363,7 +371,7 @@ namespace PLUME
             projectionShader.SetBuffer(projectionKernel, "samples_min_value", samplesMinValueBuffer);
             projectionShader.SetBuffer(projectionKernel, "samples_max_value", samplesMaxValueBuffer);
         }
-        
+
         private void LateUpdate()
         {
             var activeContext = PlayerContext.GetActiveContext();
@@ -380,7 +388,7 @@ namespace PLUME
         private void RestoreRecordMaterials(PlayerContext ctx)
         {
             var gameObjects = ctx.GetAllGameObjects();
-            
+
             foreach (var go in gameObjects)
             {
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
@@ -388,14 +396,17 @@ namespace PLUME
                 goRenderer.SetSharedMaterials(new List<Material>());
             }
 
-            var samples = player.GetRecordLoader().SamplesInTimeRangeAsync(0, player.GetCurrentPlayTimeInNanoseconds());
-            foreach (var sample in samples.Result)
+            var samples = player.GetFramesLoader().FramesInTimeRangeAsync(0, player.GetCurrentPlayTimeInNanoseconds());
+            foreach (var frame in samples.Result)
             {
-                if (sample.Payload is MeshRendererUpdateMaterials or SkinnedMeshRendererUpdateMaterials)
+                foreach (var sample in frame.Data)
                 {
-                    foreach (var playerModule in player.PlayerModules)
+                    if (sample.Payload is MeshRendererUpdate or SkinnedMeshRendererUpdate)
                     {
-                        playerModule.PlaySample(ctx, sample);
+                        foreach (var playerModule in player.PlayerModules)
+                        {
+                            playerModule.PlaySample(ctx, sample);
+                        }
                     }
                 }
             }
@@ -411,7 +422,8 @@ namespace PLUME
                 }
 
                 var nSharedMaterials = goRenderer.sharedMaterials.Length;
-                goRenderer.sharedMaterials = Enumerable.Repeat(_segmentedObjectDepthMaterial, nSharedMaterials).ToArray();
+                goRenderer.sharedMaterials =
+                    Enumerable.Repeat(_segmentedObjectDepthMaterial, nSharedMaterials).ToArray();
                 var propertyBlock = GetOrCreateSegmentedObjectsDepthPropertyBlock(go);
                 goRenderer.SetPropertyBlock(propertyBlock);
             }
@@ -423,14 +435,14 @@ namespace PLUME
             {
                 return propertyBlock;
             }
-            
+
             var objectInstanceID = Shader.PropertyToID("object_instance_id");
             var newPropertyBlock = new MaterialPropertyBlock();
             newPropertyBlock.SetInteger(objectInstanceID, go.GetInstanceID());
             _cachedSegmentedObjectsDepthPropertyBlocks.Add(go.GetInstanceID(), newPropertyBlock);
             return newPropertyBlock;
         }
-        
+
         private void ApplyHeatmapMaterials(PlayerContext ctx)
         {
             var gameObjects = ctx.GetAllGameObjects();
@@ -481,7 +493,7 @@ namespace PLUME
                 goRenderer.SetPropertyBlock(propertyBlock);
             }
         }
-        
+
         private MaterialPropertyBlock GetOrCreateMeshSamplerResultPropertyBlock(MeshSamplerResult meshSamplerResult)
         {
             if (_cachedMeshSamplerResultPropertyBlocks.TryGetValue(meshSamplerResult, out var propertyBlock))
@@ -516,10 +528,11 @@ namespace PLUME
                 {
                     _cachedMeshSamplerResultPropertyBlocks.Remove(meshSamplerResult);
                 }
+
                 SetVisibleResult(null);
             }
         }
-        
+
         private Vector3 SampleIndexToBarycentricWeights(uint sampleIdx, uint triangleResolution)
         {
             var row = (uint)Math.Ceiling((-3 + Math.Sqrt(8.0 * sampleIdx + 9.0)) / 2.0);
@@ -531,32 +544,32 @@ namespace PLUME
 
             return new Vector3(wi, wj, wk);
         }
-        
+
         public void ExportResult(PositionHeatmapAnalysisResult result)
         {
             var resultIdx = GetResultIndex(result);
             var outputDir = $"Outputs/Analysis/EyeGazeHeatmaps/{resultIdx}";
-            
+
             if (!Directory.Exists(outputDir))
             {
                 Directory.CreateDirectory(outputDir);
             }
-            
+
             foreach (var (hash, samplerResult) in result.SamplerResults)
             {
                 string filePath;
-                
+
                 if (samplerResult.Name != null)
                 {
                     filePath = $"{outputDir}/heatmap_{samplerResult.Name}.ply";
                 }
                 else
                 {
-                    filePath = $"{outputDir}/heatmap_{(uint) hash}.ply";
+                    filePath = $"{outputDir}/heatmap_{(uint)hash}.ply";
                 }
 
                 var w = File.CreateText(filePath);
-                
+
                 // Write PLY file header for a point cloud
                 w.WriteLine("ply");
                 w.WriteLine("format ascii 1.0");
@@ -566,11 +579,11 @@ namespace PLUME
                 w.WriteLine("property float z");
                 w.WriteLine("property float value");
                 w.WriteLine("end_header");
-                
+
                 // Get the values from the GPU to the CPU
                 var samplesValueArr = new float[samplerResult.NSamples];
                 samplerResult.SampleValuesBuffer.GetData(samplesValueArr);
-                
+
                 // Extract unity VertexBuffer data
                 var verticesArr = new byte[samplerResult.VertexBuffer.count * samplerResult.VertexBuffer.stride];
                 samplerResult.VertexBuffer.GetData(verticesArr);
@@ -579,20 +592,23 @@ namespace PLUME
                 for (var i = 0; i < samplerResult.VertexBuffer.count; ++i)
                 {
                     var vertex = new Vector3(
-                        BitConverter.ToSingle(verticesArr, i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset),
-                        BitConverter.ToSingle(verticesArr, i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset + 4),
-                        BitConverter.ToSingle(verticesArr, i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset + 8)
+                        BitConverter.ToSingle(verticesArr,
+                            i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset),
+                        BitConverter.ToSingle(verticesArr,
+                            i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset + 4),
+                        BitConverter.ToSingle(verticesArr,
+                            i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset + 8)
                     );
                     verticesPositionsArr[i] = vertex;
                 }
-                
+
                 var indicesArr = new ushort[samplerResult.IndexBuffer.count];
                 samplerResult.IndexBuffer.GetData(indicesArr);
-                
+
                 // For each triangle, get the triangle resolution
                 var trianglesResolutionArr = new uint[samplerResult.NTriangles];
                 samplerResult.TrianglesResolutionBuffer.GetData(trianglesResolutionArr);
-                
+
                 var trianglesSamplesIndexOffsetArr = new uint[samplerResult.NTriangles];
                 samplerResult.TrianglesSamplesIndexOffsetBuffer.GetData(trianglesSamplesIndexOffsetArr);
 
@@ -603,7 +619,7 @@ namespace PLUME
 
                     // nth triangle formula
                     var nSamples = (triangleResolution + 1) * (triangleResolution + 2) / 2u;
-                    
+
                     for (var sampleIdx = 0u; sampleIdx < nSamples; sampleIdx++)
                     {
                         var barycentricWeights = SampleIndexToBarycentricWeights(sampleIdx, triangleResolution);
@@ -616,27 +632,27 @@ namespace PLUME
                             v0 * barycentricWeights.x +
                             v1 * barycentricWeights.y +
                             v2 * barycentricWeights.z;
-                        
+
                         var sampleValue = samplesValueArr[sampleIndexOffset + sampleIdx];
-                        
+
                         // Write the sample to the PLY file
                         w.WriteLine($"{samplePos.x} {samplePos.y} {samplePos.z} {sampleValue}");
                     }
                 }
-                
+
                 w.Close();
                 Debug.Log("PLY file exported to " + Path.GetFullPath(filePath));
 
                 resultIdx++;
             }
         }
-        
+
         public void SetVisibleResult(PositionHeatmapAnalysisResult result)
         {
             var prevVisibleResult = _visibleResult;
-            
+
             _visibleResult = result;
-            
+
             if (result == null && prevVisibleResult != null)
             {
                 RestoreRecordMaterials(player.GetPlayerContext());
@@ -658,7 +674,7 @@ namespace PLUME
             _projectionCamera.targetTexture.Release();
             _projectionCamera.targetTexture = null;
         }
-        
+
         public override void Dispose()
         {
             foreach (var result in GetResults())

@@ -11,40 +11,43 @@ namespace PLUME
             {
                 case TransformCreate transformCreate:
                 {
-                    ctx.GetOrCreateGameObjectByIdentifier(transformCreate.Id);
+                    ctx.GetOrCreateTransformByIdentifier(transformCreate.Id);
                     break;
                 }
                 case TransformDestroy transformDestroy:
                 {
-                    ctx.TryDestroyGameObjectByIdentifier(transformDestroy.Id);
+                    ctx.TryDestroyGameObjectByIdentifier(transformDestroy.Id.ParentId);
                     break;
                 }
-                case TransformUpdateParent transformUpdateParent:
+                case TransformUpdate transformUpdate:
                 {
-                    ctx.SetParent(transformUpdateParent.Id, transformUpdateParent.ParentId);
-                    break;
-                }
-                case TransformUpdateSiblingIndex transformUpdateSiblingIndex:
-                {
-                    ctx.SetSiblingIndex(transformUpdateSiblingIndex.Id, transformUpdateSiblingIndex.SiblingIndex);
-                    break;
-                }
-                case TransformUpdatePosition transformUpdatePosition:
-                {
-                    var t = ctx.GetOrCreateTransformByIdentifier(transformUpdatePosition.Id);
-                    t.localPosition = transformUpdatePosition.LocalPosition.ToEngineType();
-                    break;
-                }
-                case TransformUpdateRotation transformUpdateRotation:
-                {
-                    var t = ctx.GetOrCreateTransformByIdentifier(transformUpdateRotation.Id);
-                    t.localRotation = transformUpdateRotation.LocalRotation.ToEngineType();
-                    break;
-                }
-                case TransformUpdateScale transformUpdateScale:
-                {
-                    var t = ctx.GetOrCreateTransformByIdentifier(transformUpdateScale.Id);
-                    t.localScale = transformUpdateScale.LocalScale.ToEngineType();
+                    if (transformUpdate.ParentTransformId != null)
+                    {
+                        ctx.SetParent(transformUpdate.Id, transformUpdate.ParentTransformId);
+                    }
+
+                    if (transformUpdate.HasSiblingIdx)
+                    {
+                        ctx.SetSiblingIndex(transformUpdate.Id, transformUpdate.SiblingIdx);
+                    }
+
+                    var t = ctx.GetOrCreateTransformByIdentifier(transformUpdate.Id);
+
+                    if (transformUpdate.LocalPosition != null)
+                    {
+                        t.localPosition = transformUpdate.LocalPosition.ToEngineType();
+                    }
+
+                    if (transformUpdate.LocalRotation != null)
+                    {
+                        t.localRotation = transformUpdate.LocalRotation.ToEngineType();
+                    }
+
+                    if (transformUpdate.LocalScale != null)
+                    {
+                        t.localScale = transformUpdate.LocalScale.ToEngineType();
+                    }
+
                     break;
                 }
             }

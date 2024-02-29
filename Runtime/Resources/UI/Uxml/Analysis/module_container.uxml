@@ -1,11 +1,11 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Packages/fr.liris.plume/Runtime/Resources/UI/Styles/analysis_module_container.uss?fileID=7433441132597879392&amp;guid=c1cf5de4ca8507f4ab8a4c4b829aa3fc&amp;type=3#analysis_module_container" />
+    <Style src="project://database/Packages/fr.liris.plume/Runtime/Resources/UI/Styles/analysis_module_container.uss?fileID=7433441132597879392&amp;guid=c1cf5de4ca8507f4ab8a4c4b829aa3fc&amp;type=3#analysis_module_container"/>
     <ui:Foldout text="Title" value="false" class="title-foldout">
         <ui:VisualElement name="container">
-            <ui:VisualElement name="options-container" />
-            <ui:Label text="No results." display-tooltip-when-elided="true" name="no-results-label" class="gray-label" />
+            <ui:VisualElement name="options-container"/>
+            <ui:Label text="No results." display-tooltip-when-elided="true" name="no-results-label" class="gray-label"/>
             <ui:Foldout text="Results" name="results-foldout" class="results-foldout">
-                <ui:VisualElement name="results-container" />
+                <ui:VisualElement name="results-container"/>
             </ui:Foldout>
         </ui:VisualElement>
     </ui:Foldout>

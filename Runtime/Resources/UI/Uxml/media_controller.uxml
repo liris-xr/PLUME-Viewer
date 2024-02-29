@@ -1,32 +1,41 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global" />
-    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/media_controller.uss?fileID=7433441132597879392&amp;guid=37838a11d5f4fb6499e38990129d7ddb&amp;type=3#media_controller" />
-    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&amp;guid=028e63fb930a6f74997dbdd7944d219b&amp;type=3#dark_theme" />
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global"/>
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/media_controller.uss?fileID=7433441132597879392&amp;guid=37838a11d5f4fb6499e38990129d7ddb&amp;type=3#media_controller"/>
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&amp;guid=028e63fb930a6f74997dbdd7944d219b&amp;type=3#dark_theme"/>
     <ui:VisualElement name="media-controller__container">
         <ui:VisualElement name="floating-container" style="max-width: none; flex-grow: 0;">
             <ui:VisualElement name="play-stop-group" class="media-controller__btn-group" style="flex-shrink: 0;">
                 <PLUME.ToggleButton name="play-pause-btn" class="media-controller__btn">
-                    <ui:VisualElement picking-mode="Ignore" name="img" class="img" />
+                    <ui:VisualElement picking-mode="Ignore" name="img" class="img"/>
                 </PLUME.ToggleButton>
                 <ui:Button name="stop-btn" class="media-controller__btn">
-                    <ui:VisualElement picking-mode="Ignore" name="img" class="img" style="background-image: resource(&apos;UI/Images/media-stop&apos;);" />
+                    <ui:VisualElement picking-mode="Ignore" name="img" class="img"
+                                      style="background-image: resource(&apos;UI/Images/media-stop&apos;);"/>
                 </ui:Button>
             </ui:VisualElement>
-            <ui:VisualElement name="hspacer" class="horizontal-spacer" style="max-width: 5px; flex-grow: 0; min-width: 2px;" />
-            <ui:VisualElement name="speed-group" class="media-controller__btn-group" style="flex-direction: row; flex-shrink: 0;">
-                <ui:Label text="Speed:" display-tooltip-when-elided="true" />
-                <ui:Button name="decrease-speed-btn" text="-" class="media-controller__btn btn-group__btn" />
-                <ui:TextField name="speed-textfield" text="x1" readonly="true" focusable="false" />
-                <ui:Button name="increase-speed-btn" text="+" class="media-controller__btn btn-group__btn img" />
+            <ui:VisualElement name="hspacer" class="horizontal-spacer"
+                              style="max-width: 5px; flex-grow: 0; min-width: 2px;"/>
+            <ui:VisualElement name="speed-group" class="media-controller__btn-group"
+                              style="flex-direction: row; flex-shrink: 0;">
+                <ui:Label text="Speed:" display-tooltip-when-elided="true"/>
+                <ui:Button name="decrease-speed-btn" text="-" class="media-controller__btn btn-group__btn"/>
+                <ui:TextField name="speed-textfield" text="x1" readonly="true" focusable="false"/>
+                <ui:Button name="increase-speed-btn" text="+" class="media-controller__btn btn-group__btn img"/>
             </ui:VisualElement>
-            <ui:VisualElement name="hspacer" class="horizontal-spacer" style="max-width: 5px; flex-grow: 0; min-width: 2px;" />
-            <ui:EnumField label="Camera:" type="PLUME.Viewer.PreviewCameraType, fr.liris.plume.viewer" name="camera-selection" style="width: 150px;" />
-            <ui:VisualElement name="hspacer" class="horizontal-spacer" style="max-width: 5px; flex-grow: 0; min-width: 2px;" />
-            <ui:Button text="Auto Adjust View" parse-escape-sequences="true" display-tooltip-when-elided="true" name="reset-view" enable-rich-text="false" />
-            <ui:VisualElement name="hspacer" class="horizontal-spacer" style="max-width: 5px; flex-grow: 0; min-width: 2px;" />
-            <ui:VisualElement name="extras-group" class="media-controller__btn-group" style="flex-direction: row; flex-shrink: 0;">
+            <ui:VisualElement name="hspacer" class="horizontal-spacer"
+                              style="max-width: 5px; flex-grow: 0; min-width: 2px;"/>
+            <ui:EnumField label="Camera:" type="PLUME.Viewer.PreviewCameraType, fr.liris.plume.viewer"
+                          name="camera-selection" style="width: 150px;"/>
+            <ui:VisualElement name="hspacer" class="horizontal-spacer"
+                              style="max-width: 5px; flex-grow: 0; min-width: 2px;"/>
+            <ui:Button text="Auto Adjust View" parse-escape-sequences="true" display-tooltip-when-elided="true"
+                       name="reset-view" enable-rich-text="false"/>
+            <ui:VisualElement name="hspacer" class="horizontal-spacer"
+                              style="max-width: 5px; flex-grow: 0; min-width: 2px;"/>
+            <ui:VisualElement name="extras-group" class="media-controller__btn-group"
+                              style="flex-direction: row; flex-shrink: 0;">
                 <PLUME.ToggleButton name="toggle-maximize-preview-btn" class="media-controller__btn">
-                    <ui:VisualElement name="img" picking-mode="Ignore" class="img" />
+                    <ui:VisualElement name="img" picking-mode="Ignore" class="img"/>
                 </PLUME.ToggleButton>
             </ui:VisualElement>
         </ui:VisualElement>

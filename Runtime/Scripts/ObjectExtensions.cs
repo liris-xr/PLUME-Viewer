@@ -38,7 +38,7 @@ namespace PLUME
                 }
             }
 
-            obj = (Object) FindObjectFromInstanceIDMethod.Invoke(null, new object[] {instanceId});
+            obj = (Object)FindObjectFromInstanceIDMethod.Invoke(null, new object[] { instanceId });
             CachedObjectFromInstanceId.Add(instanceId, obj);
 
             //TODO : Manage when obj is null (give safe handle)

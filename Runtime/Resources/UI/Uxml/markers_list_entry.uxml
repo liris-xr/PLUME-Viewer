@@ -1,14 +1,19 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global" />
-    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&amp;guid=028e63fb930a6f74997dbdd7944d219b&amp;type=3#dark_theme" />
-    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/markers_list_entry.uss?fileID=7433441132597879392&amp;guid=f8d7405b9d2be9c45a216788ce962545&amp;type=3#markers_list_entry" />
-    <ui:VisualElement name="markers-list-entry" style="flex-grow: 0; padding-top: 3px; padding-right: 3px; padding-bottom: 3px; padding-left: 3px; flex-shrink: 1; flex-direction: row; align-items: center; justify-content: flex-start;">
-        <ui:Toggle name="marker-toggle" style="flex-shrink: 1; margin-top: 0; margin-right: 5px; margin-bottom: 0; margin-left: 0; flex-grow: 0;" />
-        <ui:VisualElement name="marker-color" style="flex-grow: 0; flex-shrink: 0; height: 12px; width: 12px; background-color: rgb(255, 0, 0); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; margin-right: 5px;" />
-        <ui:Label tabindex="-1" text="Marker Name" parse-escape-sequences="true" display-tooltip-when-elided="true" name="marker-label" style="align-items: center; justify-content: center; -unity-text-align: middle-left; flex-grow: 1; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;" />
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global"/>
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&amp;guid=028e63fb930a6f74997dbdd7944d219b&amp;type=3#dark_theme"/>
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/markers_list_entry.uss?fileID=7433441132597879392&amp;guid=f8d7405b9d2be9c45a216788ce962545&amp;type=3#markers_list_entry"/>
+    <ui:VisualElement name="markers-list-entry"
+                      style="flex-grow: 0; padding-top: 3px; padding-right: 3px; padding-bottom: 3px; padding-left: 3px; flex-shrink: 1; flex-direction: row; align-items: center; justify-content: flex-start;">
+        <ui:Toggle name="marker-toggle"
+                   style="flex-shrink: 1; margin-top: 0; margin-right: 5px; margin-bottom: 0; margin-left: 0; flex-grow: 0;"/>
+        <ui:VisualElement name="marker-color"
+                          style="flex-grow: 0; flex-shrink: 0; height: 12px; width: 12px; background-color: rgb(255, 0, 0); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; margin-right: 5px;"/>
+        <ui:Label tabindex="-1" text="Marker Name" parse-escape-sequences="true" display-tooltip-when-elided="true"
+                  name="marker-label"
+                  style="align-items: center; justify-content: center; -unity-text-align: middle-left; flex-grow: 1; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;"/>
         <ui:VisualElement name="marker-snap" style="flex-grow: 0; flex-direction: row; flex-shrink: 0;">
-            <ui:Button text="&lt;" parse-escape-sequences="true" display-tooltip-when-elided="true" name="prev" />
-            <ui:Button text="&gt;" parse-escape-sequences="true" display-tooltip-when-elided="true" name="next" />
+            <ui:Button text="&lt;" parse-escape-sequences="true" display-tooltip-when-elided="true" name="prev"/>
+            <ui:Button text="&gt;" parse-escape-sequences="true" display-tooltip-when-elided="true" name="next"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

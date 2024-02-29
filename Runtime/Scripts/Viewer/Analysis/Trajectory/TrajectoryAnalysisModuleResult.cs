@@ -12,10 +12,8 @@ namespace PLUME
     {
         public ulong Time;
         public Vector3 Position;
-        [CanBeNull]
-        public Quaternion? Rotation;
-        [CanBeNull]
-        public Marker Marker;
+        [CanBeNull] public Quaternion? Rotation;
+        [CanBeNull] public Marker Marker;
 
         public TrajectorySegmentPoint(ulong time, Vector3 position, Quaternion? rotation, [CanBeNull] Marker marker)
         {
@@ -24,19 +22,33 @@ namespace PLUME
             Rotation = rotation;
             Marker = marker;
         }
+
+        public class TimestampComparer : IComparer<TrajectorySegmentPoint>
+        {
+            public static readonly TimestampComparer Instance = new();
+
+            public int Compare(TrajectorySegmentPoint x, TrajectorySegmentPoint y)
+            {
+                if (ReferenceEquals(x, y)) return 0;
+                if (ReferenceEquals(null, y)) return 1;
+                if (ReferenceEquals(null, x)) return -1;
+                return x.Time.CompareTo(y.Time);
+            }
+        }
     }
-    
+
     public class TrajectoryAnalysisModuleResult : AnalysisModuleResult
     {
         public TrajectoryAnalysisModuleParameters GenerationParameters { get; }
-        
+
         public List<TrajectorySegmentPoint>[] Segments { get; }
 
         public TrajectoryAnalysisModuleResult()
         {
         }
 
-        public TrajectoryAnalysisModuleResult(TrajectoryAnalysisModuleParameters generationParameters, List<TrajectorySegmentPoint>[] segments)
+        public TrajectoryAnalysisModuleResult(TrajectoryAnalysisModuleParameters generationParameters,
+            List<TrajectorySegmentPoint>[] segments)
         {
             GenerationParameters = generationParameters;
             Segments = segments;

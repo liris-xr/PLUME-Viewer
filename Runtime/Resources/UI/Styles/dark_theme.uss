@@ -1237,8 +1237,9 @@
 
 .unity-base-dropdown .unity-base-dropdown__item:checked .unity-base-dropdown__checkmark {
     display: flex;
-}>
+}
 
+>
 .unity-base-dropdown__item {
     flex-direction: row;
     -unity-text-align: middle-left;
@@ -1651,8 +1652,8 @@
 }
 
 .unity-collection-view {
-    min-height: 20;
-    max-height: 4000;
+    min-height: 20px;
+    max-height: 4000px;
 }
 
 .unity-collection-view__scroll-view {
@@ -1905,8 +1906,8 @@
 }
 
 .unity-button-strip-field__button-icon {
-    width: 16;
-    height: 16;
+    width: 16px;
+    height: 16px;
     align-self: center;
 }
 

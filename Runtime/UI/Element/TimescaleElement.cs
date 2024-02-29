@@ -65,7 +65,7 @@ namespace PLUME
 
             private readonly UxmlColorAttributeDescription MajorTickColor = new()
                 { name = "major-tick-color", defaultValue = MajorTickColorDefault };
-            
+
             public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
             {
                 base.Init(ve, bag, cc);
@@ -155,7 +155,7 @@ namespace PLUME
             style.minWidth = _duration / (float)_timeDivisionDuration * _timeDivisionWidth;
             Repaint();
         }
-        
+
         public void Repaint()
         {
             GenerateTimescaleLabels();
@@ -225,7 +225,7 @@ namespace PLUME
         {
             try
             {
-                var nDivisions = _duration / (float) _timeDivisionDuration;
+                var nDivisions = _duration / (float)_timeDivisionDuration;
                 var nTicks = Mathf.CeilToInt(nDivisions * _ticksPerDivision);
                 var tickSpacing = _timeDivisionWidth / _ticksPerDivision;
                 var timePerTick = _timeDivisionDuration / (double)_ticksPerDivision;
@@ -321,7 +321,7 @@ namespace PLUME
                 RecalculateSize();
             }
         }
-        
+
         public int TicksPerDivision
         {
             get => _ticksPerDivision;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace PLUME.UI.Analysis
 {
@@ -8,9 +9,12 @@ namespace PLUME.UI.Analysis
     {
         public Player player;
 
+        private Coroutine _generationCoroutine;
+
         public void Start()
         {
             ui.GenerateButton.clicked += OnClickGenerate;
+            ui.CancelButton.clicked += OnClickCancel;
             ui.ObjectIdTextField.value = "882be9d0-c9cc-4b78-b6b3-1d5419f4cd83";
             ui.MarkersTextField.value = "Egg Pick Up";
             ui.TeleportationToleranceTextField.value = "0.1";
@@ -23,7 +27,7 @@ namespace PLUME.UI.Analysis
 
             ui.RefreshTimeRangeLimits();
             ui.TimeRange.Reset();
-            
+
             player.onGeneratingModuleChanged += generatingModule =>
             {
                 // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being shown
@@ -35,7 +39,7 @@ namespace PLUME.UI.Analysis
                     {
                         module.SetResultVisibility(result, false);
                     }
-                    
+
                     ui.RefreshResults();
                 }
             };
@@ -51,7 +55,7 @@ namespace PLUME.UI.Analysis
             var includeRotations = ui.IncludeRotations.value;
             var startTime = ui.TimeRange.StartTime;
             var endTime = ui.TimeRange.EndTime;
-            
+
             ui.GenerateButton.text = "Generating...";
             ui.GenerateButton.SetEnabled(false);
 
@@ -74,7 +78,8 @@ namespace PLUME.UI.Analysis
             parameters.StartTime = startTime;
             parameters.EndTime = endTime;
 
-            StartCoroutine(module.GenerateTrajectory(player.GetRecordLoader(), parameters, onFinishCallback));
+            _generationCoroutine = StartCoroutine(module.GenerateTrajectory(player.GetFramesLoader(),
+                player.GetMarkersLoader(), player.GetPlayerAssets(), parameters, onFinishCallback));
         }
 
         public void FixedUpdate()
@@ -82,6 +87,20 @@ namespace PLUME.UI.Analysis
             // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being generated
             var otherModuleGenerating = player.GetModuleGenerating() != null && player.GetModuleGenerating() != module;
             ui.GenerateButton.SetEnabled(!otherModuleGenerating);
+
+            if (module.IsGenerating)
+            {
+                ui.GenerationProgressBar.value = module.GenerationProgress;
+            }
+        }
+
+        private void OnClickCancel()
+        {
+            if (_generationCoroutine == null) return;
+            StopCoroutine(_generationCoroutine);
+            module.CancelGenerate();
+            module.HideAllResults();
+            ui.RefreshResults();
         }
 
         private void OnClickDeleteResult(TrajectoryAnalysisModuleResult result)

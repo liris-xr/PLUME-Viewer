@@ -33,19 +33,19 @@ namespace PLUME
             if (_loaded)
                 return;
 
-            var recordHeader = _reader.ReadNextSample().Payload.Unpack<RecordHeader>();
-            
-            while(_reader.TryReadNextSample(out var sample))
+            var recordMetadata = _reader.ReadNextSample().Payload.Unpack<RecordMetadata>();
+
+            while (_reader.TryReadNextSample(out var sample))
             {
                 // Skip samples without timestamp
-                if (sample.Header == null)
+                if (!sample.HasTimestamp)
                     continue;
-                
+
                 if (!_filter.Invoke(sample)) continue;
 
                 // Unpack the sample
                 var payload = sample.Payload.Unpack(_typeRegistry);
-                
+
                 // Unpacking might fail if the message descriptor is not found in the type registry.
                 if (payload == null)
                 {
@@ -53,16 +53,12 @@ namespace PLUME
                     continue;
                 }
 
-                var unpackedSample = new UnpackedSample
-                {
-                    Header = sample.Header,
-                    Payload = payload
-                };
-                
+                var unpackedSample = new UnpackedSample(sample.Timestamp, payload);
+
                 if (_loadedSamples.Count > 0)
                 {
-                    var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Header.Time);
-                    
+                    var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Timestamp);
+
                     // No samples after or at the current sample's timestamp, inserting at the end
                     if (idx == -1)
                     {
@@ -89,12 +85,12 @@ namespace PLUME
         {
             return _loadedSamples.ToArray();
         }
-        
+
         public UnpackedSample[] AllOfType<T>() where T : IMessage
         {
             return _loadedSamples.Where(sample => sample.Payload is T).ToArray();
         }
-        
+
         public UnpackedSample SampleAtIndex(int index)
         {
             if (!_loaded)
@@ -137,7 +133,7 @@ namespace PLUME
                 if (sample == null)
                     yield break;
 
-                if (sample.Header.Time > endTime)
+                if (sample.Timestamp > endTime)
                     yield break;
 
                 yield return sample;
@@ -148,7 +144,7 @@ namespace PLUME
         public void Close()
         {
             _reader.Close();
-            
+
             if (_closed)
                 return;
 

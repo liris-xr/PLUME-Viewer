@@ -10,21 +10,22 @@ namespace PLUME
         public override Camera GetCamera()
         {
             var ctx = PlayerContext.GetActiveContext();
-            var mainCamera = ctx?.GetAllComponents().FirstOrDefault(c => c is Camera && ctx.GetGameObjectTag(c.gameObject.GetInstanceID()) == "MainCamera") as Camera;
+            var mainCamera = ctx?.GetAllComponents().FirstOrDefault(c =>
+                c is Camera && ctx.GetGameObjectTag(c.gameObject.GetInstanceID()) == "MainCamera") as Camera;
             return mainCamera;
         }
 
         public void FixedUpdate()
         {
             var cam = GetCamera();
-            
+
             if (cam != null)
             {
                 cam.targetTexture = Player.Instance.GetCurrentPreviewCamera() == this ? PreviewRenderTexture : null;
                 cam.enabled = Player.Instance.GetCurrentPreviewCamera() == this;
             }
         }
-        
+
         public override void SetEnabled(bool enabled)
         {
         }
@@ -36,7 +37,6 @@ namespace PLUME
 
         public override void ResetView()
         {
-            
         }
     }
 }

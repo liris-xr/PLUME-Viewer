@@ -13,54 +13,136 @@ namespace PLUME
                 case CameraCreate cameraCreate:
                     ctx.GetOrCreateComponentByIdentifier<Camera>(cameraCreate.Id);
                     break;
+                case CameraDestroy cameraDestroy:
+                    ctx.TryDestroyComponentByIdentifier(cameraDestroy.Id);
+                    break;
                 case CameraUpdate cameraUpdate:
                     var cam = ctx.GetOrCreateComponentByIdentifier<Camera>(cameraUpdate.Id);
-                    cam.nearClipPlane = cameraUpdate.NearClipPlane;
-                    cam.farClipPlane = cameraUpdate.FarClipPlane;
-                    cam.fieldOfView = cameraUpdate.FieldOfView;
-                    cam.renderingPath = cameraUpdate.RenderingPath.ToEngineType();
-                    cam.allowHDR = cameraUpdate.AllowHdr;
-                    cam.allowMSAA = cameraUpdate.AllowMsaa;
-                    cam.allowDynamicResolution = cameraUpdate.AllowDynamicResolution;
-                    cam.forceIntoRenderTexture = cameraUpdate.ForceIntoRenderTexture;
-                    cam.orthographicSize = cameraUpdate.OrthographicSize;
-                    cam.orthographic = cameraUpdate.Orthographic;
-                    cam.opaqueSortMode = cameraUpdate.OpaqueSortMode.ToEngineType();
-                    cam.transparencySortMode = cameraUpdate.TransparencySortMode.ToEngineType();
-                    cam.transparencySortAxis = cameraUpdate.TransparencySortAxis.ToEngineType();
-                    cam.depth = cameraUpdate.Depth;
-                    cam.aspect = cameraUpdate.Aspect;
-                    cam.cullingMask = cameraUpdate.CullingMask;
-                    cam.eventMask = cameraUpdate.EventMask;
-                    cam.layerCullSpherical = cameraUpdate.LayerCullSpherical;
-                    cam.cameraType = cameraUpdate.CameraType.ToEngineType();
-                    cam.layerCullDistances = cameraUpdate.LayerCullDistances.ToEngineType();
-                    cam.useOcclusionCulling = cameraUpdate.UseOcclusionCulling;
-                    cam.cullingMatrix = cameraUpdate.CullingMatrix.ToEngineType();
-                    cam.backgroundColor = cameraUpdate.BackgroundColor.ToEngineType();
-                    cam.clearFlags = cameraUpdate.ClearFlags.ToEngineType();
-                    cam.depthTextureMode = cameraUpdate.DepthTextureMode.ToEngineType();
-                    cam.clearStencilAfterLightingPass = cameraUpdate.ClearStencilAfterLightingPass;
-                    cam.usePhysicalProperties = cameraUpdate.UsePhysicalProperties;
-                    cam.sensorSize = cameraUpdate.SensorSize.ToEngineType();
-                    cam.lensShift = cameraUpdate.LensShift.ToEngineType();
-                    cam.focalLength = cameraUpdate.FocalLength;
-                    cam.gateFit = cameraUpdate.GateFit.ToEngineType();
-                    cam.rect = cameraUpdate.Rect.ToEngineType();
-                    cam.pixelRect = cameraUpdate.PixelRect.ToEngineType();
-                    
-                    // TODO: support render textures living outside of assets (dynamic RT)
-                    // cam.targetTexture = cameraUpdate.TargetTextureId;
-                    
-                    cam.targetDisplay = cameraUpdate.TargetDisplay;
-                    cam.worldToCameraMatrix = cameraUpdate.WorldToCameraMatrix.ToEngineType();
-                    cam.projectionMatrix = cameraUpdate.ProjectionMatrix.ToEngineType();
-                    cam.nonJitteredProjectionMatrix = cameraUpdate.NonJitteredProjectionMatrix.ToEngineType();
-                    cam.useJitteredProjectionMatrixForTransparentRendering = cameraUpdate.UseJitteredProjectionMatrixForTransparentRendering;
-                    // cam.scene = cameraUpdate.SceneIdx;
-                    cam.stereoSeparation = cameraUpdate.StereoSeparation;
-                    cam.stereoConvergence = cameraUpdate.StereoConvergence;
-                    cam.stereoTargetEye = cameraUpdate.StereoTargetEye.ToEngineType();
+
+                    if (cameraUpdate.HasNearClipPlane)
+                        cam.nearClipPlane = cameraUpdate.NearClipPlane;
+
+                    if (cameraUpdate.HasFarClipPlane)
+                        cam.farClipPlane = cameraUpdate.FarClipPlane;
+
+                    if (cameraUpdate.HasFieldOfView)
+                        cam.fieldOfView = cameraUpdate.FieldOfView;
+
+                    if (cameraUpdate.HasRenderingPath)
+                        cam.renderingPath = cameraUpdate.RenderingPath.ToEngineType();
+
+                    if (cameraUpdate.HasAllowHdr)
+                        cam.allowHDR = cameraUpdate.AllowHdr;
+
+                    if (cameraUpdate.HasAllowMsaa)
+                        cam.allowMSAA = cameraUpdate.AllowMsaa;
+
+                    if (cameraUpdate.HasAllowDynamicResolution)
+                        cam.allowDynamicResolution = cameraUpdate.AllowDynamicResolution;
+
+                    if (cameraUpdate.HasForceIntoRenderTexture)
+                        cam.forceIntoRenderTexture = cameraUpdate.ForceIntoRenderTexture;
+
+                    if (cameraUpdate.HasOrthographicSize)
+                        cam.orthographicSize = cameraUpdate.OrthographicSize;
+
+                    if (cameraUpdate.HasOrthographic)
+                        cam.orthographic = cameraUpdate.Orthographic;
+
+                    if (cameraUpdate.HasOpaqueSortMode)
+                        cam.opaqueSortMode = cameraUpdate.OpaqueSortMode.ToEngineType();
+
+                    if (cameraUpdate.HasTransparencySortMode)
+                        cam.transparencySortMode = cameraUpdate.TransparencySortMode.ToEngineType();
+
+                    if (cameraUpdate.TransparencySortAxis != null)
+                        cam.transparencySortAxis = cameraUpdate.TransparencySortAxis.ToEngineType();
+
+                    if (cameraUpdate.HasDepth)
+                        cam.depth = cameraUpdate.Depth;
+
+                    if (cameraUpdate.HasAspect)
+                        cam.aspect = cameraUpdate.Aspect;
+
+                    if (cameraUpdate.HasCullingMask)
+                        cam.cullingMask = cameraUpdate.CullingMask;
+
+                    if (cameraUpdate.HasEventMask)
+                        cam.eventMask = cameraUpdate.EventMask;
+
+                    if (cameraUpdate.HasLayerCullSpherical)
+                        cam.layerCullSpherical = cameraUpdate.LayerCullSpherical;
+
+                    if (cameraUpdate.HasCameraType)
+                        cam.cameraType = cameraUpdate.CameraType.ToEngineType();
+
+                    if (cameraUpdate.LayerCullDistances != null)
+                        cam.layerCullDistances = cameraUpdate.LayerCullDistances.Distances.ToEngineType();
+
+                    if (cameraUpdate.HasUseOcclusionCulling)
+                        cam.useOcclusionCulling = cameraUpdate.UseOcclusionCulling;
+
+                    if (cameraUpdate.CullingMatrix != null)
+                        cam.cullingMatrix = cameraUpdate.CullingMatrix.ToEngineType();
+
+                    if (cameraUpdate.BackgroundColor != null)
+                        cam.backgroundColor = cameraUpdate.BackgroundColor.ToEngineType();
+
+                    if (cameraUpdate.HasClearFlags)
+                        cam.clearFlags = cameraUpdate.ClearFlags.ToEngineType();
+
+                    if (cameraUpdate.HasDepthTextureMode)
+                        cam.depthTextureMode = cameraUpdate.DepthTextureMode.ToEngineType();
+
+                    if (cameraUpdate.HasClearStencilAfterLightingPass)
+                        cam.clearStencilAfterLightingPass = cameraUpdate.ClearStencilAfterLightingPass;
+
+                    if (cameraUpdate.HasUsePhysicalProperties)
+                        cam.usePhysicalProperties = cameraUpdate.UsePhysicalProperties;
+
+                    if (cameraUpdate.SensorSize != null)
+                        cam.sensorSize = cameraUpdate.SensorSize.ToEngineType();
+
+                    if (cameraUpdate.LensShift != null)
+                        cam.lensShift = cameraUpdate.LensShift.ToEngineType();
+
+                    if (cameraUpdate.HasFocalLength)
+                        cam.focalLength = cameraUpdate.FocalLength;
+
+                    if (cameraUpdate.HasGateFit)
+                        cam.gateFit = cameraUpdate.GateFit.ToEngineType();
+
+                    if (cameraUpdate.Rect != null)
+                        cam.rect = cameraUpdate.Rect.ToEngineType();
+
+                    if (cameraUpdate.PixelRect != null)
+                        cam.pixelRect = cameraUpdate.PixelRect.ToEngineType();
+
+                    if (cameraUpdate.HasTargetDisplay)
+                        cam.targetDisplay = cameraUpdate.TargetDisplay;
+
+                    if (cameraUpdate.WorldToCameraMatrix != null)
+                        cam.worldToCameraMatrix = cameraUpdate.WorldToCameraMatrix.ToEngineType();
+
+                    if (cameraUpdate.ProjectionMatrix != null)
+                        cam.projectionMatrix = cameraUpdate.ProjectionMatrix.ToEngineType();
+
+                    if (cameraUpdate.NonJitteredProjectionMatrix != null)
+                        cam.nonJitteredProjectionMatrix = cameraUpdate.NonJitteredProjectionMatrix.ToEngineType();
+
+                    if (cameraUpdate.HasUseJitteredProjectionMatrixForTransparentRendering)
+                        cam.useJitteredProjectionMatrixForTransparentRendering =
+                            cameraUpdate.UseJitteredProjectionMatrixForTransparentRendering;
+
+                    if (cameraUpdate.HasStereoSeparation)
+                        cam.stereoSeparation = cameraUpdate.StereoSeparation;
+
+                    if (cameraUpdate.HasStereoConvergence)
+                        cam.stereoConvergence = cameraUpdate.StereoConvergence;
+
+                    if (cameraUpdate.HasStereoTargetEye)
+                        cam.stereoTargetEye = cameraUpdate.StereoTargetEye.ToEngineType();
+
                     break;
             }
         }

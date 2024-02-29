@@ -45,7 +45,7 @@ namespace PLUME
             UpdateClass();
             toggled?.Invoke(_state);
         }
-        
+
         public void SetStateWithoutNotify(bool state)
         {
             _state = state;

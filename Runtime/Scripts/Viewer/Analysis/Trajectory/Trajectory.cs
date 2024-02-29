@@ -83,13 +83,13 @@ namespace PLUME
             var gradient = new Gradient();
             var key0 = new GradientColorKey(GetColorAtTime(t0), 0);
             var key1 = new GradientColorKey(GetColorAtTime(t1), 1);
-            gradient.SetKeys(new[] {key0, key1}, new GradientAlphaKey[] { });
+            gradient.SetKeys(new[] { key0, key1 }, new GradientAlphaKey[] { });
 
             var segmentGameObject = new GameObject("Teleportation Segment");
             var lineRenderer = segmentGameObject.AddComponent<LineRenderer>();
             lineRenderer.numCapVertices = 4;
             lineRenderer.positionCount = 2;
-            lineRenderer.SetPositions(new[] {pointA.Position, pointB.Position});
+            lineRenderer.SetPositions(new[] { pointA.Position, pointB.Position });
             lineRenderer.useWorldSpace = true;
             lineRenderer.colorGradient = gradient;
             lineRenderer.startWidth = lineWidth * 1.4f;
@@ -113,7 +113,7 @@ namespace PLUME
                 var time = segmentPoints[0].Time;
                 var position = segmentPoints[0].Position;
                 var color = GetColorAtTime(time);
-                
+
                 var segmentGameObject = new GameObject("Continuous Segment");
                 var lineRenderer = segmentGameObject.AddComponent<LineRenderer>();
                 lineRenderer.numCapVertices = 4;
@@ -127,7 +127,7 @@ namespace PLUME
                 lineRenderer.startWidth = lineWidth;
                 segmentGameObject.transform.parent = gameObject.transform;
             }
-            
+
             var times = segmentPoints.Select(point => point.Time).ToArray();
             var positions = segmentPoints.Select(point => point.Position).ToArray();
 
@@ -138,7 +138,7 @@ namespace PLUME
                 var gradient = new Gradient();
                 var key0 = new GradientColorKey(GetColorAtTime(t0), 0);
                 var key1 = new GradientColorKey(GetColorAtTime(t1), 1);
-                gradient.SetKeys(new[] {key0, key1}, new GradientAlphaKey[] { });
+                gradient.SetKeys(new[] { key0, key1 }, new GradientAlphaKey[] { });
 
                 var segmentGameObject = new GameObject("Continuous Segment");
                 var lineRenderer = segmentGameObject.AddComponent<LineRenderer>();
@@ -153,10 +153,10 @@ namespace PLUME
                 segmentGameObject.transform.parent = gameObject.transform;
             }
         }
-        
+
         public void UpdateMarkersCamera(Camera cam)
         {
-            foreach(var billboard in _billboards)
+            foreach (var billboard in _billboards)
             {
                 billboard.camera = cam;
             }
@@ -167,7 +167,7 @@ namespace PLUME
             var startColor = Color.blue;
             var endColor = Color.red;
             var duration = result.GenerationParameters.EndTime - result.GenerationParameters.StartTime;
-            var t = (time - result.GenerationParameters.StartTime) / (float) duration;
+            var t = (time - result.GenerationParameters.StartTime) / (float)duration;
             return Color.Lerp(startColor, endColor, t);
         }
     }

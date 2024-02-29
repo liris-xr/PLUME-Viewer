@@ -7,14 +7,14 @@ namespace PLUME.Viewer.Analysis
 {
     public class EyeGazeAnalysisModuleUI : AnalysisModuleWithResultsUI<EyeGazeAnalysisModule, EyeGazeAnalysisResult>
     {
-        public PLUME.Player player;
-        
+        public Player player;
+
         public VisualTreeAsset resultEntryTemplate;
 
         public Action<EyeGazeAnalysisResult> clickedDeleteResult;
         public Action<EyeGazeAnalysisResult> clickedExportResult;
         public Action<EyeGazeAnalysisResult, bool> toggledResultVisibility;
-        
+
         public Button GenerateButton { get; private set; }
         public ProgressBar GenerationProgressBar { get; private set; }
         public VisualElement GeneratingPanel { get; private set; }
@@ -52,7 +52,7 @@ namespace PLUME.Viewer.Analysis
                 ResultsEmptyLabel.style.display = DisplayStyle.Flex;
                 ResultsFoldout.style.display = DisplayStyle.None;
             }
-            
+
             Results.Clear();
 
             for (var resultIdx = 0; resultIdx < module.GetResultsCount(); ++resultIdx)
@@ -81,7 +81,7 @@ namespace PLUME.Viewer.Analysis
                 Results.Add(resultEntry);
             }
         }
-        
+
         public void RefreshTimeRangeLimits()
         {
             TimeRange.LowLimit = 0u;

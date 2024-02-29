@@ -4,7 +4,6 @@ namespace PLUME
 {
     public static class ComputeShaderExtensions
     {
-        
         /**
          * Compute shader's dispatch is limited to a maximum of 65535 thread groups. This method sends as many dispatch as
          * necessary to cope for this limitation.
@@ -15,8 +14,8 @@ namespace PLUME
             int totalNumberOfGroupsNeededY)
         {
             const int maxAllowedGroups = 65535;
-            var numberOfNeededDispatchesX = Mathf.CeilToInt(totalNumberOfGroupsNeededX / (float) maxAllowedGroups);
-            var numberOfNeededDispatchesY = Mathf.CeilToInt(totalNumberOfGroupsNeededY / (float) maxAllowedGroups);
+            var numberOfNeededDispatchesX = Mathf.CeilToInt(totalNumberOfGroupsNeededX / (float)maxAllowedGroups);
+            var numberOfNeededDispatchesY = Mathf.CeilToInt(totalNumberOfGroupsNeededY / (float)maxAllowedGroups);
 
             for (var xDispatchIdx = 0; xDispatchIdx < numberOfNeededDispatchesX; ++xDispatchIdx)
             {

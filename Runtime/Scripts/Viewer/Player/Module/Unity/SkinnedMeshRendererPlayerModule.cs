@@ -16,56 +16,79 @@ namespace PLUME
                     ctx.GetOrCreateComponentByIdentifier<SkinnedMeshRenderer>(skinnedMeshRendererCreate.Id);
                     break;
                 }
-                case SkinnedMeshRendererUpdateEnabled skinnedMeshRendererUpdateEnabled:
+                case SkinnedMeshRendererDestroy skinnedMeshRendererDestroy:
                 {
-                    var skinnedMeshRenderer =
-                        ctx.GetOrCreateComponentByIdentifier<SkinnedMeshRenderer>(skinnedMeshRendererUpdateEnabled.Id);
-                    skinnedMeshRenderer.enabled = skinnedMeshRendererUpdateEnabled.Enabled;
+                    ctx.TryDestroyComponentByIdentifier(skinnedMeshRendererDestroy.Id);
                     break;
                 }
-                case SkinnedMeshRendererUpdateBones skinnedMeshRendererUpdateBones:
+                case SkinnedMeshRendererUpdate skinnedMeshRendererUpdate:
                 {
                     var skinnedMeshRenderer =
-                        ctx.GetOrCreateComponentByIdentifier<SkinnedMeshRenderer>(skinnedMeshRendererUpdateBones.Id);
-                    skinnedMeshRenderer.rootBone = ctx.GetOrCreateTransformByIdentifier(skinnedMeshRendererUpdateBones.RootBoneId);
-                    skinnedMeshRenderer.bones = skinnedMeshRendererUpdateBones.BonesIds.Select(ctx.GetOrCreateTransformByIdentifier).ToArray();
-                    break;
-                }
-                case SkinnedMeshRendererUpdateBounds skinnedMeshRendererUpdateBounds:
-                {
-                    var skinnedMeshRenderer =
-                        ctx.GetOrCreateComponentByIdentifier<SkinnedMeshRenderer>(skinnedMeshRendererUpdateBounds.Id);
-                    skinnedMeshRenderer.localBounds = skinnedMeshRendererUpdateBounds.LocalBounds.ToEngineType();
-                    break;
-                }
-                case SkinnedMeshRendererUpdateMesh skinnedMeshRendererUpdateSharedMesh:
-                {
-                    var skinnedMeshRenderer =
-                        ctx.GetOrCreateComponentByIdentifier<SkinnedMeshRenderer>(skinnedMeshRendererUpdateSharedMesh.Id);
-                    skinnedMeshRenderer.sharedMesh = ctx.GetOrDefaultAssetByIdentifier<Mesh>(skinnedMeshRendererUpdateSharedMesh.MeshId);
-                    ctx.TryAddAssetIdentifierCorrespondence(skinnedMeshRendererUpdateSharedMesh.MeshId, skinnedMeshRenderer.sharedMesh);
-                    break;
-                }
-                case SkinnedMeshRendererUpdateMaterials skinnedMeshRendererUpdateSharedMaterials:
-                {
-                    var skinnedMeshRenderer =
-                        ctx.GetOrCreateComponentByIdentifier<SkinnedMeshRenderer>(skinnedMeshRendererUpdateSharedMaterials.Id);
-                    skinnedMeshRenderer.sharedMaterials = skinnedMeshRendererUpdateSharedMaterials.MaterialsIds.Select(ctx.GetOrDefaultAssetByIdentifier<Material>).ToArray();
-                    
-                    for (var materialIdx = 0; materialIdx < skinnedMeshRenderer.sharedMaterials.Length; ++materialIdx)
+                        ctx.GetOrCreateComponentByIdentifier<SkinnedMeshRenderer>(skinnedMeshRendererUpdate.Id);
+
+                    if (skinnedMeshRendererUpdate.HasEnabled)
                     {
-                        ctx.TryAddAssetIdentifierCorrespondence(skinnedMeshRendererUpdateSharedMaterials.MaterialsIds[materialIdx], skinnedMeshRenderer.sharedMaterials[materialIdx]);
+                        skinnedMeshRenderer.enabled = skinnedMeshRendererUpdate.Enabled;
                     }
-                    break;
-                }
-                case SkinnedMeshRendererUpdateLightmap skinnedMeshRendererUpdateLightmap:
-                {
-                    var meshRenderer =
-                        ctx.GetOrCreateComponentByIdentifier<SkinnedMeshRenderer>(skinnedMeshRendererUpdateLightmap.Id);
-                    meshRenderer.lightmapIndex = skinnedMeshRendererUpdateLightmap.LightmapIndex;
-                    meshRenderer.lightmapScaleOffset = skinnedMeshRendererUpdateLightmap.LightmapScaleOffset.ToEngineType();
-                    meshRenderer.realtimeLightmapIndex = skinnedMeshRendererUpdateLightmap.RealtimeLightmapIndex;
-                    meshRenderer.realtimeLightmapScaleOffset = skinnedMeshRendererUpdateLightmap.RealtimeLightmapScaleOffset.ToEngineType();
+
+                    if (skinnedMeshRendererUpdate.Bones != null)
+                    {
+                        var bones = skinnedMeshRendererUpdate.Bones;
+                        skinnedMeshRenderer.rootBone = ctx.GetOrCreateTransformByIdentifier(bones.RootBoneId);
+                        skinnedMeshRenderer.bones =
+                            bones.BonesIds.Select(ctx.GetOrCreateTransformByIdentifier).ToArray();
+                    }
+
+                    if (skinnedMeshRendererUpdate.LocalBounds != null)
+                    {
+                        skinnedMeshRenderer.localBounds = skinnedMeshRendererUpdate.LocalBounds.ToEngineType();
+                    }
+
+                    if (skinnedMeshRendererUpdate.MeshId != null)
+                    {
+                        skinnedMeshRenderer.sharedMesh =
+                            ctx.GetOrDefaultAssetByIdentifier<Mesh>(skinnedMeshRendererUpdate.MeshId);
+                        ctx.TryAddAssetIdentifierCorrespondence(skinnedMeshRendererUpdate.MeshId,
+                            skinnedMeshRenderer.sharedMesh);
+                    }
+
+                    if (skinnedMeshRendererUpdate.Materials != null)
+                    {
+                        var materials = skinnedMeshRendererUpdate.Materials;
+                        skinnedMeshRenderer.sharedMaterials =
+                            materials.Ids.Select(ctx.GetOrDefaultAssetByIdentifier<Material>).ToArray();
+
+                        for (var materialIdx = 0;
+                             materialIdx < skinnedMeshRenderer.sharedMaterials.Length;
+                             ++materialIdx)
+                        {
+                            ctx.TryAddAssetIdentifierCorrespondence(materials.Ids[materialIdx],
+                                skinnedMeshRenderer.sharedMaterials[materialIdx]);
+                        }
+                    }
+
+                    if (skinnedMeshRendererUpdate.HasLightmapIndex)
+                    {
+                        skinnedMeshRenderer.lightmapIndex = skinnedMeshRendererUpdate.LightmapIndex;
+                    }
+
+                    if (skinnedMeshRendererUpdate.LightmapScaleOffset != null)
+                    {
+                        skinnedMeshRenderer.lightmapScaleOffset =
+                            skinnedMeshRendererUpdate.LightmapScaleOffset.ToEngineType();
+                    }
+
+                    if (skinnedMeshRendererUpdate.HasRealtimeLightmapIndex)
+                    {
+                        skinnedMeshRenderer.realtimeLightmapIndex = skinnedMeshRendererUpdate.RealtimeLightmapIndex;
+                    }
+
+                    if (skinnedMeshRendererUpdate.RealtimeLightmapScaleOffset != null)
+                    {
+                        skinnedMeshRenderer.realtimeLightmapScaleOffset =
+                            skinnedMeshRendererUpdate.RealtimeLightmapScaleOffset.ToEngineType();
+                    }
+
                     break;
                 }
             }

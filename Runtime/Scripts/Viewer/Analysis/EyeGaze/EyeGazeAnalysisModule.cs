@@ -57,7 +57,7 @@ namespace PLUME.Viewer.Analysis
 
         public bool IsGenerating { get; private set; }
         public float GenerationProgress { get; private set; }
-        
+
         private PlayerContext _generationContext;
 
         private Camera _projectionCamera;
@@ -105,7 +105,7 @@ namespace PLUME.Viewer.Analysis
         }
 
         // TODO: refactoring needed
-        public IEnumerator GenerateHeatmap(BufferedAsyncRecordLoader loader, PlayerAssets assets,
+        public IEnumerator GenerateHeatmap(BufferedAsyncFramesLoader framesLoader, PlayerAssets assets,
             EyeGazeAnalysisModuleParameters parameters,
             Action<EyeGazeAnalysisResult> finishCallback)
         {
@@ -156,16 +156,16 @@ namespace PLUME.Viewer.Analysis
 
             if (parameters.StartTime > 0)
             {
-                yield return PlaySamplesInTimeRange(loader, _generationContext, 0, parameters.StartTime - 1u);
+                yield return PlaySamplesInTimeRange(framesLoader, _generationContext, 0, parameters.StartTime - 1u);
             }
 
             var currentTime = parameters.StartTime;
 
-            while (currentTime <= parameters.EndTime && currentTime <= loader.Duration)
+            while (currentTime <= parameters.EndTime && currentTime <= framesLoader.Duration)
             {
                 var startTime = currentTime;
                 var endTime = currentTime + projectionSamplingInterval;
-                yield return PlaySamplesInTimeRange(loader, _generationContext, startTime, endTime);
+                yield return PlaySamplesInTimeRange(framesLoader, _generationContext, startTime, endTime);
 
                 var replayCameraId = _generationContext.GetReplayInstanceId(parameters.XrCameraIdentifier);
                 var replayProjectionReceiversIds = new List<int>();
@@ -217,9 +217,10 @@ namespace PLUME.Viewer.Analysis
                 }
 
                 currentTime = endTime + 1;
-                GenerationProgress = (currentTime - parameters.StartTime) / (float)(parameters.EndTime - parameters.StartTime);
+                GenerationProgress = (currentTime - parameters.StartTime) /
+                                     (float)(parameters.EndTime - parameters.StartTime);
             }
-            
+
             GenerationProgress = 1;
 
             QualitySettings.vSyncCount = prevVSyncCount;
@@ -230,10 +231,10 @@ namespace PLUME.Viewer.Analysis
 
             PlayerContext.Activate(player.GetPlayerContext());
             IsGenerating = false;
-            
-            if(player.GetModuleGenerating() == this)
+
+            if (player.GetModuleGenerating() == this)
                 player.SetModuleGenerating(null);
-            
+
             finishCallback(result);
         }
 
@@ -247,11 +248,11 @@ namespace PLUME.Viewer.Analysis
 
             PlayerContext.Activate(player.GetPlayerContext());
             IsGenerating = false;
-            
-            if(player.GetModuleGenerating() == this)
+
+            if (player.GetModuleGenerating() == this)
                 player.SetModuleGenerating(null);
         }
-        
+
         private void ProjectCurrentEyeGaze(
             PlayerContext ctx,
             GameObject xrCamera,
@@ -443,40 +444,43 @@ namespace PLUME.Viewer.Analysis
                 return result;
 
             var meshSamplerResult = meshSampler.Sample(mesh, samplesPerSquareMeter, go.transform.lossyScale);
-            meshSamplerResult.Name = go.name + "_" + (uint) meshSamplerResultHash;
+            meshSamplerResult.Name = go.name + "_" + (uint)meshSamplerResultHash;
             meshSamplerResults.Add(meshSamplerResultHash, meshSamplerResult);
             return meshSamplerResult;
         }
 
-        private IEnumerator PlaySamplesInTimeRange(BufferedAsyncRecordLoader loader, PlayerContext ctx,
+        private IEnumerator PlaySamplesInTimeRange(BufferedAsyncFramesLoader loader, PlayerContext ctx,
             ulong startTime,
             ulong endTime)
         {
-            var samplesLoadingTask = loader.SamplesInTimeRangeAsync(startTime, endTime);
-            yield return new WaitUntil(() => samplesLoadingTask.IsCompleted);
+            var framesLoadingTask = loader.FramesInTimeRangeAsync(startTime, endTime);
+            yield return new WaitUntil(() => framesLoadingTask.IsCompleted);
 
-            foreach (var sample in samplesLoadingTask.Result)
+            foreach (var frame in framesLoadingTask.Result)
             {
-                if (sample.Payload is InputAction inputAction)
+                foreach (var sample in frame.Data)
                 {
-                    if (inputAction.BindingPaths.Contains("<EyeGaze>/pose/position"))
+                    if (sample.Payload is InputAction inputAction)
                     {
-                        if (inputAction.Vector3 == null)
-                            _lastEyeGazePosition = null;
-                        else
-                            _lastEyeGazePosition = inputAction.Vector3.ToEngineType();
-                    }
-                    else if (inputAction.BindingPaths.Contains("<EyeGaze>/pose/rotation"))
-                    {
-                        if (inputAction.Quaternion == null)
-                            _lastEyeGazeRotation = null;
-                        else
-                            _lastEyeGazeRotation = inputAction.Quaternion.ToEngineType();
+                        if (inputAction.BindingPaths.Contains("<EyeGaze>/pose/position"))
+                        {
+                            if (inputAction.Vector3 == null)
+                                _lastEyeGazePosition = null;
+                            else
+                                _lastEyeGazePosition = inputAction.Vector3.ToEngineType();
+                        }
+                        else if (inputAction.BindingPaths.Contains("<EyeGaze>/pose/rotation"))
+                        {
+                            if (inputAction.Quaternion == null)
+                                _lastEyeGazeRotation = null;
+                            else
+                                _lastEyeGazeRotation = inputAction.Quaternion.ToEngineType();
+                        }
                     }
                 }
             }
 
-            ctx.PlaySamples(player.PlayerModules, samplesLoadingTask.Result);
+            ctx.PlayFrames(player.PlayerModules, framesLoadingTask.Result);
         }
 
         private void PrepareProjectionShader(ComputeBuffer samplesMinValueBuffer, ComputeBuffer samplesMaxValueBuffer,
@@ -507,7 +511,7 @@ namespace PLUME.Viewer.Analysis
         private void RestoreRecordMaterials(PlayerContext ctx)
         {
             var gameObjects = ctx.GetAllGameObjects();
-            
+
             foreach (var go in gameObjects)
             {
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
@@ -515,14 +519,17 @@ namespace PLUME.Viewer.Analysis
                 goRenderer.SetSharedMaterials(new List<Material>());
             }
 
-            var samples = player.GetRecordLoader().SamplesInTimeRangeAsync(0, player.GetCurrentPlayTimeInNanoseconds());
-            foreach (var sample in samples.Result)
+            var frames = player.GetFramesLoader().FramesInTimeRangeAsync(0, player.GetCurrentPlayTimeInNanoseconds());
+            foreach (var frame in frames.Result)
             {
-                if (sample.Payload is MeshRendererUpdateMaterials or SkinnedMeshRendererUpdateMaterials)
+                foreach (var sample in frame.Data)
                 {
-                    foreach (var playerModule in player.PlayerModules)
+                    if (sample.Payload is MeshRendererUpdate or SkinnedMeshRendererUpdate)
                     {
-                        playerModule.PlaySample(ctx, sample);
+                        foreach (var playerModule in player.PlayerModules)
+                        {
+                            playerModule.PlaySample(ctx, sample);
+                        }
                     }
                 }
             }
@@ -634,7 +641,7 @@ namespace PLUME.Viewer.Analysis
             return newPropertyBlock;
         }
 
-                private Vector3 SampleIndexToBarycentricWeights(uint sampleIdx, uint triangleResolution)
+        private Vector3 SampleIndexToBarycentricWeights(uint sampleIdx, uint triangleResolution)
         {
             var row = (uint)Math.Ceiling((-3 + Math.Sqrt(8.0 * sampleIdx + 9.0)) / 2.0);
             var col = sampleIdx - row * (row + 1) / 2u;
@@ -645,32 +652,32 @@ namespace PLUME.Viewer.Analysis
 
             return new Vector3(wi, wj, wk);
         }
-        
+
         public void ExportResult(EyeGazeAnalysisResult result)
         {
             var resultIdx = GetResultIndex(result);
             var outputDir = $"Outputs/Analysis/EyeGazeHeatmaps/{resultIdx}";
-            
+
             if (!Directory.Exists(outputDir))
             {
                 Directory.CreateDirectory(outputDir);
             }
-            
+
             foreach (var (hash, samplerResult) in result.SamplerResults)
             {
                 string filePath;
-                
+
                 if (samplerResult.Name != null)
                 {
                     filePath = $"{outputDir}/heatmap_{samplerResult.Name}.ply";
                 }
                 else
                 {
-                    filePath = $"{outputDir}/heatmap_{(uint) hash}.ply";
+                    filePath = $"{outputDir}/heatmap_{(uint)hash}.ply";
                 }
 
                 var w = File.CreateText(filePath);
-                
+
                 // Write PLY file header for a point cloud
                 w.WriteLine("ply");
                 w.WriteLine("format ascii 1.0");
@@ -680,11 +687,11 @@ namespace PLUME.Viewer.Analysis
                 w.WriteLine("property float z");
                 w.WriteLine("property float value");
                 w.WriteLine("end_header");
-                
+
                 // Get the values from the GPU to the CPU
                 var samplesValueArr = new float[samplerResult.NSamples];
                 samplerResult.SampleValuesBuffer.GetData(samplesValueArr);
-                
+
                 // Extract unity VertexBuffer data
                 var verticesArr = new byte[samplerResult.VertexBuffer.count * samplerResult.VertexBuffer.stride];
                 samplerResult.VertexBuffer.GetData(verticesArr);
@@ -693,20 +700,23 @@ namespace PLUME.Viewer.Analysis
                 for (var i = 0; i < samplerResult.VertexBuffer.count; ++i)
                 {
                     var vertex = new Vector3(
-                        BitConverter.ToSingle(verticesArr, i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset),
-                        BitConverter.ToSingle(verticesArr, i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset + 4),
-                        BitConverter.ToSingle(verticesArr, i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset + 8)
+                        BitConverter.ToSingle(verticesArr,
+                            i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset),
+                        BitConverter.ToSingle(verticesArr,
+                            i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset + 4),
+                        BitConverter.ToSingle(verticesArr,
+                            i * samplerResult.VertexBuffer.stride + samplerResult.VertexBufferPositionOffset + 8)
                     );
                     verticesPositionsArr[i] = vertex;
                 }
-                
+
                 var indicesArr = new ushort[samplerResult.IndexBuffer.count];
                 samplerResult.IndexBuffer.GetData(indicesArr);
-                
+
                 // For each triangle, get the triangle resolution
                 var trianglesResolutionArr = new uint[samplerResult.NTriangles];
                 samplerResult.TrianglesResolutionBuffer.GetData(trianglesResolutionArr);
-                
+
                 var trianglesSamplesIndexOffsetArr = new uint[samplerResult.NTriangles];
                 samplerResult.TrianglesSamplesIndexOffsetBuffer.GetData(trianglesSamplesIndexOffsetArr);
 
@@ -717,7 +727,7 @@ namespace PLUME.Viewer.Analysis
 
                     // nth triangle formula
                     var nSamples = (triangleResolution + 1) * (triangleResolution + 2) / 2u;
-                    
+
                     for (var sampleIdx = 0u; sampleIdx < nSamples; sampleIdx++)
                     {
                         var barycentricWeights = SampleIndexToBarycentricWeights(sampleIdx, triangleResolution);
@@ -730,19 +740,19 @@ namespace PLUME.Viewer.Analysis
                             v0 * barycentricWeights.x +
                             v1 * barycentricWeights.y +
                             v2 * barycentricWeights.z;
-                        
+
                         var sampleValue = samplesValueArr[sampleIndexOffset + sampleIdx];
-                        
+
                         // Write the sample to the PLY file
                         w.WriteLine($"{samplePos.x} {samplePos.y} {samplePos.z} {sampleValue}");
                     }
                 }
-                
+
                 w.Close();
                 Debug.Log("PLY file exported to " + Path.GetFullPath(filePath));
             }
         }
-        
+
         public override void RemoveResult(EyeGazeAnalysisResult result)
         {
             base.RemoveResult(result);
@@ -753,16 +763,17 @@ namespace PLUME.Viewer.Analysis
                 {
                     _cachedMeshSamplerResultPropertyBlocks.Remove(meshSamplerResult);
                 }
+
                 SetVisibleResult(null);
             }
         }
-        
+
         public void SetVisibleResult(EyeGazeAnalysisResult result)
         {
             var prevVisibleResult = _visibleResult;
-            
+
             _visibleResult = result;
-            
+
             if (result == null && prevVisibleResult != null)
             {
                 RestoreRecordMaterials(player.GetPlayerContext());

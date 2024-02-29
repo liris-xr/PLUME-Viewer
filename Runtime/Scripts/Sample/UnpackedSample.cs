@@ -1,34 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
 using Google.Protobuf;
-using JetBrains.Annotations;
 
 namespace PLUME.Sample
 {
     public class UnpackedSample : UnpackedSample<IMessage>
     {
+        public UnpackedSample(ulong? timestamp, IMessage payload) : base(timestamp, payload)
+        {
+        }
     }
 
-    public class UnpackedSample<T> where T : IMessage
+    public abstract class UnpackedSample<T> where T : IMessage
     {
-        [CanBeNull] public SampleHeader Header;
-        public T Payload;
+        public readonly ulong? Timestamp;
+        public readonly T Payload;
 
-        private bool Equals(UnpackedSample<T> other)
+        public UnpackedSample(ulong? timestamp, T payload)
         {
-            return Equals(Header, other.Header) && EqualityComparer<T>.Default.Equals(Payload, other.Payload);
+            Timestamp = timestamp;
+            Payload = payload;
+        }
+
+        protected bool Equals(UnpackedSample<T> other)
+        {
+            return Timestamp == other.Timestamp && EqualityComparer<T>.Default.Equals(Payload, other.Payload);
         }
 
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            return obj.GetType() == GetType() && Equals((UnpackedSample<T>)obj);
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((UnpackedSample<T>)obj);
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Header, Payload);
+            return HashCode.Combine(Timestamp, Payload);
         }
     }
 }

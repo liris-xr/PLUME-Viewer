@@ -16,100 +16,162 @@ namespace PLUME
                     ctx.GetOrCreateComponentByIdentifier<Light>(lightCreate.Id);
                     break;
                 }
-                case LightUpdateEnabled lightUpdateEnabled:
+                case LightDestroy lightDestroy:
                 {
-                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateEnabled.Id);
-                    replayLight.enabled = lightUpdateEnabled.Enabled;
+                    ctx.TryDestroyComponentByIdentifier(lightDestroy.Id);
                     break;
                 }
-                case LightUpdateType lightUpdateType:
+                case LightUpdate lightUpdate:
                 {
-                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateType.Id);
-                    replayLight.type = lightUpdateType.Type.ToEngineType();
-                    break;
-                }
-                case LightUpdateRange lightUpdateRange:
-                {
-                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateRange.Id);
-                    replayLight.range = lightUpdateRange.Range;
-                    break;
-                }
-                case LightUpdateColor lightUpdateColor:
-                {
-                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateColor.Id);
-                    replayLight.color = lightUpdateColor.Color.ToEngineType();
-                    replayLight.colorTemperature = lightUpdateColor.ColorTemperature;
-                    replayLight.useColorTemperature = lightUpdateColor.UseColorTemperature;
-                    break;
-                }
-                case LightUpdateIntensity lightUpdateIntensity:
-                {
-                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateIntensity.Id);
-                    replayLight.intensity = lightUpdateIntensity.Intensity;
-                    break;
-                }
-                case LightUpdateBounceIntensity lightUpdateBounceIntensity:
-                {
-                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateBounceIntensity.Id);
-                    replayLight.bounceIntensity = lightUpdateBounceIntensity.BounceIntensity;
-                    break;
-                }
-                case LightUpdateShape lightUpdateShape:
-                {
-                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateShape.Id);
-                    replayLight.shape = lightUpdateShape.Shape.ToEngineType();
-                    break;
-                }
-                case LightUpdateSpotAngle lightUpdateSpotAngle:
-                {
-                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateSpotAngle.Id);
-                    replayLight.spotAngle = lightUpdateSpotAngle.SpotAngle;
-                    replayLight.innerSpotAngle = lightUpdateSpotAngle.InnerSpotAngle;
-                    break;
-                }
-                case LightUpdateShadows lightUpdateShadows:
-                {
-                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateShadows.Id);
-                    replayLight.shadows = lightUpdateShadows.Shadows.ToEngineType();
-                    replayLight.shadowBias = lightUpdateShadows.ShadowBias;
-                    replayLight.shadowResolution = lightUpdateShadows.ShadowResolution.ToEngineType();
-                    replayLight.shadowCustomResolution = lightUpdateShadows.ShadowCustomResolution;
-                    replayLight.shadowStrength = lightUpdateShadows.ShadowStrength;
-                    replayLight.shadowNearPlane = lightUpdateShadows.ShadowNearPlane;
-                    replayLight.shadowNormalBias = lightUpdateShadows.ShadowNormalBias;
-                    replayLight.shadowMatrixOverride = lightUpdateShadows.ShadowMatrixOverride.ToEngineType();
-                    replayLight.layerShadowCullDistances = lightUpdateShadows.LayerShadowCullDistances.ToArray();
-                    replayLight.lightShadowCasterMode = lightUpdateShadows.LightShadowCasterMode.ToEngineType();
-                    replayLight.useShadowMatrixOverride = lightUpdateShadows.UseShadowMatrixOverride;
-                    replayLight.useViewFrustumForShadowCasterCull = lightUpdateShadows.UseViewFrustumForShadowCasterCull;
-                    break;
-                }
-                case LightUpdateCookie lightUpdateCookie:
-                {
-                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateCookie.Id);
-                    replayLight.cookie = ctx.GetOrDefaultAssetByIdentifier<Texture>(lightUpdateCookie.CookieId);
-                    replayLight.cookieSize = lightUpdateCookie.CookieSize;
-                    ctx.TryAddAssetIdentifierCorrespondence(lightUpdateCookie.CookieId, replayLight.cookie);
-                    break;
-                }
-                case LightUpdateFlare lightUpdateFlare:
-                {
-                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateFlare.Id);
-                    replayLight.flare = ctx.GetOrDefaultAssetByIdentifier<Flare>(lightUpdateFlare.FlareId);;
-                    ctx.TryAddAssetIdentifierCorrespondence(lightUpdateFlare.FlareId, replayLight.flare);
-                    break;
-                }
-                case LightUpdateCulling lightUpdateCulling:
-                {
-                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateCulling.Id);
-                    replayLight.useBoundingSphereOverride = lightUpdateCulling.UseBoundingSphereOverride;
-                    replayLight.cullingMask = lightUpdateCulling.CullingMask;
-                    break;
-                }
-                case LightUpdateRenderingLayerMask lightUpdateRenderingLayerMask:
-                {
-                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdateRenderingLayerMask.Id);
-                    replayLight.renderingLayerMask = lightUpdateRenderingLayerMask.RenderingLayerMask;
+                    var replayLight = ctx.GetOrCreateComponentByIdentifier<Light>(lightUpdate.Id);
+
+                    if (lightUpdate.HasEnabled)
+                    {
+                        replayLight.enabled = lightUpdate.Enabled;
+                    }
+
+                    if (lightUpdate.HasType)
+                    {
+                        replayLight.type = lightUpdate.Type.ToEngineType();
+                    }
+
+                    if (lightUpdate.HasRange)
+                    {
+                        replayLight.range = lightUpdate.Range;
+                    }
+
+                    if (lightUpdate.Color != null)
+                    {
+                        replayLight.color = lightUpdate.Color.ToEngineType();
+                    }
+
+                    if (lightUpdate.HasColorTemperature)
+                    {
+                        replayLight.colorTemperature = lightUpdate.ColorTemperature;
+                    }
+
+                    if (lightUpdate.HasUseColorTemperature)
+                    {
+                        replayLight.useColorTemperature = lightUpdate.UseColorTemperature;
+                    }
+
+                    if (lightUpdate.HasIntensity)
+                    {
+                        replayLight.intensity = lightUpdate.Intensity;
+                    }
+
+                    if (lightUpdate.HasBounceIntensity)
+                    {
+                        replayLight.bounceIntensity = lightUpdate.BounceIntensity;
+                    }
+
+                    if (lightUpdate.HasShape)
+                    {
+                        replayLight.shape = lightUpdate.Shape.ToEngineType();
+                    }
+
+                    if (lightUpdate.HasSpotAngle)
+                    {
+                        replayLight.spotAngle = lightUpdate.SpotAngle;
+                    }
+
+                    if (lightUpdate.HasInnerSpotAngle)
+                    {
+                        replayLight.innerSpotAngle = lightUpdate.InnerSpotAngle;
+                    }
+
+                    if (lightUpdate.HasShadows)
+                    {
+                        replayLight.shadows = lightUpdate.Shadows.ToEngineType();
+                    }
+
+                    if (lightUpdate.HasShadowBias)
+                    {
+                        replayLight.shadowBias = lightUpdate.ShadowBias;
+                    }
+
+                    if (lightUpdate.HasShadowResolution)
+                    {
+                        replayLight.shadowResolution = lightUpdate.ShadowResolution.ToEngineType();
+                    }
+
+                    if (lightUpdate.HasShadowCustomResolution)
+                    {
+                        replayLight.shadowCustomResolution = lightUpdate.ShadowCustomResolution;
+                    }
+
+                    if (lightUpdate.HasShadowStrength)
+                    {
+                        replayLight.shadowStrength = lightUpdate.ShadowStrength;
+                    }
+
+                    if (lightUpdate.HasShadowNearPlane)
+                    {
+                        replayLight.shadowNearPlane = lightUpdate.ShadowNearPlane;
+                    }
+
+                    if (lightUpdate.HasShadowNormalBias)
+                    {
+                        replayLight.shadowNormalBias = lightUpdate.ShadowNormalBias;
+                    }
+
+                    if (lightUpdate.ShadowMatrixOverride != null)
+                    {
+                        replayLight.shadowMatrixOverride = lightUpdate.ShadowMatrixOverride.ToEngineType();
+                    }
+
+                    if (lightUpdate.LayerShadowCullDistances != null)
+                    {
+                        replayLight.layerShadowCullDistances = lightUpdate.LayerShadowCullDistances.Distances.ToArray();
+                    }
+
+                    if (lightUpdate.HasLightShadowCasterMode)
+                    {
+                        replayLight.lightShadowCasterMode = lightUpdate.LightShadowCasterMode.ToEngineType();
+                    }
+
+                    if (lightUpdate.HasUseShadowMatrixOverride)
+                    {
+                        replayLight.useShadowMatrixOverride = lightUpdate.UseShadowMatrixOverride;
+                    }
+
+                    if (lightUpdate.HasUseViewFrustumForShadowCasterCull)
+                    {
+                        replayLight.useViewFrustumForShadowCasterCull = lightUpdate.UseViewFrustumForShadowCasterCull;
+                    }
+
+                    if (lightUpdate.CookieId != null)
+                    {
+                        replayLight.cookie = ctx.GetOrDefaultAssetByIdentifier<Texture>(lightUpdate.CookieId);
+                        ctx.TryAddAssetIdentifierCorrespondence(lightUpdate.CookieId, replayLight.cookie);
+                    }
+
+                    if (lightUpdate.HasCookieSize)
+                    {
+                        replayLight.cookieSize = lightUpdate.CookieSize;
+                    }
+
+                    if (lightUpdate.FlareId != null)
+                    {
+                        replayLight.flare = ctx.GetOrDefaultAssetByIdentifier<Flare>(lightUpdate.FlareId);
+                        ctx.TryAddAssetIdentifierCorrespondence(lightUpdate.FlareId, replayLight.flare);
+                    }
+
+                    if (lightUpdate.HasUseBoundingSphereOverride)
+                    {
+                        replayLight.useBoundingSphereOverride = lightUpdate.UseBoundingSphereOverride;
+                    }
+
+                    if (lightUpdate.HasCullingMask)
+                    {
+                        replayLight.cullingMask = lightUpdate.CullingMask;
+                    }
+
+                    if (lightUpdate.HasRenderingLayerMask)
+                    {
+                        replayLight.renderingLayerMask = lightUpdate.RenderingLayerMask;
+                    }
+
                     break;
                 }
             }

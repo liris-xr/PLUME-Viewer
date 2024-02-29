@@ -1,8 +1,6 @@
 ﻿using System;
-using Google.Protobuf;
 using PLUME.Sample;
 using PLUME.Sample.Unity.XRITK;
-using UnityEngine;
 
 namespace PLUME
 {
@@ -11,7 +9,7 @@ namespace PLUME
         public override void PlaySample(PlayerContext ctx, UnpackedSample sample)
         {
             var payload = sample.Payload;
-            var time = sample.Header.Time;
+            var time = sample.Timestamp;
 
             switch (payload)
             {

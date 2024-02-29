@@ -26,7 +26,7 @@ namespace PLUME.UI.Analysis
 
             ui.RefreshTimeRangeLimits();
             ui.TimeRange.Reset();
-            
+
             player.onVisibleHeatmapModuleChanged += visibleModule =>
             {
                 // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being shown
@@ -36,7 +36,7 @@ namespace PLUME.UI.Analysis
                     ui.RefreshResults();
                 }
             };
-            
+
             player.onGeneratingModuleChanged += generatingModule =>
             {
                 // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being shown
@@ -66,16 +66,16 @@ namespace PLUME.UI.Analysis
             {
                 module.AddResult(result);
                 module.SetVisibleResult(result);
-                
+
                 if (player.GetVisibleHeatmapModule() != module)
                 {
                     player.SetVisibleHeatmapModule(module);
                 }
-                
+
                 ui.RefreshResults();
             });
 
-            _generationCoroutine = StartCoroutine(module.GenerateHeatmap(player.GetRecordLoader(),
+            _generationCoroutine = StartCoroutine(module.GenerateHeatmap(player.GetFramesLoader(),
                 player.GetPlayerAssets(), parameters,
                 onFinishCallback));
         }
@@ -88,12 +88,12 @@ namespace PLUME.UI.Analysis
             module.SetVisibleResult(null);
             ui.RefreshResults();
         }
-        
+
         public void FixedUpdate()
         {
             // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being generated
             var otherModuleGenerating = player.GetModuleGenerating() != null && player.GetModuleGenerating() != module;
-            
+
             ui.GenerateButton.style.display = module.IsGenerating ? DisplayStyle.None : DisplayStyle.Flex;
             ui.GenerateButton.SetEnabled(!module.IsGenerating && !otherModuleGenerating);
 
@@ -112,7 +112,7 @@ namespace PLUME.UI.Analysis
             {
                 player.SetVisibleHeatmapModule(null);
             }
-            
+
             module.RemoveResult(result);
             ui.RefreshResults();
         }
@@ -121,7 +121,7 @@ namespace PLUME.UI.Analysis
         {
             module.ExportResult(result);
         }
-        
+
         private void OnToggleResultVisibility(PositionHeatmapAnalysisResult result, bool visible)
         {
             // Disable show/hide when generating
@@ -146,7 +146,7 @@ namespace PLUME.UI.Analysis
                     }
                 }
             }
-            
+
             ui.RefreshResults();
         }
     }

@@ -44,7 +44,8 @@ namespace PLUME
                     var shaderName = mat.shader.name;
                     var color = GetMaterialMainColor(mat);
                     var mainTexture = GetMaterialMainTexture(mat);
-                    hash = CombineHashCodes(name.GetHashCode(), shaderName.GetHashCode(), color.GetHashCode(), Hash(mainTexture));
+                    hash = CombineHashCodes(name.GetHashCode(), shaderName.GetHashCode(), color.GetHashCode(),
+                        Hash(mainTexture));
                     break;
                 }
                 case Texture tex:

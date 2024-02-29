@@ -7,7 +7,6 @@ using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using Google.Protobuf.WellKnownTypes;
 using PLUME.Sample;
-using UnityEngine;
 
 namespace PLUME
 {
@@ -25,10 +24,11 @@ namespace PLUME
         public ulong Duration { get; private set; }
 
         private bool _closed;
-        
+
         private readonly Func<PackedSample, bool> _filter;
 
-        public BufferedAsyncRecordLoader(RecordReader reader, TypeRegistry typeRegistry, Func<PackedSample, bool> filter = null, bool autoStart = true)
+        public BufferedAsyncRecordLoader(RecordReader reader, TypeRegistry typeRegistry,
+            Func<PackedSample, bool> filter = null, bool autoStart = true)
         {
             _reader = reader;
             _filter = filter;
@@ -52,25 +52,26 @@ namespace PLUME
 
         private void Run()
         {
-            var recordMetadata = _reader.ReadMetadata();
-            var recordHeader = _reader.ReadNextSample().Payload.Unpack<RecordHeader>();
+            var readMetaFile = _reader.TryReadMetaFile(out var recordMetadata, out var recordMetrics);
+
+            var recordHeader = _reader.ReadNextSample().Payload.Unpack<RecordMetadata>();
 
             var versionStr =
                 $"{recordHeader.RecorderVersion.Name} v{recordHeader.RecorderVersion.Major}.{recordHeader.RecorderVersion.Minor}.{recordHeader.RecorderVersion.Patch}";
 
-            if (recordMetadata == null)
+            if (!readMetaFile)
             {
                 throw new NotImplementedException(
                     "Metadata file not found. Need to recompute duration and sample count and verify samples order.");
             }
 
-            if (!recordMetadata.Sequential)
+            if (!recordMetrics.IsSequential)
             {
                 throw new NotImplementedException("Record is not sequential and needs to be reordered.");
             }
 
-            Duration = recordMetadata.Duration;
-            SamplesCount = recordMetadata.SamplesCount;
+            Duration = recordMetrics.Duration;
+            SamplesCount = recordMetrics.NSamples;
 
             PackedSample sample;
 
@@ -85,13 +86,13 @@ namespace PLUME
                     FinishedLoading = true;
                     break;
                 }
-                
+
                 if (_filter != null && !_filter.Invoke(sample)) continue;
-                
+
                 // Skip samples without timestamp
-                if (sample.Header == null)
+                if (!sample.HasTimestamp)
                     continue;
-                
+
                 var messageDescriptor = _typeRegistry.Find(Any.GetTypeName(sample.Payload.TypeUrl));
 
                 if (messageDescriptor == null)
@@ -100,12 +101,8 @@ namespace PLUME
                 }
 
                 var payload = sample.Payload.Unpack(_typeRegistry);
-                
-                var unpackedSample = new UnpackedSample
-                {
-                    Header = sample.Header,
-                    Payload = payload
-                };
+
+                var unpackedSample = new UnpackedSample(sample.Timestamp, payload);
 
                 lock (_samplesBuffer)
                 {
@@ -181,7 +178,7 @@ namespace PLUME
                 {
                     var lastLoadedSample = _samplesBuffer.LastOrDefault();
 
-                    if ((lastLoadedSample != null && lastLoadedSample.Header.Time >= time) || FinishedLoading)
+                    if ((lastLoadedSample != null && lastLoadedSample.Timestamp >= time) || FinishedLoading)
                     {
                         lock (_signals)
                         {
@@ -213,14 +210,14 @@ namespace PLUME
                 if (sample == null)
                     return samples;
 
-                if (sample.Header.Time > endTime)
+                if (sample.Timestamp > endTime)
                     return samples;
 
                 samples.Add(sample);
                 idx++;
             } while (true);
         }
-        
+
         public UnpackedSample[] All()
         {
             lock (_samplesBuffer)
@@ -228,7 +225,7 @@ namespace PLUME
                 return _samplesBuffer.ToArray();
             }
         }
-        
+
         public UnpackedSample[] AllOfType<T>() where T : IMessage
         {
             lock (_samplesBuffer)
@@ -241,7 +238,7 @@ namespace PLUME
         {
             if (_closed)
                 return;
-            
+
             _loadingThread.Interrupt();
             lock (_samplesBuffer)
             {

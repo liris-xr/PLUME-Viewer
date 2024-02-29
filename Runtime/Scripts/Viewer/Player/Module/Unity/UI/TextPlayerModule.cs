@@ -16,39 +16,86 @@ namespace PLUME.UI
                     ctx.GetOrCreateComponentByIdentifier<Text>(textCreate.Id);
                     break;
                 }
-                case TextUpdateColor textUpdateColor:
+                case TextDestroy textDestroy:
                 {
-                    var t = ctx.GetOrCreateComponentByIdentifier<Text>(textUpdateColor.Id);
-                    t.color = textUpdateColor.Color.ToEngineType();
+                    ctx.TryDestroyComponentByIdentifier(textDestroy.Id);
                     break;
                 }
-                case TextUpdateValue textUpdateValue:
+                case TextUpdate textUpdate:
                 {
-                    var t = ctx.GetOrCreateComponentByIdentifier<Text>(textUpdateValue.Id);
-                    t.text = textUpdateValue.Text;
-                    break;
-                }
-                case TextUpdateFont textUpdateFont:
-                {
-                    var t = ctx.GetOrCreateComponentByIdentifier<Text>(textUpdateFont.Id);
-                    t.font = ctx.GetOrDefaultAssetByIdentifier<Font>(textUpdateFont.FontId);
-                    t.fontStyle = (FontStyle)textUpdateFont.FontStyle;
-                    t.fontSize = textUpdateFont.FontSize;
-                    ctx.TryAddAssetIdentifierCorrespondence(textUpdateFont.FontId, t.font);
-                    break;
-                }
-                case TextUpdateExtras textUpdateExtras:
-                {
-                    var t = ctx.GetOrCreateComponentByIdentifier<Text>(textUpdateExtras.Id);
-                    t.lineSpacing = textUpdateExtras.LineSpacing;
-                    t.supportRichText = textUpdateExtras.SupportRichText;
-                    t.alignment = (TextAnchor)textUpdateExtras.Alignment;
-                    t.alignByGeometry = textUpdateExtras.AlignByGeometry;
-                    t.horizontalOverflow = (HorizontalWrapMode)textUpdateExtras.HorizontalOverflow;
-                    t.verticalOverflow = (VerticalWrapMode)textUpdateExtras.VerticalOverflow;
-                    t.resizeTextForBestFit = textUpdateExtras.ResizeTextForBestFit;
-                    t.resizeTextMinSize = textUpdateExtras.ResizeTextMinSize;
-                    t.resizeTextMaxSize = textUpdateExtras.ResizeTextMaxSize;
+                    var text = ctx.GetOrCreateComponentByIdentifier<Text>(textUpdate.Id);
+
+                    if (textUpdate.Color != null)
+                    {
+                        text.color = textUpdate.Color.ToEngineType();
+                    }
+
+                    if (textUpdate.HasText)
+                    {
+                        text.text = textUpdate.Text;
+                    }
+
+                    if (textUpdate.FontId != null)
+                    {
+                        text.font = ctx.GetOrDefaultAssetByIdentifier<Font>(textUpdate.FontId);
+                        ctx.TryAddAssetIdentifierCorrespondence(textUpdate.FontId, text.font);
+                    }
+
+                    if (textUpdate.HasFontStyle)
+                    {
+                        text.fontStyle = (FontStyle)textUpdate.FontStyle;
+                    }
+
+                    if (textUpdate.HasFontSize)
+                    {
+                        text.fontSize = textUpdate.FontSize;
+                    }
+
+                    if (textUpdate.HasLineSpacing)
+                    {
+                        text.lineSpacing = textUpdate.LineSpacing;
+                    }
+
+                    if (textUpdate.HasSupportRichText)
+                    {
+                        text.supportRichText = textUpdate.SupportRichText;
+                    }
+
+                    if (textUpdate.HasAlignment)
+                    {
+                        text.alignment = (TextAnchor)textUpdate.Alignment;
+                    }
+
+                    if (textUpdate.HasAlignByGeometry)
+                    {
+                        text.alignByGeometry = textUpdate.AlignByGeometry;
+                    }
+
+                    if (textUpdate.HasHorizontalOverflow)
+                    {
+                        text.horizontalOverflow = (HorizontalWrapMode)textUpdate.HorizontalOverflow;
+                    }
+
+                    if (textUpdate.HasVerticalOverflow)
+                    {
+                        text.verticalOverflow = (VerticalWrapMode)textUpdate.VerticalOverflow;
+                    }
+
+                    if (textUpdate.HasResizeTextForBestFit)
+                    {
+                        text.resizeTextForBestFit = textUpdate.ResizeTextForBestFit;
+                    }
+
+                    if (textUpdate.HasResizeTextMinSize)
+                    {
+                        text.resizeTextMinSize = textUpdate.ResizeTextMinSize;
+                    }
+
+                    if (textUpdate.HasResizeTextMaxSize)
+                    {
+                        text.resizeTextMaxSize = textUpdate.ResizeTextMaxSize;
+                    }
+
                     break;
                 }
             }

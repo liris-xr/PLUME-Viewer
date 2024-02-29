@@ -1,10 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.IO.Compression;
-using Google.Protobuf;
-using JetBrains.Annotations;
+using K4os.Compression.LZ4.Streams;
 using PLUME.Sample;
-using UnityEngine;
 
 namespace PLUME
 {
@@ -16,34 +13,53 @@ namespace PLUME
         private bool _closed;
 
         private readonly RecordMetadata _metadata;
-        
+
+        private const uint LZ4MagicNumber = 0x184D2204;
+
         public RecordReader(string recordPath)
         {
             _recordPath = recordPath;
-            _samplesStream = new GZipStream(File.Open(recordPath, FileMode.Open, FileAccess.Read, FileShare.Read), CompressionMode.Decompress);
+
+            var fileStream = File.Open(recordPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+            // Read magic number
+            var magicNumber = new byte[4];
+            _ = fileStream.Read(magicNumber, 0, 4);
+            fileStream.Seek(0, SeekOrigin.Begin);
+            var compressed = BitConverter.ToUInt32(magicNumber, 0) == LZ4MagicNumber;
+
+            if (compressed)
+                _samplesStream = LZ4Stream.Decode(fileStream);
+            else
+                _samplesStream = fileStream;
         }
 
-        public RecordMetadata ReadMetadata()
+        public bool TryReadMetaFile(out RecordMetadata metadata, out RecordMetrics metrics)
         {
             var recordMetadataPath = _recordPath + ".meta";
 
             if (!File.Exists(recordMetadataPath))
             {
-                return null;
+                metadata = null;
+                metrics = null;
+                return false;
             }
-            
-            using var metadataStream = File.Open(recordMetadataPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+            using var metaStream = File.Open(recordMetadataPath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
             try
             {
-                var metadata = RecordMetadata.Parser.ParseDelimitedFrom(metadataStream);
-                metadataStream.Close();
-                return metadata;
+                metadata = RecordMetadata.Parser.ParseDelimitedFrom(metaStream);
+                metrics = RecordMetrics.Parser.ParseDelimitedFrom(metaStream);
+                metaStream.Close();
+                return true;
             }
             catch (Exception)
             {
-                metadataStream.Close();
-                return null;
+                metaStream.Close();
+                metadata = null;
+                metrics = null;
+                return false;
             }
         }
 
@@ -60,7 +76,7 @@ namespace PLUME
                 return false;
             }
         }
-        
+
         public PackedSample ReadNextSample()
         {
             return PackedSample.Parser.ParseDelimitedFrom(_samplesStream);
@@ -71,7 +87,7 @@ namespace PLUME
             if (_closed)
                 return;
             _closed = true;
-            
+
             _samplesStream.Close();
         }
 

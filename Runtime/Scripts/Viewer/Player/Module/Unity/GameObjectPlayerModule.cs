@@ -1,6 +1,5 @@
 ﻿using PLUME.Sample;
 using PLUME.Sample.Unity;
-using UnityEngine.SceneManagement;
 
 namespace PLUME
 {
@@ -20,32 +19,35 @@ namespace PLUME
                     ctx.TryDestroyGameObjectByIdentifier(gameObjectDestroy.Id);
                     break;
                 }
-                case GameObjectUpdateName gameObjectUpdateName:
+                case GameObjectUpdate gameObjectUpdate:
                 {
-                    var go = ctx.GetOrCreateGameObjectByIdentifier(gameObjectUpdateName.Id);
-                    go.name = gameObjectUpdateName.Name;
-                    break;
-                }
-                case GameObjectUpdateActiveSelf gameObjectUpdateActiveSelf:
-                {
-                    ctx.SetActive(gameObjectUpdateActiveSelf.Id, gameObjectUpdateActiveSelf.Active);
-                    break;
-                }
-                case GameObjectUpdateScene gameObjectUpdateScene:
-                {
-                    var go = ctx.GetOrCreateGameObjectByIdentifier(gameObjectUpdateScene.Id);
-                    // TODO handle multiple scenes
-                    break;
-                }
-                case GameObjectUpdateLayer gameObjectUpdateLayer:
-                {
-                    var go = ctx.GetOrCreateGameObjectByIdentifier(gameObjectUpdateLayer.Id);
-                    go.layer = gameObjectUpdateLayer.Layer;
-                    break;
-                }
-                case GameObjectUpdateTag gameObjectUpdateTag:
-                {
-                    ctx.SetGameObjectTag(gameObjectUpdateTag.Id, gameObjectUpdateTag.Tag);
+                    var go = ctx.GetOrCreateGameObjectByIdentifier(gameObjectUpdate.Id);
+
+                    if (gameObjectUpdate.HasName)
+                    {
+                        go.name = gameObjectUpdate.Name;
+                    }
+
+                    if (gameObjectUpdate.HasActive)
+                    {
+                        ctx.SetActive(gameObjectUpdate.Id, gameObjectUpdate.Active);
+                    }
+
+                    if (gameObjectUpdate.HasLayer)
+                    {
+                        go.layer = gameObjectUpdate.Layer;
+                    }
+
+                    if (gameObjectUpdate.HasTag)
+                    {
+                        ctx.SetGameObjectTag(gameObjectUpdate.Id, gameObjectUpdate.Tag);
+                    }
+
+                    if (gameObjectUpdate.HasSceneId)
+                    {
+                        // TODO handle multiple scenes
+                    }
+
                     break;
                 }
             }

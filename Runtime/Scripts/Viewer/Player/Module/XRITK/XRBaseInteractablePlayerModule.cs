@@ -9,36 +9,34 @@ namespace PLUME
         public override void PlaySample(PlayerContext ctx, UnpackedSample sample)
         {
             var payload = sample.Payload;
-            var time = sample.Header.Time;
+            var time = sample.Timestamp;
 
             switch (payload)
             {
                 case XRBaseInteractableCreate xrBaseInteractableCreate:
-                    {
-                        var go = ctx.GetOrCreateGameObjectByIdentifier(xrBaseInteractableCreate.Id.ParentId);
-                        Debug.Log($"XR Base Interactable : {go.name} has been created");
-                        break;
-                    }
+                {
+                    var go = ctx.GetOrCreateGameObjectByIdentifier(xrBaseInteractableCreate.Id.ParentId);
+                    Debug.Log($"XR Base Interactable : {go.name} has been created");
+                    break;
+                }
                 case XRBaseInteractableDestroy xrBaseInteractableDestroy:
-                    {
-                        var go = ctx.GetOrCreateGameObjectByIdentifier(xrBaseInteractableDestroy.Id.ParentId);
-                        Debug.Log($"XR Base Interactable : {go.name} has been destroyed");
-                        break;
-                    }
-                case XRBaseInteractableSetEnabled xrBaseInteractableSetEnabled:
-                    {
-                        var go = ctx.GetOrCreateGameObjectByIdentifier(xrBaseInteractableSetEnabled.Id.ParentId);
-                        string message;
-                        if (xrBaseInteractableSetEnabled.Enabled)
-                            message = "XR Base Interactable : {0} has been enabled";
-                        else
-                            message = "XR Base Interactable : {0} has been disabled";
-                        Debug.Log(string.Format(message, go.name));
-                        break;
-                    }
-                
+                {
+                    var go = ctx.GetOrCreateGameObjectByIdentifier(xrBaseInteractableDestroy.Id.ParentId);
+                    Debug.Log($"XR Base Interactable : {go.name} has been destroyed");
+                    break;
+                }
+                case XRBaseInteractableUpdate xrBaseInteractableSetEnabled:
+                {
+                    var go = ctx.GetOrCreateGameObjectByIdentifier(xrBaseInteractableSetEnabled.Id.ParentId);
+                    string message;
+                    if (xrBaseInteractableSetEnabled.Enabled)
+                        message = "XR Base Interactable : {0} has been enabled";
+                    else
+                        message = "XR Base Interactable : {0} has been disabled";
+                    Debug.Log(string.Format(message, go.name));
+                    break;
+                }
             }
-
         }
     }
 }

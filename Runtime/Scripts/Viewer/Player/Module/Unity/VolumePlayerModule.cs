@@ -1,5 +1,5 @@
 ﻿using PLUME.Sample;
-using PLUME.Sample.Unity;
+using PLUME.Sample.Unity.URP;
 using UnityEngine.Rendering;
 
 namespace PLUME
@@ -26,7 +26,8 @@ namespace PLUME
                     volume.blendDistance = volumeUpdate.BlendDistance;
                     volume.weight = volumeUpdate.Weight;
                     volume.priority = volumeUpdate.Priority;
-                    volume.sharedProfile = ctx.GetOrDefaultAssetByIdentifier<VolumeProfile>(volumeUpdate.SharedProfileId);
+                    volume.sharedProfile =
+                        ctx.GetOrDefaultAssetByIdentifier<VolumeProfile>(volumeUpdate.SharedProfileId);
                     break;
                 }
             }

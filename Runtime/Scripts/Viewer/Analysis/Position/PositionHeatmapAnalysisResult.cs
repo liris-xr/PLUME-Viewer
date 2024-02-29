@@ -5,7 +5,6 @@ using UnityEngine;
 
 namespace PLUME
 {
-    
     public struct PositionHeatmapAnalysisModuleParameters
     {
         public string CasterIdentifier;
@@ -14,21 +13,23 @@ namespace PLUME
         public ulong StartTime;
         public ulong EndTime;
     }
-    
+
     public class PositionHeatmapAnalysisResult : AnalysisModuleResult, IDisposable
     {
         public PositionHeatmapAnalysisModuleParameters Parameters;
         public ComputeBuffer MinValueBuffer { get; }
         public ComputeBuffer MaxValueBuffer { get; }
-        
+
         /// <summary>
         /// List of generated samples for the projection receivers. The key is the hash between the GameObject
         /// identifier and mesh identifier in the record.
         /// </summary>
         public readonly Dictionary<int, MeshSamplerResult> SamplerResults = new();
 
-        public PositionHeatmapAnalysisResult() {}
-        
+        public PositionHeatmapAnalysisResult()
+        {
+        }
+
         public PositionHeatmapAnalysisResult(PositionHeatmapAnalysisModuleParameters parameters,
             ComputeBuffer minValueBuffer,
             ComputeBuffer maxValueBuffer,
@@ -49,7 +50,7 @@ namespace PLUME
                 return BitConverter.ToSingle(BitConverter.GetBytes(samplesMinValueArr[0]));
             }
         }
-        
+
         public float MaxValue
         {
             get
@@ -66,7 +67,7 @@ namespace PLUME
             {
                 samplerResult.Dispose();
             }
-            
+
             MinValueBuffer.Release();
             MaxValueBuffer.Release();
         }

@@ -25,13 +25,14 @@ namespace PLUME.UI
         {
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<FocusInEvent>(OnPreviewRenderFocused);
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<FocusOutEvent>(OnPreviewRenderUnfocused);
-            
+
             _mainWindowUI.PreviewRender.RegisterCallback<MouseEnterEvent>(OnPreviewRenderMouseEnter);
             _mainWindowUI.PreviewRender.RegisterCallback<MouseLeaveEvent>(OnPreviewRenderMouseLeave);
-            
+
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<NavigationMoveEvent>(OnPreviewRenderNavigationMove);
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<KeyDownEvent>(OnPreviewRenderKeyDown);
-            _mainWindowUI.PreviewRender.style.backgroundImage = Background.FromRenderTexture(player.PreviewRenderTexture);
+            _mainWindowUI.PreviewRender.style.backgroundImage =
+                Background.FromRenderTexture(player.PreviewRenderTexture);
 
             _mainWindowUI.Timeline.RegisterCallback<KeyDownEvent>(OnPlayPauseKeyDown);
             _mainWindowUI.PlayPauseButton.RegisterCallback<KeyDownEvent>(OnPlayPauseKeyDown);
@@ -44,13 +45,13 @@ namespace PLUME.UI
             _mainWindowUI.DecreaseSpeedButton.clicked += OnClickDecreaseSpeed;
             _mainWindowUI.IncreaseSpeedButton.clicked += OnClickIncreaseSpeed;
             _mainWindowUI.ToggleMaximizePreviewButton.toggled += OnClickToggleMaximizePreview;
-            
+
             _mainWindowUI.CameraEnumField.SetValueWithoutNotify(player.GetCurrentPreviewCamera().GetCameraType());
             _mainWindowUI.CameraEnumField.RegisterValueChangedCallback(OnCameraSelectionChanged);
 
             RefreshResetViewButton();
             _mainWindowUI.ResetViewButton.clicked += OnClickResetView;
-            
+
             _mainWindowUI.Timeline.focusable = true;
             player.GetPlayerContext().updatedHierarchy += OnHierarchyUpdateEvent;
         }
@@ -64,15 +65,16 @@ namespace PLUME.UI
                 cam.ResetView();
             }
         }
-        
+
         private void RefreshResetViewButton()
         {
-            _mainWindowUI.ResetViewButton.SetEnabled(player.GetCurrentPreviewCamera().GetCameraType() != PreviewCameraType.Main);
+            _mainWindowUI.ResetViewButton.SetEnabled(player.GetCurrentPreviewCamera().GetCameraType() !=
+                                                     PreviewCameraType.Main);
         }
-        
+
         private void OnCameraSelectionChanged(ChangeEvent<Enum> evt)
         {
-            var cameraType = (PreviewCameraType) evt.newValue;
+            var cameraType = (PreviewCameraType)evt.newValue;
 
             switch (cameraType)
             {
@@ -88,7 +90,7 @@ namespace PLUME.UI
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
+
             RefreshResetViewButton();
         }
 
@@ -159,7 +161,8 @@ namespace PLUME.UI
                 {
                     var id = updateParentEvt.transformIdentifier.GetHashCode();
 
-                    if (updateParentEvt.parentTransformIdentifier == null)
+                    // Null Guid
+                    if (updateParentEvt.parentTransformIdentifier == "00000000-0000-0000-0000-000000000000")
                     {
                         controller.Move(id, -1, updateParentEvt.siblingIdx);
                     }
@@ -227,7 +230,7 @@ namespace PLUME.UI
                 player.GetTopViewCamera().ZoomDisabled = false;
             }
         }
-        
+
         private void OnPreviewRenderMouseLeave(MouseLeaveEvent evt)
         {
             if (player.GetTopViewCamera() != null)
@@ -242,7 +245,7 @@ namespace PLUME.UI
             {
                 player.GetFreeCamera().InputDisabled = false;
             }
-            
+
             if (player.GetTopViewCamera() != null)
             {
                 player.GetTopViewCamera().InputDisabled = false;
@@ -255,7 +258,7 @@ namespace PLUME.UI
             {
                 player.GetFreeCamera().InputDisabled = true;
             }
-            
+
             if (player.GetTopViewCamera() != null)
             {
                 player.GetTopViewCamera().InputDisabled = true;
@@ -301,37 +304,39 @@ namespace PLUME.UI
         {
             _mainWindowUI.ViewerPanel.style.display = DisplayStyle.Flex;
             _mainWindowUI.LoadingPanel.style.display = DisplayStyle.None;
-            
+
             _mainWindowUI.RefreshTimelineScale();
             _mainWindowUI.RefreshTimelineTimeIndicator();
             _mainWindowUI.RefreshTimelineCursor();
             _mainWindowUI.RefreshPlayPauseButton();
             _mainWindowUI.RefreshSpeed();
-            
+
             _mainWindowUI.RefreshMarkers();
             _mainWindowUI.RefreshPhysiologicalTracks();
-            
+
             // By default, show 30s of the record in the timeline
             _mainWindowUI.Timeline.ShowTimePeriod(0, 60_000_000_000);
             _mainWindowUI.Timeline.Focus();
-            
+
             _mainWindowUI.HierarchyTree.ClearSelection();
         }
-        
+
         public void Update()
         {
             if (_loading)
             {
-                var isLoading = !player.GetPlayerAssets().IsLoaded() || !player.GetMarkersLoader().FinishedLoading || !player.GetPhysiologicalSignalsLoader().FinishedLoading;
+                var isLoading = !player.GetPlayerAssets().IsLoaded() || !player.GetMarkersLoader().FinishedLoading ||
+                                !player.GetPhysiologicalSignalsLoader().FinishedLoading;
 
                 if (isLoading)
                 {
                     _mainWindowUI.ViewerPanel.style.display = DisplayStyle.None;
                     _mainWindowUI.LoadingPanel.style.display = DisplayStyle.Flex;
-                    
+
                     if (!player.GetPlayerAssets().IsLoaded())
                     {
-                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").value = player.GetPlayerAssets().GetLoadingProgress();
+                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").value =
+                            player.GetPlayerAssets().GetLoadingProgress();
                         _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").title = "Loading asset bundle...";
                     }
                     else if (!player.GetMarkersLoader().FinishedLoading)
@@ -342,26 +347,31 @@ namespace PLUME.UI
                     else if (!player.GetPhysiologicalSignalsLoader().FinishedLoading)
                     {
                         _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").value = 0;
-                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").title = "Loading physiological signals...";
+                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").title =
+                            "Loading physiological signals...";
                     }
-                } else {
+                }
+                else
+                {
                     ShowViewerPanel();
                     _loading = false;
                 }
             }
-            
+
             var isGenerating = player.GetModuleGenerating() != null;
             _mainWindowUI.PlayPauseButton.SetEnabled(!isGenerating);
             _mainWindowUI.StopButton.SetEnabled(!isGenerating);
             _mainWindowUI.DecreaseSpeedButton.SetEnabled(!isGenerating);
             _mainWindowUI.IncreaseSpeedButton.SetEnabled(!isGenerating);
 
-            _mainWindowUI.PreviewRender.Q<Label>("generating-label").style.display = isGenerating ? DisplayStyle.Flex : DisplayStyle.None;
-            
+            _mainWindowUI.PreviewRender.Q<Label>("generating-label").style.display =
+                isGenerating ? DisplayStyle.Flex : DisplayStyle.None;
+
             _mainWindowUI.PreviewRender.Q<Label>("free-camera-instructions").style.display =
                 player.GetCurrentPreviewCamera() is FreeCamera ? DisplayStyle.Flex : DisplayStyle.None;
-            _mainWindowUI.PreviewRender.Q<Label>("top-view-camera-instructions").style.display = player.GetCurrentPreviewCamera() is TopViewCamera ? DisplayStyle.Flex : DisplayStyle.None;
-            
+            _mainWindowUI.PreviewRender.Q<Label>("top-view-camera-instructions").style.display =
+                player.GetCurrentPreviewCamera() is TopViewCamera ? DisplayStyle.Flex : DisplayStyle.None;
+
             if (!_mainWindowUI.IsTimeIndicatorFocused())
             {
                 _mainWindowUI.RefreshTimelineTimeIndicator();

@@ -11,7 +11,7 @@ namespace PLUME
         private readonly RecordReader _reader;
         private readonly TypeRegistry _typeRegistry;
         private readonly OrderedSamplesList _loadedSamples;
-        
+
         public ulong Duration { get; private set; }
         public ulong SampleCount { get; private set; }
 
@@ -34,17 +34,17 @@ namespace PLUME
         {
             if (_loaded)
                 return;
-            
-            var recordHeader = _reader.ReadNextSample().Payload.Unpack<RecordHeader>();
-            
-            Debug.Log(recordHeader);
 
-            while(_reader.TryReadNextSample(out var sample))
+            var recordMetadata = _reader.ReadNextSample().Payload.Unpack<RecordMetadata>();
+
+            Debug.Log(recordMetadata);
+
+            while (_reader.TryReadNextSample(out var sample))
             {
                 // Skip samples without timestamp
-                if (sample.Header == null)
+                if (!sample.HasTimestamp)
                     continue;
-                
+
                 var payload = sample.Payload.Unpack(_typeRegistry);
 
                 // Unpacking might fail if the message descriptor is not found in the type registry.
@@ -54,15 +54,11 @@ namespace PLUME
                     continue;
                 }
 
-                var unpackedSample = new UnpackedSample
-                {
-                    Header = sample.Header,
-                    Payload = payload
-                };
-                
+                var unpackedSample = new UnpackedSample(sample.Timestamp, payload);
+
                 if (_loadedSamples.Count > 0)
                 {
-                    var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Header.Time);
+                    var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Timestamp);
 
                     // No samples after or at the current sample's timestamp, inserting at the end
                     if (idx == -1)
@@ -81,7 +77,7 @@ namespace PLUME
                 }
 
                 SampleCount++;
-                Duration = Math.Max(Duration, sample.Header.Time);
+                Duration = Math.Max(Duration, sample.Timestamp);
             }
 
             _loaded = true;
@@ -132,7 +128,7 @@ namespace PLUME
                 if (sample == null)
                     yield break;
 
-                if (sample.Header.Time > endTime)
+                if (sample.Timestamp > endTime)
                     yield break;
 
                 yield return sample;
@@ -143,7 +139,7 @@ namespace PLUME
         public void Close()
         {
             _reader.Close();
-            
+
             if (_closed)
                 return;
 

@@ -15,45 +15,106 @@ namespace PLUME.UI
                     ctx.GetOrCreateComponentByIdentifier<TextMeshProUGUI>(tmpTextCreate.Id);
                     break;
                 }
-                case TMPTextUpdateColor tmpTextUpdateColor:
+                case TMPTextDestroy tmpTextDestroy:
                 {
-                    var t = ctx.GetOrCreateComponentByIdentifier<TextMeshProUGUI>(tmpTextUpdateColor.Id);
-                    t.color = tmpTextUpdateColor.Color.ToEngineType();
+                    ctx.TryDestroyComponentByIdentifier(tmpTextDestroy.Id);
                     break;
                 }
-                case TMPTextUpdateValue tmpTextUpdateValue:
+                case TMPTextUpdate tmpTextUpdate:
                 {
-                    var t = ctx.GetOrCreateComponentByIdentifier<TextMeshProUGUI>(tmpTextUpdateValue.Id);
-                    t.text = tmpTextUpdateValue.Text;
-                    break;
-                }
-                case TMPTextUpdateFont tmpTextUpdateFont:
-                {
-                    var t = ctx.GetOrCreateComponentByIdentifier<TextMeshProUGUI>(tmpTextUpdateFont.Id);
-                    t.font = ctx.GetOrDefaultAssetByIdentifier<TMP_FontAsset>(tmpTextUpdateFont.FontId);
-                    t.fontStyle = (FontStyles) tmpTextUpdateFont.FontStyle;
-                    t.fontSize = tmpTextUpdateFont.FontSize;
-                    t.enableAutoSizing = tmpTextUpdateFont.AutoSize;
-                    t.fontSizeMin = tmpTextUpdateFont.FontSizeMin;
-                    t.fontSizeMax = tmpTextUpdateFont.FontSizeMax;
-                    ctx.TryAddAssetIdentifierCorrespondence(tmpTextUpdateFont.FontId, t.font);
-                    
+                    var tmpText = ctx.GetOrCreateComponentByIdentifier<TextMeshProUGUI>(tmpTextUpdate.Id);
 
-                    break;
-                }
-                case TMPTextUpdateExtras tmpTextUpdateExtras:
-                {
-                    var t = ctx.GetOrCreateComponentByIdentifier<TextMeshProUGUI>(tmpTextUpdateExtras.Id);
-                    t.characterSpacing = tmpTextUpdateExtras.CharacterSpacing;
-                    t.wordSpacing = tmpTextUpdateExtras.WordSpacing;
-                    t.lineSpacing = tmpTextUpdateExtras.LineSpacing;
-                    t.paragraphSpacing = tmpTextUpdateExtras.ParagraphSpacing;
-                    t.alignment = (TextAlignmentOptions) tmpTextUpdateExtras.Alignment;
-                    t.enableWordWrapping = tmpTextUpdateExtras.WrappingEnabled;
-                    t.overflowMode = (TextOverflowModes) tmpTextUpdateExtras.Overflow;
-                    t.horizontalMapping = (TextureMappingOptions) tmpTextUpdateExtras.HorizontalMapping;
-                    t.verticalMapping = (TextureMappingOptions) tmpTextUpdateExtras.VerticalMapping;
-                    t.margin = tmpTextUpdateExtras.Margin.ToEngineType();
+                    if (tmpTextUpdate.HasText)
+                    {
+                        tmpText.text = tmpTextUpdate.Text;
+                    }
+
+                    if (tmpTextUpdate.Color != null)
+                    {
+                        tmpText.color = tmpTextUpdate.Color.ToEngineType();
+                    }
+
+                    if (tmpTextUpdate.HasFontSize)
+                    {
+                        tmpText.fontSize = tmpTextUpdate.FontSize;
+                    }
+
+                    if (tmpTextUpdate.HasFontStyle)
+                    {
+                        tmpText.fontStyle = (FontStyles)tmpTextUpdate.FontStyle;
+                    }
+
+                    if (tmpTextUpdate.HasAutoSize)
+                    {
+                        tmpText.enableAutoSizing = tmpTextUpdate.AutoSize;
+                    }
+
+                    if (tmpTextUpdate.HasFontSizeMin)
+                    {
+                        tmpText.fontSizeMin = tmpTextUpdate.FontSizeMin;
+                    }
+
+                    if (tmpTextUpdate.HasFontSizeMax)
+                    {
+                        tmpText.fontSizeMax = tmpTextUpdate.FontSizeMax;
+                    }
+
+                    if (tmpTextUpdate.HasCharacterSpacing)
+                    {
+                        tmpText.characterSpacing = tmpTextUpdate.CharacterSpacing;
+                    }
+
+                    if (tmpTextUpdate.HasWordSpacing)
+                    {
+                        tmpText.wordSpacing = tmpTextUpdate.WordSpacing;
+                    }
+
+                    if (tmpTextUpdate.HasLineSpacing)
+                    {
+                        tmpText.lineSpacing = tmpTextUpdate.LineSpacing;
+                    }
+
+                    if (tmpTextUpdate.HasParagraphSpacing)
+                    {
+                        tmpText.paragraphSpacing = tmpTextUpdate.ParagraphSpacing;
+                    }
+
+                    if (tmpTextUpdate.HasAlignment)
+                    {
+                        tmpText.alignment = (TextAlignmentOptions)tmpTextUpdate.Alignment;
+                    }
+
+                    if (tmpTextUpdate.HasWrappingEnabled)
+                    {
+                        tmpText.enableWordWrapping = tmpTextUpdate.WrappingEnabled;
+                    }
+
+                    if (tmpTextUpdate.HasOverflow)
+                    {
+                        tmpText.overflowMode = (TextOverflowModes)tmpTextUpdate.Overflow;
+                    }
+
+                    if (tmpTextUpdate.HasHorizontalMapping)
+                    {
+                        tmpText.horizontalMapping = (TextureMappingOptions)tmpTextUpdate.HorizontalMapping;
+                    }
+
+                    if (tmpTextUpdate.HasVerticalMapping)
+                    {
+                        tmpText.verticalMapping = (TextureMappingOptions)tmpTextUpdate.VerticalMapping;
+                    }
+
+                    if (tmpTextUpdate.Margin != null)
+                    {
+                        tmpText.margin = tmpTextUpdate.Margin.ToEngineType();
+                    }
+
+                    if (tmpTextUpdate.FontId != null)
+                    {
+                        tmpText.font = ctx.GetOrDefaultAssetByIdentifier<TMP_FontAsset>(tmpTextUpdate.FontId);
+                        ctx.TryAddAssetIdentifierCorrespondence(tmpTextUpdate.FontId, tmpText.font);
+                    }
+
                     break;
                 }
             }

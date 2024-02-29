@@ -14,7 +14,8 @@ namespace PLUME.UI.Analysis
         public void Start()
         {
             ui.GenerateButton.clicked += OnClickGenerate;
-            ui.InteractorsIdsTextField.value = "f73a0170-aa81-4305-806b-3eadcb864441,32fbd30a-f825-45d9-b929-3f16d339fefa";
+            ui.InteractorsIdsTextField.value =
+                "f73a0170-aa81-4305-806b-3eadcb864441,32fbd30a-f825-45d9-b929-3f16d339fefa";
             ui.InteractablesIdsTextField.value = "";
             ui.InteractionTypeDropdownField.value = "Hover";
 
@@ -33,7 +34,7 @@ namespace PLUME.UI.Analysis
                     ui.RefreshResults();
                 }
             };
-            
+
             player.onGeneratingModuleChanged += generatingModule =>
             {
                 // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being shown
@@ -50,7 +51,8 @@ namespace PLUME.UI.Analysis
             module.SetVisibleResult(null);
 
             var interactorsIds = ui.InteractorsIdsTextField.value.Trim().Split(",").Where(s => s.Length > 0).ToArray();
-            var interactablesIds = ui.InteractablesIdsTextField.value.Trim().Split(",").Where(s => s.Length > 0).ToArray();
+            var interactablesIds =
+                ui.InteractablesIdsTextField.value.Trim().Split(",").Where(s => s.Length > 0).ToArray();
 
             var interactionType = (InteractionType)ui.InteractionTypeDropdownField.index;
             var startTime = ui.TimeRange.StartTime;
@@ -74,18 +76,18 @@ namespace PLUME.UI.Analysis
                 ui.GenerateButton.SetEnabled(true);
                 module.AddResult(result);
                 module.SetVisibleResult(result);
-                
+
                 if (player.GetVisibleHeatmapModule() != module)
                 {
                     player.SetVisibleHeatmapModule(module);
                 }
-                
+
                 ui.RefreshResults();
             });
 
-            StartCoroutine(module.GenerateHeatmap(player.GetRecordLoader(), generationParameters, onFinishCallback));
+            StartCoroutine(module.GenerateHeatmap(player.GetFramesLoader(), generationParameters, onFinishCallback));
         }
-        
+
         public void FixedUpdate()
         {
             // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being generated

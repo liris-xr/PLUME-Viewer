@@ -1,4 +1,3 @@
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Scripting;
 using UnityEngine.UIElements;
@@ -20,14 +19,14 @@ namespace PLUME
         public new class UxmlTraits : VisualElement.UxmlTraits
         {
             private readonly UxmlColorAttributeDescription _color = new()
-                {name = "color", defaultValue = DefaultColor};
-            
+                { name = "color", defaultValue = DefaultColor };
+
             private readonly UxmlUnsignedLongAttributeDescription _timeDivisionDuration = new()
-                {name = "time-division-duration", defaultValue = TimeDivisionDurationDefault};
+                { name = "time-division-duration", defaultValue = TimeDivisionDurationDefault };
 
             private readonly UxmlFloatAttributeDescription _timeDivisionWidth = new()
-                {name = "time-division-width", defaultValue = TimeDivisionWidthDefault};
-            
+                { name = "time-division-width", defaultValue = TimeDivisionWidthDefault };
+
             public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
             {
                 base.Init(ve, bag, cc);
@@ -44,7 +43,7 @@ namespace PLUME
         private ulong _time;
         private ulong _timeDivisionDuration;
         private float _timeDivisionWidth;
-        
+
         public TimelineMarkerElement()
         {
             var uxml = Resources.Load<VisualTreeAsset>("UI/Uxml/timeline_marker");
@@ -75,7 +74,7 @@ namespace PLUME
         {
             _marker.Q("time-offset").style.left = _time / (float)TimeDivisionDuration * TimeDivisionWidth;
         }
-        
+
         public ulong TimeDivisionDuration
         {
             get => _timeDivisionDuration;

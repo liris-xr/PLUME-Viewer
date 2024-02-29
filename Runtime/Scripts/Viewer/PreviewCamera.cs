@@ -5,8 +5,7 @@ namespace PLUME.Viewer
 {
     public abstract class PreviewCamera : MonoBehaviour
     {
-        [NonSerialized]
-        public RenderTexture PreviewRenderTexture;
+        [NonSerialized] public RenderTexture PreviewRenderTexture;
 
         public abstract Camera GetCamera();
 

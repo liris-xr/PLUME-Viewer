@@ -4,7 +4,8 @@ using UnityEngine.UIElements;
 
 namespace PLUME.UI.Analysis
 {
-    public class PositionHeatmapAnalysisModuleUI : AnalysisModuleWithResultsUI<PositionHeatmapAnalysisModule, PositionHeatmapAnalysisResult>
+    public class PositionHeatmapAnalysisModuleUI : AnalysisModuleWithResultsUI<PositionHeatmapAnalysisModule,
+        PositionHeatmapAnalysisResult>
     {
         public Player player;
 
@@ -49,7 +50,7 @@ namespace PLUME.UI.Analysis
                 ResultsEmptyLabel.style.display = DisplayStyle.Flex;
                 ResultsFoldout.style.display = DisplayStyle.None;
             }
-            
+
             Results.Clear();
 
             for (var resultIdx = 0; resultIdx < module.GetResultsCount(); ++resultIdx)
@@ -63,7 +64,8 @@ namespace PLUME.UI.Analysis
                     .ToString(@"hh\:mm\:ss\.fff");
                 var projectionReceiversIds = string.Join(",", result.Parameters.ReceiversIdentifiers);
 
-                resultEntry.Q("projection-caster").Q<Label>("value").text = result.Parameters.CasterIdentifier.ToString();
+                resultEntry.Q("projection-caster").Q<Label>("value").text =
+                    result.Parameters.CasterIdentifier.ToString();
                 resultEntry.Q("projection-receivers").Q<Label>("value").text = projectionReceiversIds;
                 resultEntry.Q("start-time").Q<Label>("value").text = startTimeStr;
                 resultEntry.Q("end-time").Q<Label>("value").text = endTimeStr;

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using UnityEngine;
 
 namespace PLUME
 {
@@ -24,19 +23,20 @@ namespace PLUME
     public class InteractionHeatmapAnalysisResult : AnalysisModuleResult
     {
         public InteractionAnalysisModuleParameters GenerationParameters { get; }
-        
+
         // Mapping between interactors record identifier and number of interactions
         public readonly Dictionary<string, int> Interactions = new();
 
         public readonly int TotalInteractionCount;
-        
+
         public readonly int MaxInteractionCount;
 
         public InteractionHeatmapAnalysisResult()
         {
         }
 
-        public InteractionHeatmapAnalysisResult(InteractionAnalysisModuleParameters generationParameters,  Dictionary<string, int> interactions, int totalInteractionCount, int maxInteractionCount)
+        public InteractionHeatmapAnalysisResult(InteractionAnalysisModuleParameters generationParameters,
+            Dictionary<string, int> interactions, int totalInteractionCount, int maxInteractionCount)
         {
             GenerationParameters = generationParameters;
             Interactions = interactions;

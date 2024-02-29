@@ -4,7 +4,8 @@ using UnityEngine.UIElements;
 
 namespace PLUME.UI.Analysis
 {
-    public class InteractionHeatmapAnalysisModuleUI : AnalysisModuleWithResultsUI<InteractionHeatmapAnalysisModule, InteractionHeatmapAnalysisResult>
+    public class InteractionHeatmapAnalysisModuleUI : AnalysisModuleWithResultsUI<InteractionHeatmapAnalysisModule,
+        InteractionHeatmapAnalysisResult>
     {
         public Player player;
 
@@ -42,7 +43,7 @@ namespace PLUME.UI.Analysis
                 ResultsEmptyLabel.style.display = DisplayStyle.Flex;
                 ResultsFoldout.style.display = DisplayStyle.None;
             }
-            
+
             Results.Clear();
 
             for (var resultIdx = 0; resultIdx < module.GetResultsCount(); ++resultIdx)
@@ -56,7 +57,9 @@ namespace PLUME.UI.Analysis
                     .ToString(@"hh\:mm\:ss\.fff");
                 var interactionType = result.GenerationParameters.InteractionType.ToString();
                 var interactors = string.Join(",", result.GenerationParameters.InteractorsIds);
-                var interactables = result.GenerationParameters.InteractablesIds.Length == 0 ? "All" : string.Join(",", result.GenerationParameters.InteractablesIds);
+                var interactables = result.GenerationParameters.InteractablesIds.Length == 0
+                    ? "All"
+                    : string.Join(",", result.GenerationParameters.InteractablesIds);
 
                 resultEntry.Q("interactors").Q<Label>("value").text = interactors;
                 resultEntry.Q("interactables").Q<Label>("value").text = interactables;
@@ -65,19 +68,20 @@ namespace PLUME.UI.Analysis
                 resultEntry.Q("end-time").Q<Label>("value").text = endTimeStr;
                 resultEntry.Q<Label>("result-index").text = $"#{resultIdx + 1}";
                 resultEntry.Q<Button>("delete-btn").clicked += () => clickedDeleteResult?.Invoke(result);
-                resultEntry.Q<ToggleButton>("show-btn").toggled += state => toggledResultVisibility?.Invoke(result, state);
+                resultEntry.Q<ToggleButton>("show-btn").toggled +=
+                    state => toggledResultVisibility?.Invoke(result, state);
                 resultEntry.Q<ToggleButton>("show-btn").SetStateWithoutNotify(module.GetVisibleResult() == result);
 
                 Results.Add(resultEntry);
             }
         }
-        
+
         public void RefreshTimeRangeLimits()
         {
             TimeRange.LowLimit = 0u;
             TimeRange.HighLimit = player.GetRecordDurationInNanoseconds();
         }
-        
+
 
         public override string GetTitle()
         {

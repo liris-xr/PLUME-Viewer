@@ -26,7 +26,7 @@ namespace PLUME
         private PlayerAssets _assets;
         public PlayerModule[] PlayerModules { get; private set; }
 
-        private BufferedAsyncRecordLoader _recordLoader;
+        private BufferedAsyncFramesLoader _framesLoader;
         private BufferedAsyncRecordLoader _markersLoader;
         private BufferedAsyncRecordLoader _physioSignalsLoader;
 
@@ -96,12 +96,12 @@ namespace PLUME
                           || sample.Payload.Is(StreamSample.Descriptor)
             );
 
-            _recordLoader =
-                new BufferedAsyncRecordLoader(new RecordReader(recordPath), typeRegistryProvider.GetTypeRegistry());
+            _framesLoader =
+                new BufferedAsyncFramesLoader(new RecordReader(recordPath), typeRegistryProvider.GetTypeRegistry());
 
             _markersLoader.StartLoading();
             _physioSignalsLoader.StartLoading();
-            _recordLoader.StartLoading();
+            _framesLoader.StartLoading();
 
             _playerContext = PlayerContext.NewContext("MainPlayerContext", _assets);
         }
@@ -147,7 +147,7 @@ namespace PLUME
         {
             PreviewRenderTexture.Release();
 
-            _recordLoader?.Dispose();
+            _framesLoader?.Dispose();
             _markersLoader?.Dispose();
             _physioSignalsLoader?.Dispose();
         }
@@ -214,14 +214,14 @@ namespace PLUME
             var endTime = _currentTimeNanoseconds + durationNanoseconds;
 
             _isLoading = true;
-            var samples = _recordLoader.SamplesInTimeRangeAsync(_currentTimeNanoseconds, endTime).Result;
+            var frames = _framesLoader.FramesInTimeRangeAsync(_currentTimeNanoseconds, endTime).Result;
             _isLoading = false;
 
-            _playerContext.PlaySamples(PlayerModules, samples);
+            _playerContext.PlayFrames(PlayerModules, frames);
 
-            _currentTimeNanoseconds = Math.Clamp(endTime, 0, _recordLoader.Duration + 1);
+            _currentTimeNanoseconds = Math.Clamp(endTime, 0, _framesLoader.Duration + 1);
 
-            if (endTime > _recordLoader.Duration)
+            if (endTime > _framesLoader.Duration)
             {
                 if (loop)
                 {
@@ -263,12 +263,12 @@ namespace PLUME
 
         public ulong GetRecordDurationInNanoseconds()
         {
-            return _recordLoader.Duration;
+            return _framesLoader.Duration;
         }
 
-        public BufferedAsyncRecordLoader GetRecordLoader()
+        public BufferedAsyncFramesLoader GetFramesLoader()
         {
-            return _recordLoader;
+            return _framesLoader;
         }
 
         public BufferedAsyncRecordLoader GetMarkersLoader()
@@ -330,7 +330,7 @@ namespace PLUME
 
         public void Dispose()
         {
-            _recordLoader?.Dispose();
+            _framesLoader?.Dispose();
             _markersLoader?.Dispose();
             _physioSignalsLoader?.Dispose();
         }

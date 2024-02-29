@@ -15,19 +15,35 @@ namespace PLUME
                     ctx.GetOrCreateComponentByIdentifier<TerrainCollider>(terrainColliderCreate.Id);
                     break;
                 }
-                case TerrainColliderUpdateEnabled terrainColliderUpdateEnabled:
+                case TerrainColliderDestroy terrainColliderDestroy:
                 {
-                    var terrainCollider = ctx.GetOrCreateComponentByIdentifier<TerrainCollider>(terrainColliderUpdateEnabled.Id);
-                    terrainCollider.enabled = terrainColliderUpdateEnabled.Enabled;
+                    ctx.TryDestroyComponentByIdentifier(terrainColliderDestroy.Id);
                     break;
                 }
                 case TerrainColliderUpdate terrainColliderUpdate:
                 {
-                    var terrainCollider = ctx.GetOrCreateComponentByIdentifier<TerrainCollider>(terrainColliderUpdate.Id);
-                    var terrainData = ctx.GetOrDefaultAssetByIdentifier<TerrainData>(terrainColliderUpdate.TerrainDataId);
-                    var material = ctx.GetOrDefaultAssetByIdentifier<PhysicMaterial>(terrainColliderUpdate.MaterialId);
-                    terrainCollider.terrainData = terrainData;
-                    terrainCollider.sharedMaterial = material;
+                    var terrainCollider =
+                        ctx.GetOrCreateComponentByIdentifier<TerrainCollider>(terrainColliderUpdate.Id);
+
+                    if (terrainColliderUpdate.HasEnabled)
+                    {
+                        terrainCollider.enabled = terrainColliderUpdate.Enabled;
+                    }
+
+                    if (terrainColliderUpdate.TerrainDataId != null)
+                    {
+                        var terrainData =
+                            ctx.GetOrDefaultAssetByIdentifier<TerrainData>(terrainColliderUpdate.TerrainDataId);
+                        terrainCollider.terrainData = terrainData;
+                    }
+
+                    if (terrainColliderUpdate.MaterialId != null)
+                    {
+                        var material =
+                            ctx.GetOrDefaultAssetByIdentifier<PhysicMaterial>(terrainColliderUpdate.MaterialId);
+                        terrainCollider.sharedMaterial = material;
+                    }
+
                     break;
                 }
             }

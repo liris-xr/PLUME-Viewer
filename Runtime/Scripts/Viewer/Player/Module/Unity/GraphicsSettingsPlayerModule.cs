@@ -1,6 +1,5 @@
 ﻿using PLUME.Sample;
 using PLUME.Sample.Unity;
-using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace PLUME
@@ -11,7 +10,9 @@ namespace PLUME
         {
             if (sample.Payload is GraphicsSettingsUpdate graphicsSettingsUpdate)
             {
-                GraphicsSettings.defaultRenderPipeline = ctx.GetOrDefaultAssetByIdentifier<RenderPipelineAsset>(graphicsSettingsUpdate.DefaultRenderPipelineAssetId);
+                GraphicsSettings.defaultRenderPipeline =
+                    ctx.GetOrDefaultAssetByIdentifier<RenderPipelineAsset>(graphicsSettingsUpdate
+                        .DefaultRenderPipelineAssetId);
             }
         }
     }

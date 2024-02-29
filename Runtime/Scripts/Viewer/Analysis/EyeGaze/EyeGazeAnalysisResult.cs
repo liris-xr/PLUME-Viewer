@@ -12,7 +12,7 @@ namespace PLUME.Viewer.Analysis
         World,
         Camera
     }
-    
+
     public struct EyeGazeAnalysisModuleParameters
     {
         public string XrCameraIdentifier;

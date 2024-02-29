@@ -14,13 +14,13 @@ namespace PLUME
         public new class UxmlTraits : VisualElement.UxmlTraits
         {
             private readonly UxmlStringAttributeDescription _recordName = new()
-                {name = "record-name", defaultValue = "N/A"};
+                { name = "record-name", defaultValue = "N/A" };
 
             private readonly UxmlStringAttributeDescription _recordDuration = new()
-                {name = "record-duration", defaultValue = "N/A"};
+                { name = "record-duration", defaultValue = "N/A" };
 
             private readonly UxmlStringAttributeDescription _recordCreationDate =
-                new() {name = "record-created-at", defaultValue = "N/A"};
+                new() { name = "record-created-at", defaultValue = "N/A" };
 
             public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
             {

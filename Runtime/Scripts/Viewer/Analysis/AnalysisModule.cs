@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace PLUME
 {
-    public abstract class AnalysisModule : MonoBehaviour {
-        
+    public abstract class AnalysisModule : MonoBehaviour
+    {
         public virtual bool HasResults()
         {
             return false;
@@ -20,7 +20,7 @@ namespace PLUME
     public abstract class AnalysisModuleWithResults<T> : AnalysisModule, IDisposable where T : AnalysisModuleResult
     {
         private readonly List<T> _results = new();
-        
+
         public void SaveResults()
         {
             throw new NotImplementedException();
@@ -41,7 +41,7 @@ namespace PLUME
         {
             _results.Remove(result);
         }
-        
+
         public virtual int GetResultIndex(T result)
         {
             return _results.IndexOf(result);
@@ -61,7 +61,7 @@ namespace PLUME
         {
             return _results.Count;
         }
-        
+
         public override bool HasResults()
         {
             return true;
@@ -71,7 +71,9 @@ namespace PLUME
         {
             return typeof(T);
         }
-        
-        public virtual void Dispose() {}
+
+        public virtual void Dispose()
+        {
+        }
     }
 }

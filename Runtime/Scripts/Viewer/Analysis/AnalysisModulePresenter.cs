@@ -10,8 +10,9 @@ namespace PLUME.UI.Analysis
         public TU module;
         public TW ui;
     }
-    
-    public abstract class AnalysisModulePresenter<TU, TV> : MonoBehaviour where TU : AnalysisModule where TV : AnalysisModuleUI<TU>
+
+    public abstract class AnalysisModulePresenter<TU, TV> : MonoBehaviour
+        where TU : AnalysisModule where TV : AnalysisModuleUI<TU>
     {
         public TU module;
         public TV ui;

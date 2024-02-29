@@ -8,7 +8,7 @@ namespace PLUME.UI.Analysis
 {
     public class
         TrajectoryAnalysisModuleUI : AnalysisModuleWithResultsUI<TrajectoryAnalysisModule,
-            TrajectoryAnalysisModuleResult>
+        TrajectoryAnalysisModuleResult>
     {
         public Player player;
 
@@ -18,6 +18,9 @@ namespace PLUME.UI.Analysis
         public Action<TrajectoryAnalysisModuleResult, bool> toggledResultVisibility;
 
         public Button GenerateButton { get; private set; }
+        public VisualElement GeneratingPanel { get; private set; }
+        public ProgressBar GenerationProgressBar { get; private set; }
+        public Button CancelButton { get; private set; }
         public TextField ObjectIdTextField { get; private set; }
         public TextField MarkersTextField { get; private set; }
         public Toggle TeleportationSegments { get; private set; }
@@ -31,6 +34,9 @@ namespace PLUME.UI.Analysis
             base.Awake();
 
             GenerateButton = Options.Q<Button>("generate-btn");
+            GeneratingPanel = Options.Q("generating");
+            GenerationProgressBar = GeneratingPanel.Q<ProgressBar>("progress-bar");
+            CancelButton = GeneratingPanel.Q<Button>("cancel-btn");
             ObjectIdTextField = Options.Q<TextField>("object-id");
             MarkersTextField = Options.Q<TextField>("markers");
             TeleportationSegments = Options.Q<Toggle>("teleportation-segments");
@@ -58,7 +64,7 @@ namespace PLUME.UI.Analysis
                 ResultsEmptyLabel.style.display = DisplayStyle.Flex;
                 ResultsFoldout.style.display = DisplayStyle.None;
             }
-            
+
             Results.Clear();
 
             for (var resultIdx = 0; resultIdx < module.GetResultsCount(); ++resultIdx)

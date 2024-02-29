@@ -1,16 +1,20 @@
 ﻿using System;
 using Google.Protobuf.Collections;
 using PLUME.Sample.Unity;
-using PLUME.Sample.Unity.URP;
+using PLUME.Sample.Unity.UI;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.UI;
+using AdditionalCanvasShaderChannels = UnityEngine.AdditionalCanvasShaderChannels;
 using AmbientMode = UnityEngine.Rendering.AmbientMode;
+using AntialiasingMode = UnityEngine.Rendering.Universal.AntialiasingMode;
+using AntialiasingQuality = UnityEngine.Rendering.Universal.AntialiasingQuality;
 using CameraClearFlags = PLUME.Sample.Unity.CameraClearFlags;
 using CameraType = PLUME.Sample.Unity.CameraType;
 using DefaultReflectionMode = UnityEngine.Rendering.DefaultReflectionMode;
 using DepthTextureMode = PLUME.Sample.Unity.DepthTextureMode;
 using FogMode = UnityEngine.FogMode;
-using LightmapData = UnityEngine.LightmapData;
 using LightmapsMode = UnityEngine.LightmapsMode;
 using LightShadowCasterMode = UnityEngine.LightShadowCasterMode;
 using LightShadowResolution = UnityEngine.Rendering.LightShadowResolution;
@@ -24,19 +28,31 @@ using ReflectionProbeRefreshMode = UnityEngine.Rendering.ReflectionProbeRefreshM
 using ReflectionProbeTimeSlicingMode = UnityEngine.Rendering.ReflectionProbeTimeSlicingMode;
 using ReflectionProbeUsage = PLUME.Sample.Unity.ReflectionProbeUsage;
 using RenderingPath = PLUME.Sample.Unity.RenderingPath;
+using RenderMode = UnityEngine.RenderMode;
+using ScaleMode = PLUME.Sample.Unity.UI.ScaleMode;
 using ShadowCastingMode = PLUME.Sample.Unity.ShadowCastingMode;
+using StandaloneRenderResize = UnityEngine.StandaloneRenderResize;
 using TransparencySortMode = PLUME.Sample.Unity.TransparencySortMode;
 
 namespace PLUME
 {
     public static class PayloadExtensions
     {
-        public static TransformGameObjectIdentifier ToIdentifierPayload(this Transform t)
+        public static GameObjectIdentifier ToIdentifierPayload(this GameObject go)
         {
-            return new TransformGameObjectIdentifier
+            return new GameObjectIdentifier
             {
-                TransformId = t.GetHashCode().ToString(),
-                GameObjectId = t.gameObject.GetHashCode().ToString()
+                GameObjectId = go.GetHashCode().ToString(),
+                TransformId = go.transform.GetHashCode().ToString()
+            };
+        }
+
+        public static ComponentIdentifier ToIdentifierPayload(this Component component)
+        {
+            return new ComponentIdentifier
+            {
+                ComponentId = component.GetHashCode().ToString(),
+                ParentId = component.gameObject.ToIdentifierPayload()
             };
         }
 
@@ -223,7 +239,7 @@ namespace PLUME
                 _ => throw new ArgumentOutOfRangeException(nameof(ambientMode), ambientMode, null)
             };
         }
-        
+
         public static Bounds ToEngineType(this Sample.Common.Bounds bounds)
         {
             return new Bounds
@@ -232,7 +248,7 @@ namespace PLUME
                 extents = bounds.Extents.ToEngineType()
             };
         }
-        
+
         public static Rect ToEngineType(this Sample.Common.Rect rect)
         {
             return new Rect(rect.X, rect.Y, rect.Width, rect.Height);
@@ -260,18 +276,18 @@ namespace PLUME
                 m33 = mtx.M33
             };
         }
-        
+
         public static T[] ToEngineType<T>(this RepeatedField<T> repeatedField)
         {
             var arr = new T[repeatedField.Count];
-            for(var i = 0; i < repeatedField.Count; ++i)
+            for (var i = 0; i < repeatedField.Count; ++i)
             {
                 arr[i] = repeatedField[i];
             }
 
             return arr;
         }
-        
+
         public static ReflectionProbeMode ToEngineType(this Sample.Unity.ReflectionProbeMode reflectionProbeMode)
         {
             return reflectionProbeMode switch
@@ -282,39 +298,48 @@ namespace PLUME
                 _ => throw new ArgumentOutOfRangeException(nameof(reflectionProbeMode), reflectionProbeMode, null)
             };
         }
-        
-        public static ReflectionProbeRefreshMode ToEngineType(this Sample.Unity.ReflectionProbeRefreshMode reflectionProbeRefreshMode)
+
+        public static ReflectionProbeRefreshMode ToEngineType(
+            this Sample.Unity.ReflectionProbeRefreshMode reflectionProbeRefreshMode)
         {
             return reflectionProbeRefreshMode switch
             {
                 Sample.Unity.ReflectionProbeRefreshMode.EveryFrame => ReflectionProbeRefreshMode.EveryFrame,
                 Sample.Unity.ReflectionProbeRefreshMode.OnAwake => ReflectionProbeRefreshMode.OnAwake,
                 Sample.Unity.ReflectionProbeRefreshMode.ViaScripting => ReflectionProbeRefreshMode.ViaScripting,
-                _ => throw new ArgumentOutOfRangeException(nameof(reflectionProbeRefreshMode), reflectionProbeRefreshMode, null)
+                _ => throw new ArgumentOutOfRangeException(nameof(reflectionProbeRefreshMode),
+                    reflectionProbeRefreshMode, null)
             };
         }
-        
-        public static ReflectionProbeTimeSlicingMode ToEngineType(this Sample.Unity.ReflectionProbeTimeSlicingMode reflectionProbeTimeSlicingMode)
+
+        public static ReflectionProbeTimeSlicingMode ToEngineType(
+            this Sample.Unity.ReflectionProbeTimeSlicingMode reflectionProbeTimeSlicingMode)
         {
             return reflectionProbeTimeSlicingMode switch
             {
-                Sample.Unity.ReflectionProbeTimeSlicingMode.NoTimeSlicing => ReflectionProbeTimeSlicingMode.NoTimeSlicing,
-                Sample.Unity.ReflectionProbeTimeSlicingMode.IndividualFaces => ReflectionProbeTimeSlicingMode.IndividualFaces,
-                Sample.Unity.ReflectionProbeTimeSlicingMode.AllFacesAtOnce => ReflectionProbeTimeSlicingMode.AllFacesAtOnce,
-                _ => throw new ArgumentOutOfRangeException(nameof(reflectionProbeTimeSlicingMode), reflectionProbeTimeSlicingMode, null)
+                Sample.Unity.ReflectionProbeTimeSlicingMode.NoTimeSlicing => ReflectionProbeTimeSlicingMode
+                    .NoTimeSlicing,
+                Sample.Unity.ReflectionProbeTimeSlicingMode.IndividualFaces => ReflectionProbeTimeSlicingMode
+                    .IndividualFaces,
+                Sample.Unity.ReflectionProbeTimeSlicingMode.AllFacesAtOnce => ReflectionProbeTimeSlicingMode
+                    .AllFacesAtOnce,
+                _ => throw new ArgumentOutOfRangeException(nameof(reflectionProbeTimeSlicingMode),
+                    reflectionProbeTimeSlicingMode, null)
             };
         }
-        
-        public static ReflectionProbeClearFlags ToEngineType(this Sample.Unity.ReflectionProbeClearFlags reflectionProbeClearFlags)
+
+        public static ReflectionProbeClearFlags ToEngineType(
+            this Sample.Unity.ReflectionProbeClearFlags reflectionProbeClearFlags)
         {
             return reflectionProbeClearFlags switch
             {
                 Sample.Unity.ReflectionProbeClearFlags.Skybox => ReflectionProbeClearFlags.Skybox,
                 Sample.Unity.ReflectionProbeClearFlags.SolidColor => ReflectionProbeClearFlags.SolidColor,
-                _ => throw new ArgumentOutOfRangeException(nameof(reflectionProbeClearFlags), reflectionProbeClearFlags, null)
+                _ => throw new ArgumentOutOfRangeException(nameof(reflectionProbeClearFlags), reflectionProbeClearFlags,
+                    null)
             };
         }
-        
+
         public static LightmapsMode ToEngineType(this Sample.Unity.LightmapsMode lightmapsMode)
         {
             return lightmapsMode switch
@@ -324,7 +349,7 @@ namespace PLUME
                 _ => throw new ArgumentOutOfRangeException(nameof(lightmapsMode), lightmapsMode, null)
             };
         }
-        
+
         public static UnityEngine.Rendering.ShadowCastingMode ToEngineType(this ShadowCastingMode shadowCastingMode)
         {
             return shadowCastingMode switch
@@ -337,20 +362,22 @@ namespace PLUME
                     null)
             };
         }
-        
-        public static UnityEngine.Rendering.ReflectionProbeUsage ToEngineType(this ReflectionProbeUsage reflectionProbeUsage)
+
+        public static UnityEngine.Rendering.ReflectionProbeUsage ToEngineType(
+            this ReflectionProbeUsage reflectionProbeUsage)
         {
             return reflectionProbeUsage switch
             {
                 ReflectionProbeUsage.Off => UnityEngine.Rendering.ReflectionProbeUsage.Off,
                 ReflectionProbeUsage.BlendProbes => UnityEngine.Rendering.ReflectionProbeUsage.BlendProbes,
-                ReflectionProbeUsage.BlendProbesAndSkybox => UnityEngine.Rendering.ReflectionProbeUsage.BlendProbesAndSkybox,
+                ReflectionProbeUsage.BlendProbesAndSkybox => UnityEngine.Rendering.ReflectionProbeUsage
+                    .BlendProbesAndSkybox,
                 ReflectionProbeUsage.Simple => UnityEngine.Rendering.ReflectionProbeUsage.Simple,
                 _ => throw new ArgumentOutOfRangeException(nameof(reflectionProbeUsage), reflectionProbeUsage,
                     null)
             };
         }
-        
+
         public static UnityEngine.Rendering.OpaqueSortMode ToEngineType(this OpaqueSortMode opaqueSortMode)
         {
             return opaqueSortMode switch
@@ -362,7 +389,7 @@ namespace PLUME
                     null)
             };
         }
-        
+
         public static UnityEngine.TransparencySortMode ToEngineType(this TransparencySortMode transparencySortMode)
         {
             return transparencySortMode switch
@@ -375,7 +402,7 @@ namespace PLUME
                     null)
             };
         }
-        
+
         public static UnityEngine.RenderingPath ToEngineType(this RenderingPath renderingPath)
         {
             return renderingPath switch
@@ -389,7 +416,7 @@ namespace PLUME
                     null)
             };
         }
-        
+
         public static UnityEngine.CameraType ToEngineType(this CameraType cameraType)
         {
             return cameraType switch
@@ -403,7 +430,7 @@ namespace PLUME
                     null)
             };
         }
-        
+
         public static Camera.GateFitMode ToEngineType(this CameraGateFitMode gateFitMode)
         {
             return gateFitMode switch
@@ -417,6 +444,7 @@ namespace PLUME
                     null)
             };
         }
+
         public static UnityEngine.CameraClearFlags ToEngineType(this CameraClearFlags cameraClearFlags)
         {
             return cameraClearFlags switch
@@ -429,7 +457,7 @@ namespace PLUME
                     null)
             };
         }
-        
+
         public static UnityEngine.DepthTextureMode ToEngineType(this DepthTextureMode depthTextureMode)
         {
             return depthTextureMode switch
@@ -442,7 +470,7 @@ namespace PLUME
                     null)
             };
         }
-     
+
         public static StereoTargetEyeMask ToEngineType(this CameraStereoTargetEyeMask stereoTargetEyeMask)
         {
             return stereoTargetEyeMask switch
@@ -455,50 +483,131 @@ namespace PLUME
                     null)
             };
         }
-        
-        public static UnityEngine.Rendering.Universal.CameraOverrideOption ToEngineType(this CameraOverrideOption cameraOverrideOption)
+
+        public static CameraOverrideOption ToEngineType(this Sample.Unity.URP.CameraOverrideOption cameraOverrideOption)
         {
             return cameraOverrideOption switch
             {
-                CameraOverrideOption.Off => UnityEngine.Rendering.Universal.CameraOverrideOption.Off,
-                CameraOverrideOption.On => UnityEngine.Rendering.Universal.CameraOverrideOption.On ,
-                CameraOverrideOption.UsePipelineSettings => UnityEngine.Rendering.Universal.CameraOverrideOption.UsePipelineSettings,
+                Sample.Unity.URP.CameraOverrideOption.Off => CameraOverrideOption.Off,
+                Sample.Unity.URP.CameraOverrideOption.On => CameraOverrideOption.On,
+                Sample.Unity.URP.CameraOverrideOption.UsePipelineSettings => CameraOverrideOption.UsePipelineSettings,
                 _ => throw new ArgumentOutOfRangeException(nameof(cameraOverrideOption), cameraOverrideOption,
                     null)
             };
         }
-        
-        public static UnityEngine.Rendering.Universal.CameraRenderType ToEngineType(this CameraRenderType cameraRenderType)
+
+        public static CameraRenderType ToEngineType(this Sample.Unity.URP.CameraRenderType cameraRenderType)
         {
             return cameraRenderType switch
             {
-                CameraRenderType.Base => UnityEngine.Rendering.Universal.CameraRenderType.Base,
-                CameraRenderType.Overlay => UnityEngine.Rendering.Universal.CameraRenderType.Overlay,
+                Sample.Unity.URP.CameraRenderType.Base => CameraRenderType.Base,
+                Sample.Unity.URP.CameraRenderType.Overlay => CameraRenderType.Overlay,
                 _ => throw new ArgumentOutOfRangeException(nameof(cameraRenderType), cameraRenderType,
                     null)
             };
         }
-        
-        public static UnityEngine.Rendering.Universal.AntialiasingMode ToEngineType(this AntialiasingMode antialiasingMode)
+
+        public static AntialiasingMode ToEngineType(this Sample.Unity.AntialiasingMode antialiasingMode)
         {
             return antialiasingMode switch
             {
-                AntialiasingMode.None => UnityEngine.Rendering.Universal.AntialiasingMode.None,
-                AntialiasingMode.FastApproximateAntialiasing => UnityEngine.Rendering.Universal.AntialiasingMode.FastApproximateAntialiasing,
-                AntialiasingMode.SubpixelMorphologicalAntiAliasing => UnityEngine.Rendering.Universal.AntialiasingMode.SubpixelMorphologicalAntiAliasing,
+                Sample.Unity.AntialiasingMode.None => AntialiasingMode.None,
+                Sample.Unity.AntialiasingMode.FastApproximateAntialiasing => AntialiasingMode
+                    .FastApproximateAntialiasing,
+                Sample.Unity.AntialiasingMode.SubpixelMorphologicalAntiAliasing => AntialiasingMode
+                    .SubpixelMorphologicalAntiAliasing,
                 _ => throw new ArgumentOutOfRangeException(nameof(antialiasingMode), antialiasingMode,
                     null)
             };
         }
-        
-        public static UnityEngine.Rendering.Universal.AntialiasingQuality ToEngineType(this AntialiasingQuality antialiasingQuality)
+
+        public static AntialiasingQuality ToEngineType(this Sample.Unity.AntialiasingQuality antialiasingQuality)
         {
             return antialiasingQuality switch
             {
-                AntialiasingQuality.Low => UnityEngine.Rendering.Universal.AntialiasingQuality.Low,
-                AntialiasingQuality.Medium => UnityEngine.Rendering.Universal.AntialiasingQuality.Medium,
-                AntialiasingQuality.High => UnityEngine.Rendering.Universal.AntialiasingQuality.High,
+                Sample.Unity.AntialiasingQuality.Low => AntialiasingQuality.Low,
+                Sample.Unity.AntialiasingQuality.Medium => AntialiasingQuality.Medium,
+                Sample.Unity.AntialiasingQuality.High => AntialiasingQuality.High,
                 _ => throw new ArgumentOutOfRangeException(nameof(antialiasingQuality), antialiasingQuality,
+                    null)
+            };
+        }
+
+        public static CanvasScaler.ScaleMode ToEngineType(this ScaleMode scaleMode)
+        {
+            return scaleMode switch
+            {
+                ScaleMode.ConstantPixelSize => CanvasScaler.ScaleMode.ConstantPixelSize,
+                ScaleMode.ScaleWithScreenSize => CanvasScaler.ScaleMode.ScaleWithScreenSize,
+                ScaleMode.ConstantPhysicalSize => CanvasScaler.ScaleMode.ConstantPhysicalSize,
+                _ => throw new ArgumentOutOfRangeException(nameof(scaleMode), scaleMode,
+                    null)
+            };
+        }
+
+        public static CanvasScaler.ScreenMatchMode ToEngineType(this ScreenMatchMode screenMatchMode)
+        {
+            return screenMatchMode switch
+            {
+                ScreenMatchMode.MatchWidthOrHeight => CanvasScaler.ScreenMatchMode.MatchWidthOrHeight,
+                ScreenMatchMode.Expand => CanvasScaler.ScreenMatchMode.Expand,
+                ScreenMatchMode.Shrink => CanvasScaler.ScreenMatchMode.Shrink,
+                _ => throw new ArgumentOutOfRangeException(nameof(screenMatchMode), screenMatchMode,
+                    null)
+            };
+        }
+
+        public static CanvasScaler.Unit ToEngineType(this Unit unit)
+        {
+            return unit switch
+            {
+                Unit.Centimeters => CanvasScaler.Unit.Centimeters,
+                Unit.Millimeters => CanvasScaler.Unit.Millimeters,
+                Unit.Inches => CanvasScaler.Unit.Inches,
+                Unit.Points => CanvasScaler.Unit.Points,
+                Unit.Picas => CanvasScaler.Unit.Picas,
+                _ => throw new ArgumentOutOfRangeException(nameof(unit), unit,
+                    null)
+            };
+        }
+
+        public static RenderMode ToEngineType(this Sample.Unity.UI.RenderMode renderMode)
+        {
+            return renderMode switch
+            {
+                Sample.Unity.UI.RenderMode.ScreenSpaceOverlay => RenderMode.ScreenSpaceOverlay,
+                Sample.Unity.UI.RenderMode.ScreenSpaceCamera => RenderMode.ScreenSpaceCamera,
+                Sample.Unity.UI.RenderMode.WorldSpace => RenderMode.WorldSpace,
+                _ => throw new ArgumentOutOfRangeException(nameof(renderMode), renderMode,
+                    null)
+            };
+        }
+
+        public static AdditionalCanvasShaderChannels ToEngineType(
+            this Sample.Unity.UI.AdditionalCanvasShaderChannels additionalCanvasShaderChannels)
+        {
+            return additionalCanvasShaderChannels switch
+            {
+                Sample.Unity.UI.AdditionalCanvasShaderChannels.None => AdditionalCanvasShaderChannels.None,
+                Sample.Unity.UI.AdditionalCanvasShaderChannels.TexCoord1 => AdditionalCanvasShaderChannels.TexCoord1,
+                Sample.Unity.UI.AdditionalCanvasShaderChannels.TexCoord2 => AdditionalCanvasShaderChannels.TexCoord2,
+                Sample.Unity.UI.AdditionalCanvasShaderChannels.TexCoord3 => AdditionalCanvasShaderChannels.TexCoord3,
+                Sample.Unity.UI.AdditionalCanvasShaderChannels.Normal => AdditionalCanvasShaderChannels.Normal,
+                Sample.Unity.UI.AdditionalCanvasShaderChannels.Tangent => AdditionalCanvasShaderChannels.Tangent,
+                _ => throw new ArgumentOutOfRangeException(nameof(additionalCanvasShaderChannels),
+                    additionalCanvasShaderChannels,
+                    null)
+            };
+        }
+
+        public static StandaloneRenderResize ToEngineType(
+            this Sample.Unity.UI.StandaloneRenderResize standaloneRenderResize)
+        {
+            return standaloneRenderResize switch
+            {
+                Sample.Unity.UI.StandaloneRenderResize.Enabled => StandaloneRenderResize.Enabled,
+                Sample.Unity.UI.StandaloneRenderResize.Disabled => StandaloneRenderResize.Disabled,
+                _ => throw new ArgumentOutOfRangeException(nameof(standaloneRenderResize), standaloneRenderResize,
                     null)
             };
         }

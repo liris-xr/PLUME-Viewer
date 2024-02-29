@@ -16,17 +16,26 @@ namespace PLUME.UI
                     ctx.GetOrCreateComponentByIdentifier<Image>(imageCreate.Id);
                     break;
                 }
-                case ImageUpdateColor imageUpdateColor:
+                case ImageDestroy imageDestroy:
                 {
-                    var i = ctx.GetOrCreateComponentByIdentifier<Image>(imageUpdateColor.Id);
-                    i.color = imageUpdateColor.Color.ToEngineType();
+                    ctx.TryDestroyComponentByIdentifier(imageDestroy.Id);
                     break;
                 }
-                case ImageUpdateSprite imageUpdateSprite:
+                case ImageUpdate imageUpdate:
                 {
-                    var i = ctx.GetOrCreateComponentByIdentifier<Image>(imageUpdateSprite.Id);
-                    i.sprite = ctx.GetOrDefaultAssetByIdentifier<Sprite>(imageUpdateSprite.SpriteId);
-                    ctx.TryAddAssetIdentifierCorrespondence(imageUpdateSprite.SpriteId, i.sprite);
+                    var i = ctx.GetOrCreateComponentByIdentifier<Image>(imageUpdate.Id);
+
+                    if (imageUpdate.Color != null)
+                    {
+                        i.color = imageUpdate.Color.ToEngineType();
+                    }
+
+                    if (imageUpdate.SpriteId != null)
+                    {
+                        i.sprite = ctx.GetOrDefaultAssetByIdentifier<Sprite>(imageUpdate.SpriteId);
+                        ctx.TryAddAssetIdentifierCorrespondence(imageUpdate.SpriteId, i.sprite);
+                    }
+
                     break;
                 }
             }

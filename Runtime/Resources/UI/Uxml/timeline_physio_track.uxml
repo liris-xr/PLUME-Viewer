@@ -1,27 +1,41 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global" />
-    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&amp;guid=028e63fb930a6f74997dbdd7944d219b&amp;type=3#dark_theme" />
-    <ui:VisualElement name="track" style="flex-grow: 0; flex-direction: row; width: 100%; max-width: 100%; min-width: 100%; flex-shrink: 0; height: 80px; border-bottom-width: 1px; border-left-color: rgb(48, 48, 48); border-right-color: rgb(48, 48, 48); border-top-color: rgb(48, 48, 48); border-bottom-color: rgb(48, 48, 48);">
-        <ui:VisualElement name="track-header" class="panel-container-primary" style="flex-grow: 0; width: 400px; flex-shrink: 0; border-left-color: rgb(48, 48, 48); border-right-color: rgb(48, 48, 48); border-top-color: rgb(48, 48, 48); border-bottom-color: rgb(48, 48, 48); border-top-width: 0; border-left-width: 0; border-bottom-width: 0; flex-direction: row;">
-            <ui:VisualElement name="color" style="flex-grow: 0; background-color: rgba(0, 0, 0, 0); flex-shrink: 0; width: 5px; margin-right: 5px;" />
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global"/>
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&amp;guid=028e63fb930a6f74997dbdd7944d219b&amp;type=3#dark_theme"/>
+    <ui:VisualElement name="track"
+                      style="flex-grow: 0; flex-direction: row; width: 100%; max-width: 100%; min-width: 100%; flex-shrink: 0; height: 80px; border-bottom-width: 1px; border-left-color: rgb(48, 48, 48); border-right-color: rgb(48, 48, 48); border-top-color: rgb(48, 48, 48); border-bottom-color: rgb(48, 48, 48);">
+        <ui:VisualElement name="track-header" class="panel-container-primary"
+                          style="flex-grow: 0; width: 400px; flex-shrink: 0; border-left-color: rgb(48, 48, 48); border-right-color: rgb(48, 48, 48); border-top-color: rgb(48, 48, 48); border-bottom-color: rgb(48, 48, 48); border-top-width: 0; border-left-width: 0; border-bottom-width: 0; flex-direction: row;">
+            <ui:VisualElement name="color"
+                              style="flex-grow: 0; background-color: rgba(0, 0, 0, 0); flex-shrink: 0; width: 5px; margin-right: 5px;"/>
             <ui:VisualElement style="flex-grow: 1; background-color: rgba(0, 0, 0, 0);">
-                <ui:VisualElement style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); flex-direction: row; align-items: center;">
-                    <ui:Label tabindex="-1" text="Stream Name" display-tooltip-when-elided="true" name="name" style="-unity-font-style: bold; flex-shrink: 1; flex-grow: 0; justify-content: center;" />
-                    <ui:Label tabindex="-1" text="(Channel 0)" display-tooltip-when-elided="true" name="channel" style="flex-shrink: 1; flex-grow: 0; justify-content: center;" />
+                <ui:VisualElement
+                        style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); flex-direction: row; align-items: center;">
+                    <ui:Label tabindex="-1" text="Stream Name" display-tooltip-when-elided="true" name="name"
+                              style="-unity-font-style: bold; flex-shrink: 1; flex-grow: 0; justify-content: center;"/>
+                    <ui:Label tabindex="-1" text="(Channel 0)" display-tooltip-when-elided="true" name="channel"
+                              style="flex-shrink: 1; flex-grow: 0; justify-content: center;"/>
                 </ui:VisualElement>
-                <ui:VisualElement style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); justify-content: flex-start; flex-direction: row; align-items: center;">
-                    <ui:Label tabindex="-1" text="Frequency: 50Hz" display-tooltip-when-elided="true" name="frequency" style="flex-grow: 1; flex-shrink: 1; justify-content: center;" />
+                <ui:VisualElement
+                        style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); justify-content: flex-start; flex-direction: row; align-items: center;">
+                    <ui:Label tabindex="-1" text="Frequency: 50Hz" display-tooltip-when-elided="true" name="frequency"
+                              style="flex-grow: 1; flex-shrink: 1; justify-content: center;"/>
                 </ui:VisualElement>
-                <ui:VisualElement style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); flex-direction: row; align-items: center;">
-                    <ui:Label tabindex="-1" text="Min: 0.345" display-tooltip-when-elided="true" name="min-value" style="justify-content: center;" />
-                    <ui:Label tabindex="-1" text="Max: 0.345" display-tooltip-when-elided="true" name="max-value" style="justify-content: center;" />
-                    <ui:Label tabindex="-1" text="Nearest: 0.345" display-tooltip-when-elided="true" name="current-value" style="justify-content: center;" />
+                <ui:VisualElement
+                        style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); flex-direction: row; align-items: center;">
+                    <ui:Label tabindex="-1" text="Min: 0.345" display-tooltip-when-elided="true" name="min-value"
+                              style="justify-content: center;"/>
+                    <ui:Label tabindex="-1" text="Max: 0.345" display-tooltip-when-elided="true" name="max-value"
+                              style="justify-content: center;"/>
+                    <ui:Label tabindex="-1" text="Nearest: 0.345" display-tooltip-when-elided="true"
+                              name="current-value" style="justify-content: center;"/>
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:ScrollView name="track-content-container" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="panel-container-secondary" style="width: 100%;">
+        <ui:ScrollView name="track-content-container" horizontal-scroller-visibility="Hidden"
+                       vertical-scroller-visibility="Hidden" class="panel-container-secondary" style="width: 100%;">
             <ui:VisualElement name="track-content" style="flex-grow: 1; height: 100%; width: 100%;">
-                <ui:VisualElement name="canvas" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); flex-shrink: 0; height: 100%; width: 100%;" />
+                <ui:VisualElement name="canvas"
+                                  style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); flex-shrink: 0; height: 100%; width: 100%;"/>
             </ui:VisualElement>
         </ui:ScrollView>
     </ui:VisualElement>

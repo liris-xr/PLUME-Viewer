@@ -11,60 +11,63 @@ namespace PLUME
             {
                 case RectTransformCreate rectTransformCreate:
                 {
-                    ctx.GetOrCreateGameObjectByIdentifier(rectTransformCreate.Id);
+                    ctx.GetOrCreateGameObjectByIdentifier(rectTransformCreate.Id.ParentId);
                     break;
                 }
                 case RectTransformDestroy rectTransformDestroy:
                 {
-                    ctx.TryDestroyGameObjectByIdentifier(rectTransformDestroy.Id);
+                    ctx.TryDestroyGameObjectByIdentifier(rectTransformDestroy.Id.ParentId);
                     break;
                 }
-                case RectTransformUpdateParent rectTransformUpdateParent:
+                case RectTransformUpdate rectTransformUpdate:
                 {
-                    ctx.SetParent(rectTransformUpdateParent.Id, rectTransformUpdateParent.ParentId);
-                    break;
-                }
-                case RectTransformUpdateSiblingIndex rectTransformUpdateSiblingIndex:
-                {
-                    ctx.SetSiblingIndex(rectTransformUpdateSiblingIndex.Id,
-                        rectTransformUpdateSiblingIndex.SiblingIndex);
-                    break;
-                }
-                case RectTransformUpdatePosition rectTransformUpdatePosition:
-                {
-                    var t = ctx.GetOrCreateRectTransformByIdentifier(rectTransformUpdatePosition.Id);
-                    t.localPosition = rectTransformUpdatePosition.LocalPosition.ToEngineType();
-                    break;
-                }
-                case RectTransformUpdateRotation rectTransformUpdateRotation:
-                {
-                    var t = ctx.GetOrCreateRectTransformByIdentifier(rectTransformUpdateRotation.Id);
-                    t.localRotation = rectTransformUpdateRotation.LocalRotation.ToEngineType();
-                    break;
-                }
-                case RectTransformUpdateScale rectTransformUpdateScale:
-                {
-                    var t = ctx.GetOrCreateRectTransformByIdentifier(rectTransformUpdateScale.Id);
-                    t.localScale = rectTransformUpdateScale.LocalScale.ToEngineType();
-                    break;
-                }
-                case RectTransformUpdateAnchors rectTransformUpdateAnchors:
-                {
-                    var t = ctx.GetOrCreateRectTransformByIdentifier(rectTransformUpdateAnchors.Id);
-                    t.anchorMin = rectTransformUpdateAnchors.AnchorMin.ToEngineType();
-                    t.anchorMax = rectTransformUpdateAnchors.AnchorMax.ToEngineType();
-                    break;
-                }
-                case RectTransformUpdateSize rectTransformUpdateSize:
-                {
-                    var t = ctx.GetOrCreateRectTransformByIdentifier(rectTransformUpdateSize.Id);
-                    t.sizeDelta = rectTransformUpdateSize.SizeDelta.ToEngineType();
-                    break;
-                }
-                case RectTransformUpdatePivot rectTransformUpdatePivot:
-                {
-                    var t = ctx.GetOrCreateRectTransformByIdentifier(rectTransformUpdatePivot.Id);
-                    t.pivot = rectTransformUpdatePivot.Pivot.ToEngineType();
+                    if (rectTransformUpdate.ParentId != null)
+                    {
+                        ctx.SetParent(rectTransformUpdate.Id, rectTransformUpdate.ParentId);
+                    }
+
+                    if (rectTransformUpdate.HasSiblingIdx)
+                    {
+                        ctx.SetSiblingIndex(rectTransformUpdate.Id, rectTransformUpdate.SiblingIdx);
+                    }
+
+                    var t = ctx.GetOrCreateRectTransformByIdentifier(rectTransformUpdate.Id);
+
+                    if (rectTransformUpdate.LocalPosition != null)
+                    {
+                        t.localPosition = rectTransformUpdate.LocalPosition.ToEngineType();
+                    }
+
+                    if (rectTransformUpdate.LocalRotation != null)
+                    {
+                        t.localRotation = rectTransformUpdate.LocalRotation.ToEngineType();
+                    }
+
+                    if (rectTransformUpdate.LocalScale != null)
+                    {
+                        t.localScale = rectTransformUpdate.LocalScale.ToEngineType();
+                    }
+
+                    if (rectTransformUpdate.AnchorMin != null)
+                    {
+                        t.anchorMin = rectTransformUpdate.AnchorMin.ToEngineType();
+                    }
+
+                    if (rectTransformUpdate.AnchorMax != null)
+                    {
+                        t.anchorMax = rectTransformUpdate.AnchorMax.ToEngineType();
+                    }
+
+                    if (rectTransformUpdate.SizeDelta != null)
+                    {
+                        t.sizeDelta = rectTransformUpdate.SizeDelta.ToEngineType();
+                    }
+
+                    if (rectTransformUpdate.Pivot != null)
+                    {
+                        t.pivot = rectTransformUpdate.Pivot.ToEngineType();
+                    }
+
                     break;
                 }
             }

@@ -28,15 +28,15 @@ namespace PLUME
         {
             return _assetBundleCreateRequest.isDone;
         }
-        
+
         public T GetOrDefaultAssetByIdentifier<T>(AssetIdentifier identifier) where T : Object
         {
-            if (identifier == null)
+            if (identifier.Id == "00000000-0000-0000-0000-000000000000")
                 return null;
 
             if (string.IsNullOrEmpty(identifier.Path))
                 return null;
-            
+
             var splitAssetIdentifier = identifier.Path.Split(":", 4);
 
             var assetSource = splitAssetIdentifier[0];
@@ -60,7 +60,7 @@ namespace PLUME
         {
             if (!_assetBundleCreateRequest.isDone)
                 throw new Exception("Asset bundle is not fully loaded yet.");
-            
+
             var assets = GetAssetBundle().LoadAssetWithSubAssets(assetPath, type);
             return assets.FirstOrDefault(asset => asset.name == assetName);
         }
@@ -73,7 +73,8 @@ namespace PLUME
                 "Default-Skybox" => new Material(Shader.Find("Skybox/Procedural")) { name = "Default-Skybox" },
                 "Default-Material" => new Material(Shader.Find("Standard")) { name = "Default-Material" },
                 "Default-Diffuse" => new Material(Shader.Find("Legacy Shaders/Diffuse")) { name = "Default-Diffuse" },
-                "Default-Terrain-Standard" => new Material(Shader.Find("Nature/Terrain/Standard")) { name = "Default-Terrain-Standard" },
+                "Default-Terrain-Standard" => new Material(Shader.Find("Nature/Terrain/Standard"))
+                    { name = "Default-Terrain-Standard" },
                 "Cube" => Resources.GetBuiltinResource<Mesh>("Cube.fbx"),
                 "Sphere" => Resources.GetBuiltinResource<Mesh>("New-Sphere.fbx"),
                 "Plane" => Resources.GetBuiltinResource<Mesh>("New-Plane.fbx"),
@@ -87,14 +88,15 @@ namespace PLUME
         public AssetBundle GetAssetBundle()
         {
             if (_assetBundle != null) return _assetBundle;
-            
+
             if (!_assetBundleCreateRequest.isDone)
             {
                 return null;
             }
 
             var assetBundleName = Path.GetFileName(_assetBundlePath);
-            _assetBundle = AssetBundle.GetAllLoadedAssetBundles().FirstOrDefault(bundle => bundle.name == assetBundleName);
+            _assetBundle = AssetBundle.GetAllLoadedAssetBundles()
+                .FirstOrDefault(bundle => bundle.name == assetBundleName);
             return _assetBundle;
         }
     }

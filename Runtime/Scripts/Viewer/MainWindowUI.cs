@@ -103,7 +103,7 @@ namespace PLUME.UI
                     ? new StyleColor(Color.white)
                     : new StyleColor(Color.gray);
             };
-
+            
             HierarchyTree.RegisterCallback<KeyDownEvent>(evt =>
             {
                 if (evt.ctrlKey && evt.keyCode == KeyCode.C)
@@ -124,7 +124,7 @@ namespace PLUME.UI
 
             MarkersContainer = ViewerPanel.Q("markers");
             MarkersListView = MarkersContainer.Q<ListView>("markers-list");
-            
+
             VerticalSplitView = ViewerPanel.Q<TwoPaneSplitView>("vertical-pane-split-view");
             HorizontalSplitView1 = ViewerPanel.Q<TwoPaneSplitView>("horizontal-pane-split-view-1");
             HorizontalSplitView2 = ViewerPanel.Q<TwoPaneSplitView>("horizontal-pane-split-view-2");
@@ -162,13 +162,13 @@ namespace PLUME.UI
         public void RefreshMarkers()
         {
             var markerEntryUxml = Resources.Load<VisualTreeAsset>("UI/Uxml/markers_list_entry");
-            
+
             Timeline.ClearMarkers();
             MarkersListView.Clear();
-            
+
             var markersLoader = player.GetMarkersLoader();
             var markerColors = new Dictionary<string, Color>();
-            
+
             var groupedMarkerTimelineElements = new Dictionary<string, List<TimelineMarkerElement>>();
             var groupedMarkerSamples = new Dictionary<string, List<UnpackedSample>>();
 
@@ -186,7 +186,7 @@ namespace PLUME.UI
 
                 var markerElement = new TimelineMarkerElement();
                 markerElement.SetColor(markerColor);
-                markerElement.SetTime(s.Header.Time);
+                markerElement.SetTime(s.Timestamp!.Value);
                 Timeline.AddMarker(markerElement);
 
                 if (groupedMarkerSamples.ContainsKey(marker.Label))
@@ -196,34 +196,28 @@ namespace PLUME.UI
                 }
                 else
                 {
-                    groupedMarkerTimelineElements.Add(marker.Label, new List<TimelineMarkerElement> {markerElement});
-                    groupedMarkerSamples.Add(marker.Label, new List<UnpackedSample> {s});
+                    groupedMarkerTimelineElements.Add(marker.Label, new List<TimelineMarkerElement> { markerElement });
+                    groupedMarkerSamples.Add(marker.Label, new List<UnpackedSample> { s });
                 }
             }
-            
+
             foreach (var (markerLabel, markerSamples) in groupedMarkerSamples.OrderBy(pair => pair.Key))
             {
                 var entry = markerEntryUxml.Instantiate().Q("markers-list-entry");
-                
+
                 var showAllBtn = MarkersContainer.Q<Button>("show-all");
                 var hideAllBtn = MarkersContainer.Q<Button>("hide-all");
-                
+
                 var prevBtn = entry.Q("marker-snap").Q<Button>("prev");
                 var nextBtn = entry.Q("marker-snap").Q<Button>("next");
-                
+
                 entry.Q("marker-color").style.backgroundColor = markerColors[markerLabel];
                 entry.Q<Label>("marker-label").text = markerLabel;
 
-                showAllBtn.clicked += () =>
-                {
-                    entry.Q<Toggle>("marker-toggle").value = true;
-                };
-                
-                hideAllBtn.clicked += () =>
-                {
-                    entry.Q<Toggle>("marker-toggle").value = false;
-                };
-                
+                showAllBtn.clicked += () => { entry.Q<Toggle>("marker-toggle").value = true; };
+
+                hideAllBtn.clicked += () => { entry.Q<Toggle>("marker-toggle").value = false; };
+
                 entry.Q<Toggle>("marker-toggle").value = true;
                 entry.Q<Toggle>("marker-toggle").RegisterValueChangedCallback(evt =>
                 {
@@ -231,7 +225,7 @@ namespace PLUME.UI
                     {
                         timelineMarkerElement.style.display = evt.newValue ? DisplayStyle.Flex : DisplayStyle.None;
                     }
-                    
+
                     prevBtn.SetEnabled(evt.newValue);
                     nextBtn.SetEnabled(evt.newValue);
                 });
@@ -239,20 +233,20 @@ namespace PLUME.UI
                 {
                     // TODO: move this into the MainWindowPresenter
                     var t = player.GetCurrentPlayTimeInNanoseconds();
-                    
-                    var snapMarker = markerSamples.OrderBy(s => s.Header.Time).LastOrDefault(s => s.Header.Time < t);
+
+                    var snapMarker = markerSamples.OrderBy(s => s.Timestamp).LastOrDefault(s => s.Timestamp < t);
                     if (snapMarker != null)
                     {
-                        player.JumpToTime(snapMarker.Header.Time);
+                        player.JumpToTime(snapMarker.Timestamp!.Value);
                     }
                 };
                 nextBtn.clicked += () =>
                 {
                     var t = player.GetCurrentPlayTimeInNanoseconds();
-                    var snapMarker = markerSamples.OrderBy(s => s.Header.Time).FirstOrDefault(s => s.Header.Time > t);
+                    var snapMarker = markerSamples.OrderBy(s => s.Timestamp).FirstOrDefault(s => s.Timestamp > t);
                     if (snapMarker != null)
                     {
-                        player.JumpToTime(snapMarker.Header.Time);
+                        player.JumpToTime(snapMarker.Timestamp!.Value);
                     }
                 };
                 MarkersListView.Q<ScrollView>().Add(entry);
@@ -262,7 +256,7 @@ namespace PLUME.UI
         public void RefreshPhysiologicalTracks()
         {
             Timeline.ClearTracks();
-            
+
             var physioSignalsLoader = player.GetPhysiologicalSignalsLoader();
 
             var tracks = new Dictionary<string, TimelinePhysiologicalSignalTrackElement[]>();
@@ -280,7 +274,7 @@ namespace PLUME.UI
 
                 if (channelFormat == "string")
                     continue;
-                
+
                 Random.InitState(streamName.GetHashCode());
                 var streamColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
                 var channelsTrack = new TimelinePhysiologicalSignalTrackElement[channelCount];
@@ -302,7 +296,7 @@ namespace PLUME.UI
             }
 
             var streamSamples = physioSignalsLoader.AllOfType<StreamSample>()
-                .OrderBy(s => s.Header!.Time)
+                .OrderBy(s => s.Timestamp)
                 .GroupBy(s => ((StreamSample)s.Payload).StreamInfo.LslStreamId);
 
             foreach (var streamSamplesGroup in streamSamples)
@@ -330,37 +324,37 @@ namespace PLUME.UI
                                 min = Math.Min(min, sample.FloatValue.Value[channelIdx]);
                                 max = Math.Max(max, sample.FloatValue.Value[channelIdx]);
                                 points.Add(
-                                    new Vector2(unpackedSample.Header!.Time, sample.FloatValue.Value[channelIdx]));
+                                    new Vector2(unpackedSample.Timestamp!.Value, sample.FloatValue.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.DoubleValue:
                                 min = Math.Min(min, (float)sample.DoubleValue.Value[channelIdx]);
                                 max = Math.Max(max, (float)sample.DoubleValue.Value[channelIdx]);
-                                points.Add(new Vector2(unpackedSample.Header!.Time,
+                                points.Add(new Vector2(unpackedSample.Timestamp!.Value,
                                     (float)sample.DoubleValue.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.Int8Value:
                                 min = Math.Min(min, sample.Int8Value.Value[channelIdx]);
                                 max = Math.Max(max, sample.Int8Value.Value[channelIdx]);
-                                points.Add(new Vector2(unpackedSample.Header!.Time,
+                                points.Add(new Vector2(unpackedSample.Timestamp!.Value,
                                     sample.Int8Value.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.Int16Value:
                                 min = Math.Min(min, sample.Int16Value.Value[channelIdx]);
                                 max = Math.Max(max, sample.Int16Value.Value[channelIdx]);
                                 points.Add(
-                                    new Vector2(unpackedSample.Header!.Time, sample.Int16Value.Value[channelIdx]));
+                                    new Vector2(unpackedSample.Timestamp!.Value, sample.Int16Value.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.Int32Value:
                                 min = Math.Min(min, sample.Int32Value.Value[channelIdx]);
                                 max = Math.Max(max, sample.Int32Value.Value[channelIdx]);
                                 points.Add(
-                                    new Vector2(unpackedSample.Header!.Time, sample.Int32Value.Value[channelIdx]));
+                                    new Vector2(unpackedSample.Timestamp!.Value, sample.Int32Value.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.Int64Value:
                                 min = Math.Min(min, sample.Int64Value.Value[channelIdx]);
                                 max = Math.Max(max, sample.Int64Value.Value[channelIdx]);
                                 points.Add(
-                                    new Vector2(unpackedSample.Header!.Time, sample.Int64Value.Value[channelIdx]));
+                                    new Vector2(unpackedSample.Timestamp!.Value, sample.Int64Value.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.None:
                             case StreamSample.ValuesOneofCase.StringValue:

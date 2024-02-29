@@ -15,44 +15,153 @@ namespace PLUME
                     ctx.GetOrCreateComponentByIdentifier<Terrain>(terrainCreate.Id);
                     break;
                 }
-                case TerrainUpdateEnabled terrainUpdateEnabled:
+                case TerrainDestroy terrainDestroy:
                 {
-                    var terrain = ctx.GetOrCreateComponentByIdentifier<Terrain>(terrainUpdateEnabled.Id);
-                    terrain.enabled = terrainUpdateEnabled.Enabled;
+                    ctx.TryDestroyComponentByIdentifier(terrainDestroy.Id);
                     break;
                 }
                 case TerrainUpdate terrainUpdate:
                 {
                     var terrain = ctx.GetOrCreateComponentByIdentifier<Terrain>(terrainUpdate.Id);
-                    var terrainData = ctx.GetOrDefaultAssetByIdentifier<TerrainData>(terrainUpdate.TerrainDataId);
-                    var materialTemplate =
-                        ctx.GetOrDefaultAssetByIdentifier<Material>(terrainUpdate.MaterialTemplateId);
-                    terrain.terrainData = terrainData;
-                    terrain.treeDistance = terrainUpdate.TreeDistance;
-                    terrain.treeBillboardDistance = terrainUpdate.TreeBillboardDistance;
-                    terrain.treeCrossFadeLength = terrainUpdate.TreeCrossFadeLength;
-                    terrain.treeMaximumFullLODCount = terrainUpdate.TreeMaximumFullLodCount;
-                    terrain.detailObjectDistance = terrainUpdate.DetailObjectDistance;
-                    terrain.detailObjectDensity = terrainUpdate.DetailObjectDensity;
-                    terrain.heightmapPixelError = terrainUpdate.HeightmapPixelError;
-                    terrain.heightmapMaximumLOD = terrainUpdate.HeightmapMaximumLod;
-                    terrain.basemapDistance = terrainUpdate.BasemapDistance;
-                    terrain.lightmapIndex = terrainUpdate.LightmapIndex;
-                    terrain.realtimeLightmapIndex = terrainUpdate.RealtimeLightmapIndex;
-                    terrain.lightmapScaleOffset = terrainUpdate.LightmapScaleOffset.ToEngineType();
-                    terrain.realtimeLightmapScaleOffset = terrainUpdate.RealtimeLightmapScaleOffset.ToEngineType();
-                    terrain.keepUnusedRenderingResources = terrainUpdate.KeepUnusedRenderingResources;
-                    terrain.shadowCastingMode = terrainUpdate.ShadowCastingMode.ToEngineType();
-                    terrain.reflectionProbeUsage = terrainUpdate.ReflectionProbeUsage.ToEngineType();
-                    terrain.materialTemplate = materialTemplate;
-                    terrain.drawHeightmap = terrainUpdate.DrawHeightmap;
-                    terrain.allowAutoConnect = terrainUpdate.AllowAutoConnect;
-                    terrain.groupingID = terrainUpdate.GroupingId;
-                    terrain.drawInstanced = terrainUpdate.DrawInstanced;
-                    terrain.drawTreesAndFoliage = terrainUpdate.DrawTreesAndFoliage;
-                    terrain.patchBoundsMultiplier = terrainUpdate.PatchBoundsMultiplier.ToEngineType();
-                    terrain.treeLODBiasMultiplier = terrainUpdate.TreeLodBiasMultiplier;
-                    terrain.collectDetailPatches = terrainUpdate.CollectDetailPatches;
+
+                    if (terrainUpdate.HasEnabled)
+                    {
+                        terrain.enabled = terrainUpdate.Enabled;
+                    }
+
+                    if (terrainUpdate.TerrainDataId != null)
+                    {
+                        var terrainData = ctx.GetOrDefaultAssetByIdentifier<TerrainData>(terrainUpdate.TerrainDataId);
+                        terrain.terrainData = terrainData;
+                    }
+
+                    if (terrainUpdate.MaterialTemplateId != null)
+                    {
+                        var materialTemplate =
+                            ctx.GetOrDefaultAssetByIdentifier<Material>(terrainUpdate.MaterialTemplateId);
+                        terrain.materialTemplate = materialTemplate;
+                    }
+
+                    if (terrainUpdate.HasTreeDistance)
+                    {
+                        terrain.treeDistance = terrainUpdate.TreeDistance;
+                    }
+
+                    if (terrainUpdate.HasTreeBillboardDistance)
+                    {
+                        terrain.treeBillboardDistance = terrainUpdate.TreeBillboardDistance;
+                    }
+
+                    if (terrainUpdate.HasTreeCrossFadeLength)
+                    {
+                        terrain.treeCrossFadeLength = terrainUpdate.TreeCrossFadeLength;
+                    }
+
+                    if (terrainUpdate.HasTreeMaximumFullLodCount)
+                    {
+                        terrain.treeMaximumFullLODCount = terrainUpdate.TreeMaximumFullLodCount;
+                    }
+
+                    if (terrainUpdate.HasDetailObjectDistance)
+                    {
+                        terrain.detailObjectDistance = terrainUpdate.DetailObjectDistance;
+                    }
+
+                    if (terrainUpdate.HasDetailObjectDensity)
+                    {
+                        terrain.detailObjectDensity = terrainUpdate.DetailObjectDensity;
+                    }
+
+                    if (terrainUpdate.HasHeightmapPixelError)
+                    {
+                        terrain.heightmapPixelError = terrainUpdate.HeightmapPixelError;
+                    }
+
+                    if (terrainUpdate.HasHeightmapMaximumLod)
+                    {
+                        terrain.heightmapMaximumLOD = terrainUpdate.HeightmapMaximumLod;
+                    }
+
+                    if (terrainUpdate.HasBasemapDistance)
+                    {
+                        terrain.basemapDistance = terrainUpdate.BasemapDistance;
+                    }
+
+                    if (terrainUpdate.HasLightmapIndex)
+                    {
+                        terrain.lightmapIndex = terrainUpdate.LightmapIndex;
+                    }
+
+                    if (terrainUpdate.HasRealtimeLightmapIndex)
+                    {
+                        terrain.realtimeLightmapIndex = terrainUpdate.RealtimeLightmapIndex;
+                    }
+
+                    if (terrainUpdate.LightmapScaleOffset != null)
+                    {
+                        terrain.lightmapScaleOffset = terrainUpdate.LightmapScaleOffset.ToEngineType();
+                    }
+
+                    if (terrainUpdate.RealtimeLightmapScaleOffset != null)
+                    {
+                        terrain.realtimeLightmapScaleOffset = terrainUpdate.RealtimeLightmapScaleOffset.ToEngineType();
+                    }
+
+                    if (terrainUpdate.HasKeepUnusedRenderingResources)
+                    {
+                        terrain.keepUnusedRenderingResources = terrainUpdate.KeepUnusedRenderingResources;
+                    }
+
+                    if (terrainUpdate.HasShadowCastingMode)
+                    {
+                        terrain.shadowCastingMode = terrainUpdate.ShadowCastingMode.ToEngineType();
+                    }
+
+                    if (terrainUpdate.HasReflectionProbeUsage)
+                    {
+                        terrain.reflectionProbeUsage = terrainUpdate.ReflectionProbeUsage.ToEngineType();
+                    }
+
+                    if (terrainUpdate.HasDrawHeightmap)
+                    {
+                        terrain.drawHeightmap = terrainUpdate.DrawHeightmap;
+                    }
+
+                    if (terrainUpdate.HasAllowAutoConnect)
+                    {
+                        terrain.allowAutoConnect = terrainUpdate.AllowAutoConnect;
+                    }
+
+                    if (terrainUpdate.HasGroupingId)
+                    {
+                        terrain.groupingID = terrainUpdate.GroupingId;
+                    }
+
+                    if (terrainUpdate.HasDrawInstanced)
+                    {
+                        terrain.drawInstanced = terrainUpdate.DrawInstanced;
+                    }
+
+                    if (terrainUpdate.HasDrawTreesAndFoliage)
+                    {
+                        terrain.drawTreesAndFoliage = terrainUpdate.DrawTreesAndFoliage;
+                    }
+
+                    if (terrainUpdate.PatchBoundsMultiplier != null)
+                    {
+                        terrain.patchBoundsMultiplier = terrainUpdate.PatchBoundsMultiplier.ToEngineType();
+                    }
+
+                    if (terrainUpdate.HasTreeLodBiasMultiplier)
+                    {
+                        terrain.treeLODBiasMultiplier = terrainUpdate.TreeLodBiasMultiplier;
+                    }
+
+                    if (terrainUpdate.HasCollectDetailPatches)
+                    {
+                        terrain.collectDetailPatches = terrainUpdate.CollectDetailPatches;
+                    }
+
                     break;
                 }
             }

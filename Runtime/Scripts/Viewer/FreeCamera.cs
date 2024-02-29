@@ -9,11 +9,10 @@ namespace PLUME
     [RequireComponent(typeof(Camera))]
     public class FreeCamera : PreviewCamera
     {
-        [NonSerialized]
-        public bool InputDisabled = true;
+        [NonSerialized] public bool InputDisabled = true;
 
         private Camera _camera;
-        
+
         private const float MouseSensitivityMultiplier = 0.01f;
 
         /// <summary>
@@ -116,10 +115,10 @@ namespace PLUME
             // Disable inputs if the camera is not selected
             if (Player.Instance.GetCurrentPreviewCamera() != this)
                 return;
-            
+
             if (Mouse.current?.rightButton?.isPressed == false)
                 return;
-            
+
             UpdateInputs();
 
             if (_inputChangeSpeed != 0.0f)
@@ -182,7 +181,7 @@ namespace PLUME
         public override void ResetView()
         {
             var cam = Player.Instance.GetMainCamera().GetCamera();
-            
+
             if (cam == null)
             {
                 transform.position = new Vector3(-2.24f, 1.84f, 0.58f);

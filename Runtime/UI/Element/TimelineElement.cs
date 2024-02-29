@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.Scripting;
-using UnityEngine.UI;
 using UnityEngine.UIElements;
 
 namespace PLUME
@@ -61,7 +59,7 @@ namespace PLUME
         private readonly List<TimelinePhysiologicalSignalTrackElement> _tracks = new();
 
         private ulong _time;
-        
+
         private ulong _duration;
         private ulong _timeDivisionDuration;
         private int _ticksPerDivision;
@@ -74,7 +72,7 @@ namespace PLUME
             var timelineUxml = Resources.Load<VisualTreeAsset>("UI/Uxml/timeline");
             var timeline = timelineUxml.Instantiate().Q("timeline");
             hierarchy.Add(timeline);
-            
+
             _timeScaleScrollView = timeline.Q<ScrollView>("time-scale-scroll-view");
 
             _tracksPlaceholder = timeline.Q("tracks-placeholder");
@@ -85,7 +83,7 @@ namespace PLUME
             _markersContainer = timeline.Q("markers-container");
 
             _timeCursor = timeline.Q("time-cursor");
-            
+
             _timelineScroller = timeline.Q<MinMaxSlider>("timeline-scroller");
             _timelineScroller.lowLimit = 0;
             _timelineScroller.highLimit = 1;
@@ -94,7 +92,7 @@ namespace PLUME
                 EnsureTimelineScrollerMinimumRange(evt);
                 UpdateTimelineScroller();
             });
-            
+
             UpdateTimelineScroller();
             RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
         }
@@ -103,19 +101,19 @@ namespace PLUME
         {
             if (to < from)
                 throw new Exception($"{nameof(from)} can't be greater or equal to {nameof(to)}");
-            _timelineScroller.minValue = from / (float) _duration;
-            _timelineScroller.maxValue = to / (float) _duration;
+            _timelineScroller.minValue = from / (float)_duration;
+            _timelineScroller.maxValue = to / (float)_duration;
         }
 
         public void AddMarker(TimelineMarkerElement markerElement)
         {
             markerElement.TimeDivisionWidth = TimeDivisionWidth;
             markerElement.TimeDivisionDuration = TimeDivisionDuration;
-            
+
             _markers.Add(markerElement);
             _markersContainer.Add(markerElement);
         }
-        
+
         public void ClearMarkers()
         {
             _markers.Clear();
@@ -127,13 +125,13 @@ namespace PLUME
             physiologicalSignalTrack.Duration = Duration;
             physiologicalSignalTrack.TimeDivisionWidth = TimeDivisionWidth;
             physiologicalSignalTrack.TimeDivisionDuration = TimeDivisionDuration;
-            
+
             _tracks.Add(physiologicalSignalTrack);
             _tracksContainer.Add(physiologicalSignalTrack);
             _tracksPlaceholder.style.display = DisplayStyle.None;
             _tracksContainer.style.display = DisplayStyle.Flex;
         }
-        
+
         public void ClearTracks()
         {
             _tracks.Clear();
@@ -144,14 +142,15 @@ namespace PLUME
 
         public void KeepTimeCursorInView()
         {
-            var relTime = _time / (float) _duration;
+            var relTime = _time / (float)_duration;
 
             var relTimeRange = _timelineScroller.maxValue - _timelineScroller.minValue;
             if (relTime < _timelineScroller.minValue)
             {
                 _timelineScroller.minValue = relTime;
                 _timelineScroller.maxValue = relTime + relTimeRange;
-            } else if (relTime > _timelineScroller.maxValue)
+            }
+            else if (relTime > _timelineScroller.maxValue)
             {
                 _timelineScroller.maxValue = relTime + relTimeRange;
                 _timelineScroller.minValue = relTime;
@@ -165,7 +164,7 @@ namespace PLUME
             var range = max - min;
 
             if (range * _duration > MinimumVisibleDuration) return;
-            
+
             var minimumRange = (float)MinimumVisibleDuration / _duration;
 
             // Scaling min
@@ -186,12 +185,12 @@ namespace PLUME
         {
             var range = _timelineScroller.maxValue - _timelineScroller.minValue;
             var minTime = (ulong)(_timelineScroller.minValue * _duration);
-            var timeRange = Math.Max(MinimumVisibleDuration, (ulong) (range * _duration));
-            
+            var timeRange = Math.Max(MinimumVisibleDuration, (ulong)(range * _duration));
+
             var timelineContentWidth = _timeScaleScrollView.contentViewport.contentRect.width;
 
             ulong roundingMagnitude;
-            
+
             switch (timeRange)
             {
                 // Round to 0.1ms when timeRange is in [0s, 10s[
@@ -218,14 +217,14 @@ namespace PLUME
                     roundingMagnitude = 3_600_000_000_000;
                     break;
             }
-            
+
             TimeDivisionDuration = timeRange / 10 - timeRange / 10 % roundingMagnitude;
             TimeDivisionWidth = timelineContentWidth / timeRange * TimeDivisionDuration;
-            
+
             var scrollOffset = minTime / (float)TimeDivisionDuration * TimeDivisionWidth;
             _timeScaleScrollView.horizontalScroller.value = scrollOffset;
             _timeCursor.Q("scroll-offset").style.left = -scrollOffset;
-            
+
             foreach (var marker in _markers)
             {
                 marker.SetScrollOffset(scrollOffset);
@@ -259,9 +258,10 @@ namespace PLUME
         private void UpdateTimescaleScrollerLimits()
         {
             _timeScaleScrollView.horizontalScroller.lowValue = 0;
-            _timeScaleScrollView.horizontalScroller.highValue = Duration / (float) TimeDivisionDuration * TimeDivisionWidth;
+            _timeScaleScrollView.horizontalScroller.highValue =
+                Duration / (float)TimeDivisionDuration * TimeDivisionWidth;
         }
-        
+
         private void UpdateTimescaleTicksClippingRect()
         {
             var clippingRect = _timeScaleScrollView.contentViewport.contentRect;
@@ -281,7 +281,7 @@ namespace PLUME
                 {
                     track.Duration = value;
                 }
-                
+
                 UpdateTimescaleScrollerLimits();
             }
         }
@@ -303,7 +303,7 @@ namespace PLUME
                 {
                     marker.TimeDivisionDuration = value;
                 }
-                
+
                 UpdateTimescaleScrollerLimits();
             }
         }
@@ -325,11 +325,11 @@ namespace PLUME
                 {
                     marker.TimeDivisionWidth = value;
                 }
-                
+
                 UpdateTimescaleScrollerLimits();
             }
         }
-        
+
         public int TicksPerDivision
         {
             get => _ticksPerDivision;

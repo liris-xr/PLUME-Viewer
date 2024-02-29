@@ -1,6 +1,4 @@
-﻿using JetBrains.Annotations;
-
-namespace PLUME
+﻿namespace PLUME
 {
     public interface IHierarchyUpdateEvent
     {
@@ -25,17 +23,17 @@ namespace PLUME
     public class HierarchyUpdateParentEvent : IHierarchyUpdateEvent
     {
         public readonly string transformIdentifier;
-        [CanBeNull] public readonly string parentTransformIdentifier;
+        public readonly string parentTransformIdentifier;
         public readonly int siblingIdx;
 
-        public HierarchyUpdateParentEvent(string transformIdentifier, [CanBeNull] string parentTransformIdentifier, int siblingIdx)
+        public HierarchyUpdateParentEvent(string transformIdentifier, string parentTransformIdentifier, int siblingIdx)
         {
             this.transformIdentifier = transformIdentifier;
             this.parentTransformIdentifier = parentTransformIdentifier;
             this.siblingIdx = siblingIdx;
         }
     }
-    
+
     public class HierarchyUpdateEnabledEvent : IHierarchyUpdateEvent
     {
         public readonly string transformIdentifier;

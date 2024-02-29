@@ -12,7 +12,7 @@ namespace PLUME
             {
                 RenderSettings.skybox = ctx.GetOrDefaultAssetByIdentifier<Material>(renderSettingsUpdate.SkyboxId);
                 ctx.TryAddAssetIdentifierCorrespondence(renderSettingsUpdate.SkyboxId, RenderSettings.skybox);
-                
+
                 RenderSettings.ambientEquatorColor = renderSettingsUpdate.AmbientEquatorColor.ToEngineType();
                 RenderSettings.ambientGroundColor = renderSettingsUpdate.AmbientGroundColor.ToEngineType();
                 RenderSettings.ambientIntensity = renderSettingsUpdate.AmbientIntensity;
@@ -23,8 +23,9 @@ namespace PLUME
 #if UNITY_2022_1_OR_NEWER
                 RenderSettings.customReflectionTexture =
                     ctx.GetOrDefaultAssetByIdentifier<Texture>(renderSettingsUpdate.CustomReflectionId);
-                ctx.TryAddAssetIdentifierCorrespondence(renderSettingsUpdate.CustomReflectionId, RenderSettings.customReflectionTexture);
-                
+                ctx.TryAddAssetIdentifierCorrespondence(renderSettingsUpdate.CustomReflectionId,
+                    RenderSettings.customReflectionTexture);
+
 #else
                 RenderSettings.customReflection =
                     ctx.GetOrDefaultAssetByIdentifier<Texture>(renderSettingsUpdate.CustomReflectionId);

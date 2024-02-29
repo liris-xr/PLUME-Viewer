@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Google.Protobuf;
 using PLUME.Sample;
 using UnityEngine;
 
@@ -36,7 +35,7 @@ namespace PLUME
         {
             if (_samples.Count == 0)
                 return -1;
-            
+
             var left = 0;
             var right = _samples.Count - 1;
 
@@ -45,9 +44,9 @@ namespace PLUME
                 var mid = left + (right - left) / 2;
                 var s = this[mid];
 
-                if (s.Header.Time == time)
+                if (s.Timestamp == time)
                 {
-                    while (mid > 0 && this[mid - 1].Header.Time == time)
+                    while (mid > 0 && this[mid - 1].Timestamp == time)
                     {
                         mid--;
                     }
@@ -55,12 +54,12 @@ namespace PLUME
                     return mid;
                 }
 
-                if ((mid == 0 || this[mid - 1].Header.Time < time) && this[mid].Header.Time > time)
+                if ((mid == 0 || this[mid - 1].Timestamp < time) && this[mid].Timestamp > time)
                 {
                     return mid;
                 }
 
-                if (s.Header.Time < time)
+                if (s.Timestamp < time)
                 {
                     left = mid + 1;
                 }
@@ -92,9 +91,9 @@ namespace PLUME
                 throw new Exception("Can't add null item to the list.");
             }
 
-            if (item.Header == null)
+            if (item.Timestamp == null)
             {
-                throw new Exception("Header can't be null.");
+                throw new Exception("Timestamp can't be null.");
             }
 
             if (item.Payload == null)
@@ -102,7 +101,7 @@ namespace PLUME
                 throw new Exception("Payload can't be null.");
             }
 
-            if (lastItem != null && item.Header.Time < lastItem.Header.Time)
+            if (lastItem != null && item.Timestamp < lastItem.Timestamp)
             {
                 Debug.Log(item.Payload + " | " + lastItem.Payload);
                 throw new Exception("Can't add a sample with a time smaller than the last sample's time in the list.");
@@ -143,9 +142,9 @@ namespace PLUME
                 throw new Exception("Can't insert null item to the list.");
             }
 
-            if (item.Header == null)
+            if (!item.Timestamp.HasValue)
             {
-                throw new Exception("Header can't be null.");
+                throw new Exception("Timestamp can't be null.");
             }
 
             if (item.Payload == null)
@@ -153,8 +152,8 @@ namespace PLUME
                 throw new Exception("Payload can't be null.");
             }
 
-            if (index > 0 && _samples[index - 1].Header.Time > item.Header.Time ||
-                index < Count - 1 && _samples[index + 1].Header.Time < item.Header.Time)
+            if (index > 0 && _samples[index - 1].Timestamp > item.Timestamp ||
+                index < Count - 1 && _samples[index + 1].Timestamp < item.Timestamp)
             {
                 throw new Exception(
                     "Can't insert a sample with a time smaller than the previous sample's time or greater than the next sample's time in the list.");
@@ -178,8 +177,8 @@ namespace PLUME
                     throw new Exception("Can't insert null item to the list.");
                 }
 
-                if (index > 0 && _samples[index - 1].Header.Time > value.Header.Time ||
-                    index < Count - 1 && _samples[index + 1].Header.Time < value.Header.Time)
+                if (index > 0 && _samples[index - 1].Timestamp > value.Timestamp ||
+                    index < Count - 1 && _samples[index + 1].Timestamp < value.Timestamp)
                 {
                     throw new Exception(
                         "Can't insert a sample with a time smaller than the previous sample's time or greater than the next sample's time in the list.");

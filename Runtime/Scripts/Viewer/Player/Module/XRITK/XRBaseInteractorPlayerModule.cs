@@ -9,7 +9,7 @@ namespace PLUME
         public override void PlaySample(PlayerContext ctx, UnpackedSample sample)
         {
             var payload = sample.Payload;
-            var time = sample.Header.Time;
+            var time = sample.Timestamp;
 
             switch (payload)
             {
@@ -25,7 +25,7 @@ namespace PLUME
                     Debug.Log($"XR Base Interactor : {go.name} has been destroyed");
                     break;
                 }
-                case XRBaseInteractorSetEnabled xrBaseInteractorSetEnabled:
+                case XRBaseInteractableUpdate xrBaseInteractorSetEnabled:
                 {
                     var go = ctx.GetOrCreateGameObjectByIdentifier(xrBaseInteractorSetEnabled.Id.ParentId);
                     string message;

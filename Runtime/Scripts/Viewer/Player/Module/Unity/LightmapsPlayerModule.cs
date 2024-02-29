@@ -1,6 +1,5 @@
 ﻿using PLUME.Sample;
 using PLUME.Sample.Unity;
-using UnityEditor;
 using UnityEngine;
 using LightmapData = UnityEngine.LightmapData;
 

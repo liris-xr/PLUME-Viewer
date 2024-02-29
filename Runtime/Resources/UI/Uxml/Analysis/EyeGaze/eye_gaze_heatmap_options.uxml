@@ -1,16 +1,23 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/position_heatmap_module.uss?fileID=7433441132597879392&amp;guid=5bdf89c930640cf429376d6e120cb9e3&amp;type=3#position_heatmap_module" />
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/position_heatmap_module.uss?fileID=7433441132597879392&amp;guid=5bdf89c930640cf429376d6e120cb9e3&amp;type=3#position_heatmap_module"/>
     <ui:VisualElement>
-        <ui:TextField picking-mode="Ignore" label="XR Camera:" text="Enter Instance ID" is-delayed="true" name="xr-camera" style="color: rgb(255, 255, 255);" />
-        <ui:TextField picking-mode="Ignore" label="Projection receivers:" text="Enter Instance ID" is-delayed="true" name="projection-receivers" style="color: rgb(255, 255, 255);" />
-        <ui:Toggle label="Include children:" name="include-receivers-children" value="true" />
-        <ui:EnumField label="Coordinate system:" type="PLUME.Viewer.Analysis.EyeGazeCoordinateSystem, fr.liris.plume.viewer" name="coordinate-system" />
-        <ui:Label text="Time range:" display-tooltip-when-elided="true" class="unity-base-field__label" style="padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; margin-left: 3px;" />
-        <PLUME.TimeRangeElement name="time-range" style="padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px;" />
-        <ui:Button text="Generate" display-tooltip-when-elided="true" name="generate-btn" />
+        <ui:TextField picking-mode="Ignore" label="XR Camera:" text="Enter Instance ID" is-delayed="true"
+                      name="xr-camera" style="color: rgb(255, 255, 255);"/>
+        <ui:TextField picking-mode="Ignore" label="Projection receivers:" text="Enter Instance ID" is-delayed="true"
+                      name="projection-receivers" style="color: rgb(255, 255, 255);"/>
+        <ui:Toggle label="Include children:" name="include-receivers-children" value="true"/>
+        <ui:EnumField label="Coordinate system:"
+                      type="PLUME.Viewer.Analysis.EyeGazeCoordinateSystem, fr.liris.plume.viewer"
+                      name="coordinate-system"/>
+        <ui:Label text="Time range:" display-tooltip-when-elided="true" class="unity-base-field__label"
+                  style="padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; margin-left: 3px;"/>
+        <PLUME.TimeRangeElement name="time-range"
+                                style="padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px;"/>
+        <ui:Button text="Generate" display-tooltip-when-elided="true" name="generate-btn"/>
         <ui:VisualElement name="generating" style="flex-grow: 1; display: none;">
-            <ui:ProgressBar value="0" title="Generating..." name="progress-bar" high-value="1" />
-            <ui:Button text="Cancel" parse-escape-sequences="true" display-tooltip-when-elided="true" name="cancel-btn" />
+            <ui:ProgressBar value="0" title="Generating..." name="progress-bar" high-value="1"/>
+            <ui:Button text="Cancel" parse-escape-sequences="true" display-tooltip-when-elided="true"
+                       name="cancel-btn"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -1,16 +1,18 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global" />
-    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&amp;guid=028e63fb930a6f74997dbdd7944d219b&amp;type=3#dark_theme" />
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global"/>
+    <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&amp;guid=028e63fb930a6f74997dbdd7944d219b&amp;type=3#dark_theme"/>
     <ui:VisualElement style="flex-grow: 1;">
         <ui:VisualElement name="Header" class="panel-header">
-            <ui:Label tabindex="-1" text="Markers" display-tooltip-when-elided="true" class="panel-header__title" />
+            <ui:Label tabindex="-1" text="Markers" display-tooltip-when-elided="true" class="panel-header__title"/>
         </ui:VisualElement>
         <ui:VisualElement class="panel-container-primary" style="flex-grow: 1;">
             <ui:VisualElement style="flex-grow: 0; flex-direction: row;">
-                <ui:Button text="Show all" parse-escape-sequences="true" display-tooltip-when-elided="true" name="show-all" style="flex-grow: 1;" />
-                <ui:Button text="Hide all" parse-escape-sequences="true" display-tooltip-when-elided="true" name="hide-all" style="flex-grow: 1;" />
+                <ui:Button text="Show all" parse-escape-sequences="true" display-tooltip-when-elided="true"
+                           name="show-all" style="flex-grow: 1;"/>
+                <ui:Button text="Hide all" parse-escape-sequences="true" display-tooltip-when-elided="true"
+                           name="hide-all" style="flex-grow: 1;"/>
             </ui:VisualElement>
-            <ui:ListView focusable="true" name="markers-list" class="panel-container-primary" style="flex-grow: 1;" />
+            <ui:ListView focusable="true" name="markers-list" class="panel-container-primary" style="flex-grow: 1;"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -16,10 +16,10 @@ namespace PLUME
         public new class UxmlTraits : VisualElement.UxmlTraits
         {
             private readonly UxmlIntAttributeDescription _aspectRatioWidth = new()
-                {name = "aspect-ratio-width", defaultValue = 16};
+                { name = "aspect-ratio-width", defaultValue = 16 };
 
             private readonly UxmlIntAttributeDescription _aspectRatioHeight =
-                new() {name = "aspect-ratio-height", defaultValue = 9};
+                new() { name = "aspect-ratio-height", defaultValue = 9 };
 
             public override IEnumerable<UxmlChildElementDescription> uxmlChildElementsDescription
             {
@@ -56,7 +56,7 @@ namespace PLUME
 
         private void UpdateElements()
         {
-            var aspectRatio = AspectRatioWidth / (float) AspectRatioHeight;
+            var aspectRatio = AspectRatioWidth / (float)AspectRatioHeight;
 
             if (aspectRatio <= 0.0f)
             {

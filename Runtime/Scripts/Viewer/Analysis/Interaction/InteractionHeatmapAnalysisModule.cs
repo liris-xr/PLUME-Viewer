@@ -40,7 +40,7 @@ namespace PLUME
             _interactionHeatmapMaterial.SetColor(EndColor, endColor);
         }
 
-        public IEnumerator GenerateHeatmap(BufferedAsyncRecordLoader loader,
+        public IEnumerator GenerateHeatmap(BufferedAsyncFramesLoader framesLoader,
             InteractionAnalysisModuleParameters parameters,
             Action<InteractionHeatmapAnalysisResult> finishCallback)
         {
@@ -48,71 +48,75 @@ namespace PLUME
 
             var totalInteractionsCount = 0;
             var maxInteractionsCount = 0;
-            
+
             if (parameters.EndTime < parameters.StartTime)
             {
                 throw new Exception(
                     $"{nameof(parameters.EndTime)} should be less or equal {nameof(parameters.StartTime)}.");
             }
 
-            var samplesLoadingTask = loader.SamplesInTimeRangeAsync(parameters.StartTime, parameters.EndTime);
-            yield return new WaitUntil(() => samplesLoadingTask.IsCompleted);
+            var framesLoadingTask = framesLoader.FramesInTimeRangeAsync(parameters.StartTime, parameters.EndTime);
+            yield return new WaitUntil(() => framesLoadingTask.IsCompleted);
 
-            foreach (var sample in samplesLoadingTask.Result)
+            foreach (var frame in framesLoadingTask.Result)
             {
-                TransformGameObjectIdentifier interactorIdentifier; 
-                TransformGameObjectIdentifier interactableIdentifier;
-                
-                if (parameters.InteractionType == InteractionType.Hover &&
-                    sample.Payload is XRBaseInteractableHoverEnter hoverEnter)
+                foreach (var sample in frame.Data)
                 {
-                    interactorIdentifier = hoverEnter.InteractorCurrent;
-                    interactableIdentifier = hoverEnter.Id.ParentId;
+                    GameObjectIdentifier interactorIdentifier;
+                    GameObjectIdentifier interactableIdentifier;
+
+                    if (parameters.InteractionType == InteractionType.Hover &&
+                        sample.Payload is XRBaseInteractableHoverEnter hoverEnter)
+                    {
+                        interactorIdentifier = hoverEnter.InteractorCurrent.ParentId;
+                        interactableIdentifier = hoverEnter.Id.ParentId;
+                    }
+                    else if (parameters.InteractionType == InteractionType.Select &&
+                             sample.Payload is XRBaseInteractableSelectEnter selectEnter)
+                    {
+                        interactorIdentifier = selectEnter.InteractorCurrent.ParentId;
+                        interactableIdentifier = selectEnter.Id.ParentId;
+                    }
+                    else if (parameters.InteractionType == InteractionType.Activate &&
+                             sample.Payload is XRBaseInteractableActivateEnter activateEnter)
+                    {
+                        interactorIdentifier = activateEnter.InteractorCurrent.ParentId;
+                        interactableIdentifier = activateEnter.Id.ParentId;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+
+                    if (interactorIdentifier == null || interactableIdentifier == null)
+                        continue;
+
+                    if (!parameters.InteractorsIds.Contains(interactorIdentifier.GameObjectId)) continue;
+
+                    if (parameters.InteractablesIds.Length > 0 &&
+                        !parameters.InteractablesIds.Contains(interactableIdentifier.GameObjectId)) continue;
+
+                    if (interactions.ContainsKey(interactableIdentifier.GameObjectId))
+                    {
+                        interactions[interactableIdentifier.GameObjectId]++;
+                    }
+                    else
+                    {
+                        interactions.Add(interactableIdentifier.GameObjectId, 1);
+                    }
+
+                    maxInteractionsCount = Math.Max(maxInteractionsCount,
+                        interactions[interactableIdentifier.GameObjectId]);
+                    totalInteractionsCount++;
                 }
-                else if (parameters.InteractionType == InteractionType.Select &&
-                         sample.Payload is XRBaseInteractableSelectEnter selectEnter)
-                {
-                    interactorIdentifier = selectEnter.InteractorCurrent;
-                    interactableIdentifier = selectEnter.Id.ParentId;
-                }
-                else if (parameters.InteractionType == InteractionType.Activate &&
-                         sample.Payload is XRBaseInteractableActivateEnter activateEnter)
-                {
-                    interactorIdentifier = activateEnter.InteractorCurrent;
-                    interactableIdentifier = activateEnter.Id.ParentId;
-                }
-                else
-                {
-                    continue;
-                }
-                
-                if (interactorIdentifier == null || interactableIdentifier == null)
-                    continue;
-                
-                if (!parameters.InteractorsIds.Contains(interactorIdentifier.GameObjectId)) continue;
-                
-                if (parameters.InteractablesIds.Length > 0 && !parameters.InteractablesIds.Contains(interactableIdentifier.GameObjectId)) continue;
-                
-                if (interactions.ContainsKey(interactableIdentifier.GameObjectId))
-                {
-                    interactions[interactableIdentifier.GameObjectId]++;
-                }
-                else
-                {
-                    interactions.Add(interactableIdentifier.GameObjectId, 1);
-                }
-                
-                maxInteractionsCount = Math.Max(maxInteractionsCount,
-                    interactions[interactableIdentifier.GameObjectId]);
-                totalInteractionsCount++;
             }
-            
+
             var result = new InteractionHeatmapAnalysisResult(parameters, interactions, totalInteractionsCount,
                 maxInteractionsCount);
 
             finishCallback(result);
         }
-        
+
         private void LateUpdate()
         {
             var activeContext = PlayerContext.GetActiveContext();
@@ -137,15 +141,18 @@ namespace PLUME
                 goRenderer.SetSharedMaterials(new List<Material>());
             }
 
-            var samples = player.GetRecordLoader()
-                .SamplesInTimeRangeAsync(0, player.GetCurrentPlayTimeInNanoseconds());
-            foreach (var sample in samples.Result)
+            var frames = player.GetFramesLoader()
+                .FramesInTimeRangeAsync(0, player.GetCurrentPlayTimeInNanoseconds());
+            foreach (var frame in frames.Result)
             {
-                if (sample.Payload is MeshRendererUpdateMaterials or SkinnedMeshRendererUpdateMaterials)
+                foreach (var data in frame.Data)
                 {
-                    foreach (var playerModule in player.PlayerModules)
+                    if (data.Payload is MeshRendererUpdate or SkinnedMeshRendererUpdate)
                     {
-                        playerModule.PlaySample(ctx, sample);
+                        foreach (var playerModule in player.PlayerModules)
+                        {
+                            playerModule.PlaySample(ctx, data);
+                        }
                     }
                 }
             }
@@ -215,13 +222,13 @@ namespace PLUME
                 SetVisibleResult(null);
             }
         }
-        
+
         public void SetVisibleResult(InteractionHeatmapAnalysisResult result)
         {
             var prevVisibleResult = _visibleResult;
-            
+
             _visibleResult = result;
-            
+
             if (result == null && prevVisibleResult != null)
             {
                 RestoreRecordMaterials(player.GetPlayerContext());

@@ -9,10 +9,8 @@ namespace PLUME
     [RequireComponent(typeof(Camera))]
     public class TopViewCamera : PreviewCamera
     {
-        [NonSerialized]
-        public bool InputDisabled = true;
-        [NonSerialized]
-        public bool ZoomDisabled = true;
+        [NonSerialized] public bool InputDisabled = true;
+        [NonSerialized] public bool ZoomDisabled = true;
 
         private Camera _camera;
 
@@ -55,7 +53,7 @@ namespace PLUME
         private void RegisterInputs()
         {
             var map = new InputActionMap("Top View Camera");
-            
+
             _moveAction = map.AddAction("move");
             _speedAction = map.AddAction("speed");
             _yMoveAction = map.AddAction("yMove");
@@ -107,7 +105,7 @@ namespace PLUME
             // Disable inputs if the camera is not selected
             if (Player.Instance.GetCurrentPreviewCamera() != this)
                 return;
-            
+
             UpdateInputs();
 
             if (_inputChangeSpeed != 0.0f)
@@ -116,7 +114,8 @@ namespace PLUME
                 if (moveSpeed < moveSpeedIncrement) moveSpeed = moveSpeedIncrement;
             }
 
-            var moved = _inputVertical != 0.0f || _inputHorizontal != 0.0f || _inputYAxis != 0.0f || (!ZoomDisabled && _scrollYAxis != 0.0f);
+            var moved = _inputVertical != 0.0f || _inputHorizontal != 0.0f || _inputYAxis != 0.0f ||
+                        (!ZoomDisabled && _scrollYAxis != 0.0f);
             if (moved)
             {
                 var t = transform;
@@ -130,7 +129,7 @@ namespace PLUME
                 var speed = Time.deltaTime * moveSpeed;
                 if (_leftShiftBoost && _leftShift)
                     speed *= turbo;
-                
+
                 var position = t.position;
                 position.x += speed * _inputHorizontal;
                 position.y += speed * _inputYAxis;
@@ -138,7 +137,7 @@ namespace PLUME
                 t.position = position;
             }
         }
-        
+
         public override Camera GetCamera()
         {
             return _camera;
@@ -154,7 +153,7 @@ namespace PLUME
                 cam.enabled = enabled;
             }
         }
-        
+
         public override PreviewCameraType GetCameraType()
         {
             return PreviewCameraType.TopView;
