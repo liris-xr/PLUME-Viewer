@@ -31,7 +31,7 @@ namespace PLUME.Viewer.Player
 
         public T GetOrDefaultAssetByIdentifier<T>(AssetIdentifier identifier) where T : Object
         {
-            if (identifier.Id == "00000000-0000-0000-0000-000000000000")
+            if (identifier.Id == "00000000000000000000000000000000")
                 return null;
 
             if (string.IsNullOrEmpty(identifier.Path))

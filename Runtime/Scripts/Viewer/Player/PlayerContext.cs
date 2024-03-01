@@ -259,7 +259,7 @@ namespace PLUME.Viewer.Player
 
         public GameObject GetOrCreateGameObjectByIdentifier(GameObjectIdentifier id)
         {
-            if (id.TransformId == "00000000-0000-0000-0000-000000000000")
+            if (id.TransformId == "00000000000000000000000000000000")
                 return null;
 
             var replayGoInstanceId = GetReplayInstanceId(id.GameObjectId);
@@ -310,7 +310,7 @@ namespace PLUME.Viewer.Player
         public Transform GetOrCreateTransformByIdentifier(ComponentIdentifier id)
         {
             // If empty guid
-            if (id.ComponentId == "00000000-0000-0000-0000-000000000000")
+            if (id.ComponentId == "00000000000000000000000000000000")
                 return null;
 
             var transformGuid = id.ComponentId;
@@ -359,7 +359,7 @@ namespace PLUME.Viewer.Player
 
         public RectTransform GetOrCreateRectTransformByIdentifier(ComponentIdentifier id)
         {
-            if (id.ComponentId == "00000000-0000-0000-0000-000000000000")
+            if (id.ComponentId == "00000000000000000000000000000000")
                 return null;
 
             var transformGuid = id.ComponentId;
@@ -414,7 +414,7 @@ namespace PLUME.Viewer.Player
 
         public T GetOrCreateComponentByIdentifier<T>(ComponentIdentifier id) where T : Component
         {
-            if (id.ComponentId == "00000000-0000-0000-0000-000000000000")
+            if (id.ComponentId == "00000000000000000000000000000000")
                 return null;
 
             var replayComponentInstanceId = GetReplayInstanceId(id.ComponentId);

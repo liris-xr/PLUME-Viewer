@@ -178,7 +178,7 @@ namespace PLUME.Viewer
                         return;
 
                     // Null Guid
-                    if (updateParentEvt.parentIdentifier.GameObjectId == "00000000-0000-0000-0000-000000000000")
+                    if (updateParentEvt.parentIdentifier.GameObjectId == "00000000000000000000000000000000")
                     {
                         controller.Move(instanceId.Value, -1, updateParentEvt.siblingIdx);
                     }
