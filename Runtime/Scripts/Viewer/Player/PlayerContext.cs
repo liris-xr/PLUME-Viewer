@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PLUME.Sample;
 using PLUME.Sample.Unity;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -49,8 +50,12 @@ namespace PLUME.Viewer.Player
             {
                 throw new Exception($"A context with this name already exists: {name}");
             }
-
+            
             var scene = SceneManager.CreateScene(name);
+            SceneManager.SetActiveScene(scene);
+            RenderSettings.skybox = BuiltinAssets.Instance.defaultSkybox;
+            Lightmapping.lightingSettings = Resources.Load<LightingSettings>("Default Lighting Settings");
+            
             var ctx = new PlayerContext(name, assets, scene);
             Contexts.Add(ctx);
             return ctx;
@@ -389,16 +394,25 @@ namespace PLUME.Viewer.Player
 
                 if (go != null)
                 {
-                    if (go!.transform is not RectTransform) go.AddComponent<RectTransform>();
-                    var t = go.transform;
-                    _transformsByInstanceId[t.GetInstanceID()] = t;
-                    TryAddIdentifierCorrespondence(transformGuid, t.GetInstanceID());
-                    return t as RectTransform;
+                    if (go.transform is not RectTransform rectTransform)
+                    {
+                        var prevLocalPosition = go.transform.localPosition;
+                        var prevLocalRotation = go.transform.localRotation;
+                        var prevLocalScale = go.transform.localScale;
+                        rectTransform = go.AddComponent<RectTransform>();
+                        rectTransform.localPosition = prevLocalPosition;
+                        rectTransform.localRotation = prevLocalRotation;
+                        rectTransform.localScale = prevLocalScale;
+                    }
+
+                    _transformsByInstanceId[rectTransform.GetInstanceID()] = rectTransform;
+                    TryAddIdentifierCorrespondence(transformGuid, rectTransform.GetInstanceID());
+                    return rectTransform;
                 }
             }
-
-            var newGameObject = new GameObject("newGameObject", typeof(RectTransform));
-            var newTransform = newGameObject.transform as RectTransform;
+            
+            var newGameObject = new GameObject();
+            var newTransform = newGameObject.AddComponent<RectTransform>();
             _gameObjectsByInstanceId[newGameObject.GetInstanceID()] = newGameObject;
             _transformsByInstanceId[newTransform.GetInstanceID()] = newTransform;
             TryAddIdentifierCorrespondence(transformGuid, newTransform.GetInstanceID());

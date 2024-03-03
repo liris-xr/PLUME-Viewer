@@ -43,7 +43,7 @@ namespace PLUME.Viewer.Player.Module.Unity.UI
 
                     if (textUpdate.HasFontStyle)
                     {
-                        text.fontStyle = (FontStyle)textUpdate.FontStyle;
+                        text.fontStyle = textUpdate.FontStyle.ToEngineType();
                     }
 
                     if (textUpdate.HasFontSize)
@@ -63,7 +63,7 @@ namespace PLUME.Viewer.Player.Module.Unity.UI
 
                     if (textUpdate.HasAlignment)
                     {
-                        text.alignment = (TextAnchor)textUpdate.Alignment;
+                        text.alignment = textUpdate.Alignment.ToEngineType();
                     }
 
                     if (textUpdate.HasAlignByGeometry)
@@ -73,12 +73,12 @@ namespace PLUME.Viewer.Player.Module.Unity.UI
 
                     if (textUpdate.HasHorizontalOverflow)
                     {
-                        text.horizontalOverflow = (HorizontalWrapMode)textUpdate.HorizontalOverflow;
+                        text.horizontalOverflow = textUpdate.HorizontalOverflow.ToEngineType();
                     }
 
                     if (textUpdate.HasVerticalOverflow)
                     {
-                        text.verticalOverflow = (VerticalWrapMode)textUpdate.VerticalOverflow;
+                        text.verticalOverflow = textUpdate.VerticalOverflow.ToEngineType();
                     }
 
                     if (textUpdate.HasResizeTextForBestFit)

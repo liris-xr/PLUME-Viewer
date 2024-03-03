@@ -59,7 +59,7 @@ namespace PLUME.Viewer.Player.Module.Unity.UI
                         c.sortingLayerID = canvasUpdate.SortingLayerId;
 
                     if (canvasUpdate.HasAdditionalShaderChannels)
-                        c.additionalShaderChannels = canvasUpdate.AdditionalShaderChannels.ToEngineType();
+                        c.additionalShaderChannels = (AdditionalCanvasShaderChannels) canvasUpdate.AdditionalShaderChannels;
 
                     if (canvasUpdate.HasSortingLayerName)
                         c.sortingLayerName = canvasUpdate.SortingLayerName;

@@ -26,12 +26,17 @@ namespace PLUME.Viewer.Player.Module.Unity
                     var skinnedMeshRenderer =
                         ctx.GetOrCreateComponentByIdentifier<SkinnedMeshRenderer>(skinnedMeshRendererUpdate.Id);
 
+                    if (skinnedMeshRendererUpdate.RootBoneId != null)
+                    {
+                        skinnedMeshRenderer.rootBone =
+                            ctx.GetOrCreateTransformByIdentifier(skinnedMeshRendererUpdate.RootBoneId);
+                    }
+
                     if (skinnedMeshRendererUpdate.Bones != null)
                     {
-                        var bones = skinnedMeshRendererUpdate.Bones;
-                        skinnedMeshRenderer.rootBone = ctx.GetOrCreateTransformByIdentifier(bones.RootBoneId);
-                        skinnedMeshRenderer.bones =
-                            bones.BonesIds.Select(ctx.GetOrCreateTransformByIdentifier).ToArray();
+                        skinnedMeshRenderer.bones = skinnedMeshRendererUpdate.Bones.Ids
+                            .Select(ctx.GetOrCreateTransformByIdentifier)
+                            .ToArray();
                     }
 
                     if (skinnedMeshRendererUpdate.MeshId != null)

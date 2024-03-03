@@ -6,15 +6,13 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
-using AdditionalCanvasShaderChannels = UnityEngine.AdditionalCanvasShaderChannels;
 using AmbientMode = UnityEngine.Rendering.AmbientMode;
 using AntialiasingMode = UnityEngine.Rendering.Universal.AntialiasingMode;
 using AntialiasingQuality = UnityEngine.Rendering.Universal.AntialiasingQuality;
-using CameraClearFlags = PLUME.Sample.Unity.CameraClearFlags;
-using CameraType = PLUME.Sample.Unity.CameraType;
 using DefaultReflectionMode = UnityEngine.Rendering.DefaultReflectionMode;
-using DepthTextureMode = PLUME.Sample.Unity.DepthTextureMode;
 using FogMode = UnityEngine.FogMode;
+using FontStyle = UnityEngine.FontStyle;
+using HorizontalWrapMode = UnityEngine.HorizontalWrapMode;
 using LightmapsMode = UnityEngine.LightmapsMode;
 using LightShadowCasterMode = UnityEngine.LightShadowCasterMode;
 using LightShadowResolution = UnityEngine.Rendering.LightShadowResolution;
@@ -32,7 +30,9 @@ using RenderMode = UnityEngine.RenderMode;
 using ScaleMode = PLUME.Sample.Unity.UI.ScaleMode;
 using ShadowCastingMode = PLUME.Sample.Unity.ShadowCastingMode;
 using StandaloneRenderResize = UnityEngine.StandaloneRenderResize;
+using TextAnchor = UnityEngine.TextAnchor;
 using TransparencySortMode = PLUME.Sample.Unity.TransparencySortMode;
+using VerticalWrapMode = UnityEngine.VerticalWrapMode;
 
 namespace PLUME
 {
@@ -417,20 +417,6 @@ namespace PLUME
             };
         }
 
-        public static UnityEngine.CameraType ToEngineType(this CameraType cameraType)
-        {
-            return cameraType switch
-            {
-                CameraType.Reflection => UnityEngine.CameraType.Reflection,
-                CameraType.Game => UnityEngine.CameraType.Game,
-                CameraType.Preview => UnityEngine.CameraType.Preview,
-                CameraType.SceneView => UnityEngine.CameraType.SceneView,
-                CameraType.Vr => UnityEngine.CameraType.VR,
-                _ => throw new ArgumentOutOfRangeException(nameof(cameraType), cameraType,
-                    null)
-            };
-        }
-
         public static Camera.GateFitMode ToEngineType(this CameraGateFitMode gateFitMode)
         {
             return gateFitMode switch
@@ -445,27 +431,27 @@ namespace PLUME
             };
         }
 
-        public static UnityEngine.CameraClearFlags ToEngineType(this CameraClearFlags cameraClearFlags)
+        public static CameraClearFlags ToEngineType(this CameraClearFlags cameraClearFlags)
         {
             return cameraClearFlags switch
             {
-                CameraClearFlags.Nothing => UnityEngine.CameraClearFlags.Nothing,
-                CameraClearFlags.Skybox => UnityEngine.CameraClearFlags.Skybox,
-                CameraClearFlags.SolidColor => UnityEngine.CameraClearFlags.SolidColor,
-                CameraClearFlags.Depth => UnityEngine.CameraClearFlags.Depth,
+                CameraClearFlags.Nothing => CameraClearFlags.Nothing,
+                CameraClearFlags.Skybox => CameraClearFlags.Skybox,
+                CameraClearFlags.SolidColor => CameraClearFlags.SolidColor,
+                CameraClearFlags.Depth => CameraClearFlags.Depth,
                 _ => throw new ArgumentOutOfRangeException(nameof(cameraClearFlags), cameraClearFlags,
                     null)
             };
         }
 
-        public static UnityEngine.DepthTextureMode ToEngineType(this DepthTextureMode depthTextureMode)
+        public static DepthTextureMode ToEngineType(this DepthTextureMode depthTextureMode)
         {
             return depthTextureMode switch
             {
-                DepthTextureMode.None => UnityEngine.DepthTextureMode.None,
-                DepthTextureMode.Depth => UnityEngine.DepthTextureMode.Depth,
-                DepthTextureMode.DepthNormals => UnityEngine.DepthTextureMode.DepthNormals,
-                DepthTextureMode.MotionVectors => UnityEngine.DepthTextureMode.MotionVectors,
+                DepthTextureMode.None => DepthTextureMode.None,
+                DepthTextureMode.Depth => DepthTextureMode.Depth,
+                DepthTextureMode.DepthNormals => DepthTextureMode.DepthNormals,
+                DepthTextureMode.MotionVectors => DepthTextureMode.MotionVectors,
                 _ => throw new ArgumentOutOfRangeException(nameof(depthTextureMode), depthTextureMode,
                     null)
             };
@@ -583,23 +569,6 @@ namespace PLUME
             };
         }
 
-        public static AdditionalCanvasShaderChannels ToEngineType(
-            this Sample.Unity.UI.AdditionalCanvasShaderChannels additionalCanvasShaderChannels)
-        {
-            return additionalCanvasShaderChannels switch
-            {
-                Sample.Unity.UI.AdditionalCanvasShaderChannels.None => AdditionalCanvasShaderChannels.None,
-                Sample.Unity.UI.AdditionalCanvasShaderChannels.TexCoord1 => AdditionalCanvasShaderChannels.TexCoord1,
-                Sample.Unity.UI.AdditionalCanvasShaderChannels.TexCoord2 => AdditionalCanvasShaderChannels.TexCoord2,
-                Sample.Unity.UI.AdditionalCanvasShaderChannels.TexCoord3 => AdditionalCanvasShaderChannels.TexCoord3,
-                Sample.Unity.UI.AdditionalCanvasShaderChannels.Normal => AdditionalCanvasShaderChannels.Normal,
-                Sample.Unity.UI.AdditionalCanvasShaderChannels.Tangent => AdditionalCanvasShaderChannels.Tangent,
-                _ => throw new ArgumentOutOfRangeException(nameof(additionalCanvasShaderChannels),
-                    additionalCanvasShaderChannels,
-                    null)
-            };
-        }
-
         public static StandaloneRenderResize ToEngineType(
             this Sample.Unity.UI.StandaloneRenderResize standaloneRenderResize)
         {
@@ -608,6 +577,72 @@ namespace PLUME
                 Sample.Unity.UI.StandaloneRenderResize.Enabled => StandaloneRenderResize.Enabled,
                 Sample.Unity.UI.StandaloneRenderResize.Disabled => StandaloneRenderResize.Disabled,
                 _ => throw new ArgumentOutOfRangeException(nameof(standaloneRenderResize), standaloneRenderResize,
+                    null)
+            };
+        }
+        
+        public static FontStyle ToEngineType(this Sample.Unity.UI.FontStyle fontStyle)
+        {
+            return fontStyle switch
+            {
+                Sample.Unity.UI.FontStyle.Normal => FontStyle.Normal,
+                Sample.Unity.UI.FontStyle.Bold => FontStyle.Bold,
+                Sample.Unity.UI.FontStyle.Italic => FontStyle.Italic,
+                Sample.Unity.UI.FontStyle.BoldAndItalic => FontStyle.BoldAndItalic,
+                _ => throw new ArgumentOutOfRangeException(nameof(fontStyle), fontStyle,
+                    null)
+            };
+        }
+        
+        public static TextAnchor ToEngineType(this Sample.Unity.UI.TextAnchor textAnchor)
+        {
+            return textAnchor switch
+            {
+                Sample.Unity.UI.TextAnchor.UpperLeft => TextAnchor.UpperLeft,
+                Sample.Unity.UI.TextAnchor.UpperCenter => TextAnchor.UpperCenter,
+                Sample.Unity.UI.TextAnchor.UpperRight => TextAnchor.UpperRight,
+                Sample.Unity.UI.TextAnchor.MiddleLeft => TextAnchor.MiddleLeft,
+                Sample.Unity.UI.TextAnchor.MiddleCenter => TextAnchor.MiddleCenter,
+                Sample.Unity.UI.TextAnchor.MiddleRight => TextAnchor.MiddleRight,
+                Sample.Unity.UI.TextAnchor.LowerLeft => TextAnchor.LowerLeft,
+                Sample.Unity.UI.TextAnchor.LowerCenter => TextAnchor.LowerCenter,
+                Sample.Unity.UI.TextAnchor.LowerRight => TextAnchor.LowerRight,
+                _ => throw new ArgumentOutOfRangeException(nameof(textAnchor), textAnchor,
+                    null)
+            };
+        }
+        
+        public static HorizontalWrapMode ToEngineType(this Sample.Unity.UI.HorizontalWrapMode horizontalWrapMode)
+        {
+            return horizontalWrapMode switch
+            {
+                Sample.Unity.UI.HorizontalWrapMode.Wrap => HorizontalWrapMode.Wrap,
+                Sample.Unity.UI.HorizontalWrapMode.Overflow => HorizontalWrapMode.Overflow,
+                _ => throw new ArgumentOutOfRangeException(nameof(horizontalWrapMode), horizontalWrapMode,
+                    null)
+            };
+        }
+        
+        public static VerticalWrapMode ToEngineType(this Sample.Unity.UI.VerticalWrapMode verticalWrapMode)
+        {
+            return verticalWrapMode switch
+            {
+                Sample.Unity.UI.VerticalWrapMode.Truncate => VerticalWrapMode.Truncate,
+                Sample.Unity.UI.VerticalWrapMode.Overflow => VerticalWrapMode.Overflow,
+                _ => throw new ArgumentOutOfRangeException(nameof(verticalWrapMode), verticalWrapMode,
+                    null)
+            };
+        }
+        
+        public static Image.Type ToEngineType(this ImageType imageType)
+        {
+            return imageType switch
+            {
+                ImageType.Simple => Image.Type.Simple,
+                ImageType.Sliced => Image.Type.Sliced,
+                ImageType.Tiled => Image.Type.Tiled,
+                ImageType.Filled => Image.Type.Filled,
+                _ => throw new ArgumentOutOfRangeException(nameof(imageType), imageType,
                     null)
             };
         }

@@ -74,7 +74,7 @@ namespace PLUME.Viewer.Player.Module.Unity
                         cam.layerCullSpherical = cameraUpdate.LayerCullSpherical;
 
                     if (cameraUpdate.HasCameraType)
-                        cam.cameraType = cameraUpdate.CameraType.ToEngineType();
+                        cam.cameraType = (CameraType) cameraUpdate.CameraType;
 
                     if (cameraUpdate.LayerCullDistances != null)
                         cam.layerCullDistances = cameraUpdate.LayerCullDistances.Distances.ToEngineType();
@@ -89,10 +89,10 @@ namespace PLUME.Viewer.Player.Module.Unity
                         cam.backgroundColor = cameraUpdate.BackgroundColor.ToEngineType();
 
                     if (cameraUpdate.HasClearFlags)
-                        cam.clearFlags = cameraUpdate.ClearFlags.ToEngineType();
+                        cam.clearFlags = (CameraClearFlags) cameraUpdate.ClearFlags;
 
                     if (cameraUpdate.HasDepthTextureMode)
-                        cam.depthTextureMode = cameraUpdate.DepthTextureMode.ToEngineType();
+                        cam.depthTextureMode = (DepthTextureMode) cameraUpdate.DepthTextureMode;
 
                     if (cameraUpdate.HasClearStencilAfterLightingPass)
                         cam.clearStencilAfterLightingPass = cameraUpdate.ClearStencilAfterLightingPass;

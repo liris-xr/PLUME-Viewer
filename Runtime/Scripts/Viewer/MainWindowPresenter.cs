@@ -132,7 +132,7 @@ namespace PLUME.Viewer
                 {
                     var instanceId = player.GetPlayerContext()
                         .GetReplayInstanceId(siblingUpdateEvt.gameObjectIdentifier.GameObjectId);
-
+                    
                     if (!instanceId.HasValue)
                         return;
 
@@ -146,7 +146,7 @@ namespace PLUME.Viewer
                         }
                         else
                         {
-                            var parentId = go.transform.parent.GetInstanceID();
+                            var parentId = go.transform.parent.gameObject.GetInstanceID();
                             controller.Move(instanceId.Value, parentId, siblingUpdateEvt.siblingIndex);
                         }
                     }
