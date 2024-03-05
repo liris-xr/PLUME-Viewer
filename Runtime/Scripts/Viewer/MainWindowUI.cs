@@ -296,12 +296,12 @@ namespace PLUME.Viewer
                     Timeline.AddTrack(channelsTrack[channelIdx]);
                 }
 
-                tracks.Add(streamOpen.StreamInfo.LslStreamId, channelsTrack);
+                tracks.Add(streamOpen.StreamId, channelsTrack);
             }
 
             var streamSamples = physioSignalsLoader.AllOfType<StreamSample>()
                 .OrderBy(s => s.Timestamp)
-                .GroupBy(s => ((StreamSample)s.Payload).StreamInfo.LslStreamId);
+                .GroupBy(s => ((StreamSample)s.Payload).StreamId);
 
             foreach (var streamSamplesGroup in streamSamples)
             {
@@ -324,44 +324,44 @@ namespace PLUME.Viewer
 
                         switch (sample.ValuesCase)
                         {
-                            case StreamSample.ValuesOneofCase.FloatValue:
-                                min = Math.Min(min, sample.FloatValue.Value[channelIdx]);
-                                max = Math.Max(max, sample.FloatValue.Value[channelIdx]);
+                            case StreamSample.ValuesOneofCase.FloatValues:
+                                min = Math.Min(min, sample.FloatValues.Value[channelIdx]);
+                                max = Math.Max(max, sample.FloatValues.Value[channelIdx]);
                                 points.Add(
-                                    new Vector2(unpackedSample.Timestamp!.Value, sample.FloatValue.Value[channelIdx]));
+                                    new Vector2(unpackedSample.Timestamp!.Value, sample.FloatValues.Value[channelIdx]));
                                 break;
-                            case StreamSample.ValuesOneofCase.DoubleValue:
-                                min = Math.Min(min, (float)sample.DoubleValue.Value[channelIdx]);
-                                max = Math.Max(max, (float)sample.DoubleValue.Value[channelIdx]);
+                            case StreamSample.ValuesOneofCase.DoubleValues:
+                                min = Math.Min(min, (float)sample.DoubleValues.Value[channelIdx]);
+                                max = Math.Max(max, (float)sample.DoubleValues.Value[channelIdx]);
                                 points.Add(new Vector2(unpackedSample.Timestamp!.Value,
-                                    (float)sample.DoubleValue.Value[channelIdx]));
+                                    (float)sample.DoubleValues.Value[channelIdx]));
                                 break;
-                            case StreamSample.ValuesOneofCase.Int8Value:
-                                min = Math.Min(min, sample.Int8Value.Value[channelIdx]);
-                                max = Math.Max(max, sample.Int8Value.Value[channelIdx]);
+                            case StreamSample.ValuesOneofCase.Int8Values:
+                                min = Math.Min(min, sample.Int8Values.Value[channelIdx]);
+                                max = Math.Max(max, sample.Int8Values.Value[channelIdx]);
                                 points.Add(new Vector2(unpackedSample.Timestamp!.Value,
-                                    sample.Int8Value.Value[channelIdx]));
+                                    sample.Int8Values.Value[channelIdx]));
                                 break;
-                            case StreamSample.ValuesOneofCase.Int16Value:
-                                min = Math.Min(min, sample.Int16Value.Value[channelIdx]);
-                                max = Math.Max(max, sample.Int16Value.Value[channelIdx]);
+                            case StreamSample.ValuesOneofCase.Int16Values:
+                                min = Math.Min(min, sample.Int16Values.Value[channelIdx]);
+                                max = Math.Max(max, sample.Int16Values.Value[channelIdx]);
                                 points.Add(
-                                    new Vector2(unpackedSample.Timestamp!.Value, sample.Int16Value.Value[channelIdx]));
+                                    new Vector2(unpackedSample.Timestamp!.Value, sample.Int16Values.Value[channelIdx]));
                                 break;
-                            case StreamSample.ValuesOneofCase.Int32Value:
-                                min = Math.Min(min, sample.Int32Value.Value[channelIdx]);
-                                max = Math.Max(max, sample.Int32Value.Value[channelIdx]);
+                            case StreamSample.ValuesOneofCase.Int32Values:
+                                min = Math.Min(min, sample.Int32Values.Value[channelIdx]);
+                                max = Math.Max(max, sample.Int32Values.Value[channelIdx]);
                                 points.Add(
-                                    new Vector2(unpackedSample.Timestamp!.Value, sample.Int32Value.Value[channelIdx]));
+                                    new Vector2(unpackedSample.Timestamp!.Value, sample.Int32Values.Value[channelIdx]));
                                 break;
-                            case StreamSample.ValuesOneofCase.Int64Value:
-                                min = Math.Min(min, sample.Int64Value.Value[channelIdx]);
-                                max = Math.Max(max, sample.Int64Value.Value[channelIdx]);
+                            case StreamSample.ValuesOneofCase.Int64Values:
+                                min = Math.Min(min, sample.Int64Values.Value[channelIdx]);
+                                max = Math.Max(max, sample.Int64Values.Value[channelIdx]);
                                 points.Add(
-                                    new Vector2(unpackedSample.Timestamp!.Value, sample.Int64Value.Value[channelIdx]));
+                                    new Vector2(unpackedSample.Timestamp!.Value, sample.Int64Values.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.None:
-                            case StreamSample.ValuesOneofCase.StringValue:
+                            case StreamSample.ValuesOneofCase.StringValues:
                                 break;
                             default:
                                 throw new ArgumentOutOfRangeException();

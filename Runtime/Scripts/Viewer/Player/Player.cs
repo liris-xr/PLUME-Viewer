@@ -5,6 +5,7 @@ using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
 using PLUME.Viewer.Analysis;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Color = UnityEngine.Color;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
@@ -38,9 +39,9 @@ namespace PLUME.Viewer.Player
 
         public RenderTexture PreviewRenderTexture { get; private set; }
 
-        private FreeCamera _freeCamera;
-        private TopViewCamera _topViewCamera;
-        private MainCamera _mainCamera;
+        public FreeCamera freeCamera;
+        public TopViewCamera topViewCamera;
+        public MainCamera mainCamera;
 
         private PreviewCamera _currentCamera;
 
@@ -63,24 +64,15 @@ namespace PLUME.Viewer.Player
             base.Awake();
 
             PreviewRenderTexture = RenderTexture.GetTemporary(1920, 1080);
+            freeCamera.PreviewRenderTexture = PreviewRenderTexture;
+            topViewCamera.PreviewRenderTexture = PreviewRenderTexture;
+            mainCamera.PreviewRenderTexture = PreviewRenderTexture;
+            SetCurrentPreviewCamera(mainCamera);
 
-            var t = transform;
-            var freeCameraGo = new GameObject("FreeCamera") { transform = { parent = t } };
-            var topViewCameraGo = new GameObject("TopViewCamera") { transform = { parent = t } };
-            var sceneMainCameraGo = new GameObject("SceneMainCamera") { transform = { parent = t } };
-            _freeCamera = freeCameraGo.AddComponent<FreeCamera>();
-            _topViewCamera = topViewCameraGo.AddComponent<TopViewCamera>();
-            _mainCamera = sceneMainCameraGo.AddComponent<MainCamera>();
-
-            _freeCamera.PreviewRenderTexture = PreviewRenderTexture;
-            _topViewCamera.PreviewRenderTexture = PreviewRenderTexture;
-            _mainCamera.PreviewRenderTexture = PreviewRenderTexture;
-            SetCurrentPreviewCamera(_mainCamera);
-
-            _freeCamera.transform.position = new Vector3(-2.24f, 1.84f, 0.58f);
-            _freeCamera.transform.rotation = Quaternion.Euler(25f, -140f, 0f);
-            _topViewCamera.transform.position = new Vector3(0, 3.25f, -4);
-            _topViewCamera.GetCamera().orthographicSize = 7;
+            freeCamera.transform.position = new Vector3(-2.24f, 1.84f, 0.58f);
+            freeCamera.transform.rotation = Quaternion.Euler(25f, -140f, 0f);
+            topViewCamera.transform.position = new Vector3(0, 3.25f, -4);
+            topViewCamera.GetCamera().orthographicSize = 7;
 
             PlayerModules = FindObjectsOfType<PlayerModule>();
             _assets = new PlayerAssets(assetBundlePath);
@@ -113,9 +105,9 @@ namespace PLUME.Viewer.Player
             GL.Clear(true, true, Color.clear);
             RenderTexture.active = rt;
 
-            _freeCamera.SetEnabled(false);
-            _topViewCamera.SetEnabled(false);
-            _mainCamera.SetEnabled(false);
+            freeCamera.SetEnabled(false);
+            topViewCamera.SetEnabled(false);
+            mainCamera.SetEnabled(false);
             _currentCamera = camera;
             camera.SetEnabled(true);
         }
@@ -293,17 +285,17 @@ namespace PLUME.Viewer.Player
 
         public FreeCamera GetFreeCamera()
         {
-            return _freeCamera;
+            return freeCamera;
         }
 
         public TopViewCamera GetTopViewCamera()
         {
-            return _topViewCamera;
+            return topViewCamera;
         }
 
         public MainCamera GetMainCamera()
         {
-            return _mainCamera;
+            return mainCamera;
         }
 
         public void SetModuleGenerating(AnalysisModule module)
