@@ -28,9 +28,6 @@
     <ol>
         <li>
             <a href="#about-the-project">About The Project</a>
-            <ul>
-                <li><a href="#built-with">Built With</a></li>
-            </ul>
         </li>
         <li>
             <a href="#getting-started">Getting Started</a>
@@ -49,21 +46,67 @@
 
 ## About
 
-TODO
-
-### Built With
-
-TODO
+PLUME Viewer is a standalone application for viewing and analyzing PLUME record files generated with PLUME Recorder, independently of the Unity project. It offers analysis modules such as interactions analysis, 3D trajectories, in-context physiological signals tracks, position and eye gaze heatmaps. Heatmaps can be exported as point clouds with the scalar field embedded. PLUME Viewer is useful to review a recorded experiment, like you would a video in a media player, but you can explore the 3D scene. PLUME Viewer does not require the original Unity Project and only needs the record files and its associated asset bundle (built with PLUME Recorder).
 
 ## Getting Started
 
-TODO
+### Prerequisites
+PLUME Viewer only runs on Windows platforms.
 
 ### Installation
+1. Download the latest release of the built application (`.zip` extension).
+2. Uncompress the archive in the folder of your choice.
+
+### Development
+1. Create a new project with Unity 2022 or later.
+2. Clone or download the repository inside the Packages folder of your Unity project.
+3. Unity will import the package into your project.
+4. Drag the PLUME Viewer prefab inside an empty Unity Scene.
+5. You can now edit the source code to adapt it to your needs. Feel free to contribute to this repository !
+
 
 ## Usage
 
-TODO
+### Start the Viewer
+Once the release downloaded, launch the PLUME Viewer.exe
+
+### Interactive Replay
+#### Media Toolbar
+Use the media toolbar to play, pause, stop the replay. You can also use the `space bar` to pause/play.
+
+Use the `-` to slow the speed of the replay down to 0.25x. Use the `+` to accelerate the speed of the replay up to
+2x.
+
+Click the `maximize` button on the far right to hide the side panels and show the replay in fullscreen. Click
+again to go back to windowed view of the replay.
+
+Use the `camera dropdown` menu to change the camera used for visualization.
+
+#### Free Camera
+Free 3D navigation inside the virtual environment.
+
+To navigate : get focus on the replay panel (a blue rectangle shows around the panel); maintain `right-click` and use `WASD + Q/E` to move around.
+
+#### Top-view Camera
+Navigable orthogonal projection from the top of the virtual environment.
+
+To navigate : get focus on the replay panel (a blue rectangle shows around the panel); use `WASD` to move up / down and left / right; use `Q` to lower the camera near plane; use `E` to higher the camera near plane.
+
+#### Main Camera
+Replays from the point of view of the camera used during the record.
+
+#### Hierarchy
+Displays the recorded hierarchy of the gameobjects in the scene, it is updated during the replay. To copy an object GUID to the clipboard, select the object and press `CTRL+C`, doing so on multiple objects will create a list of GUIDs separated by a comma.
+
+#### Timeline
+Displays the replay timeline. There are two methods to navigate through the timeline: 
+1. Click on the timescale
+of the timeline to jump to desired time;
+2. Change the current time in the textfield on the left. The timeline is scrollable using the scroll bar at the bottom. The scrollbar can be used to change the timeline scale by dragging the left and right sides of the scrollbar.
+
+The timeline can contains tracks for physiological signals. Those signals can recorded using the Lab Streaming Layer integration from the PLUME Recorder. Information about the LSL stream's name and nominal frequency are displayed on the left, along with the maximum and minimum value of the signal, and the nearest value to the time cursor (last value before the cursor).
+
+
 
 ## Roadmap
 
