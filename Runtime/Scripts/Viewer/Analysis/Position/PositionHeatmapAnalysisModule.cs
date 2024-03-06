@@ -99,7 +99,7 @@ namespace PLUME.Viewer.Analysis.Position
             _projectionCamera.targetTexture = segmentedObjectDepthTexture;
         }
 
-        public IEnumerator GenerateHeatmap(BufferedAsyncFramesLoader loader, PlayerAssets assets,
+        public IEnumerator GenerateHeatmap(Record record, RecordAssetBundle assets,
             PositionHeatmapAnalysisModuleParameters parameters,
             Action<PositionHeatmapAnalysisResult> finishCallback)
         {
@@ -147,16 +147,20 @@ namespace PLUME.Viewer.Analysis.Position
 
             if (parameters.StartTime > 0)
             {
-                yield return PlayFramesInTimeRange(loader, _generationContext, 0, parameters.StartTime - 1u);
+                var skippedFrames = record.Frames.GetInTimeRange(0, parameters.StartTime - 1u);
+                _generationContext.PlayFrames(player.PlayerModules, skippedFrames);
             }
 
+            var lastYieldTime = Time.unscaledTimeAsDouble;
+            
             var currentTime = parameters.StartTime;
 
-            while (currentTime <= parameters.EndTime && currentTime <= loader.Duration)
+            while (currentTime <= parameters.EndTime && currentTime <= record.Duration)
             {
                 var startTime = currentTime;
                 var endTime = currentTime + projectionSamplingInterval;
-                yield return PlayFramesInTimeRange(loader, _generationContext, startTime, endTime);
+                var frames = record.Frames.GetInTimeRange(startTime, endTime);
+                _generationContext.PlayFrames(player.PlayerModules, frames);
 
                 var replayProjectionCasterId = _generationContext.GetReplayInstanceId(parameters.CasterIdentifier);
                 var replayProjectionReceiversIds = new List<int>();
@@ -209,6 +213,14 @@ namespace PLUME.Viewer.Analysis.Position
                 currentTime = endTime + 1;
                 GenerationProgress = (currentTime - parameters.StartTime) /
                                      (float)(parameters.EndTime - parameters.StartTime);
+                
+                var time = Time.unscaledTimeAsDouble;
+                if (time - lastYieldTime > 1.0f / Application.targetFrameRate)
+                {
+                    lastYieldTime = time;
+                    // Only used to not freeze the game while generating
+                    yield return new WaitForEndOfFrame();
+                }
             }
 
             GenerationProgress = 1;
@@ -352,15 +364,6 @@ namespace PLUME.Viewer.Analysis.Position
             return meshSamplerResult;
         }
 
-        private IEnumerator PlayFramesInTimeRange(BufferedAsyncFramesLoader loader, PlayerContext ctx,
-            ulong startTime,
-            ulong endTime)
-        {
-            var framesLoadingTask = loader.FramesInTimeRangeAsync(startTime, endTime);
-            yield return new WaitUntil(() => framesLoadingTask.IsCompleted);
-            ctx.PlayFrames(player.PlayerModules, framesLoadingTask.Result);
-        }
-
         private void PrepareProjectionShader(ComputeBuffer samplesMinValueBuffer, ComputeBuffer samplesMaxValueBuffer,
             int projectionKernel)
         {
@@ -397,8 +400,8 @@ namespace PLUME.Viewer.Analysis.Position
                 goRenderer.SetSharedMaterials(new List<Material>());
             }
 
-            var samples = player.GetFramesLoader().FramesInTimeRangeAsync(0, player.GetCurrentPlayTimeInNanoseconds());
-            foreach (var frame in samples.Result)
+            var frames = player.Record.Frames.GetInTimeRange(0, player.GetCurrentPlayTimeInNanoseconds());
+            foreach (var frame in frames)
             {
                 foreach (var sample in frame.Data)
                 {

@@ -80,8 +80,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 ui.RefreshResults();
             });
 
-            _generationCoroutine = StartCoroutine(module.GenerateHeatmap(player.GetFramesLoader(),
-                player.GetPlayerAssets(), generationParameters, onFinishCallback));
+            _generationCoroutine = StartCoroutine(module.GenerateHeatmap(player.Record,
+                player.RecordAssetBundle, generationParameters, onFinishCallback));
         }
 
         private void OnClickCancel()

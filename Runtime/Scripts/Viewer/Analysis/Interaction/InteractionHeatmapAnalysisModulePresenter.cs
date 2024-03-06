@@ -85,7 +85,7 @@ namespace PLUME.Viewer.Analysis.Interaction
                 ui.RefreshResults();
             });
 
-            StartCoroutine(module.GenerateHeatmap(player.GetFramesLoader(), generationParameters, onFinishCallback));
+            module.GenerateHeatmap(player.Record, generationParameters, onFinishCallback);
         }
 
         public void FixedUpdate()

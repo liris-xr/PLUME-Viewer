@@ -9,9 +9,9 @@ namespace PLUME.Viewer.Player.Module.Unity
     // TODO: Fix this module, it looks like when the parent is not updated yet applying the values results sizeDelta
     public class RectTransformPlayerModule : PlayerModule
     {
-        public override void PlaySample(PlayerContext ctx, UnpackedSample sample)
+        public override void PlaySample(PlayerContext ctx, RawSample rawSample)
         {
-            switch (sample.Payload)
+            switch (rawSample.Payload)
             {
                 case RectTransformCreate rectTransformCreate:
                 {

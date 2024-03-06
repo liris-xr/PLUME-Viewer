@@ -6,9 +6,9 @@ namespace PLUME.Viewer.Player.Module.Unity
 {
     public class VolumePlayerModule : PlayerModule
     {
-        public override void PlaySample(PlayerContext ctx, UnpackedSample sample)
+        public override void PlaySample(PlayerContext ctx, RawSample rawSample)
         {
-            switch (sample.Payload)
+            switch (rawSample.Payload)
             {
                 case VolumeCreate volumeCreate:
                     ctx.GetOrCreateComponentByIdentifier<Volume>(volumeCreate.Id);

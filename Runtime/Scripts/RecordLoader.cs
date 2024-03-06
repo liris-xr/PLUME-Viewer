@@ -1,155 +1,155 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Google.Protobuf;
 using Google.Protobuf.Reflection;
+using K4os.Compression.LZ4.Streams;
 using PLUME.Sample;
+using PLUME.Sample.Common;
+using PLUME.Sample.LSL;
+using PLUME.Sample.Unity;
+using PLUME.Sample.Unity.XRITK;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 namespace PLUME
 {
     public class RecordLoader : IDisposable
     {
-        private readonly RecordReader _reader;
-        private readonly TypeRegistry _typeRegistry;
-        private readonly OrderedSamplesList _loadedSamples;
+        private const uint LZ4MagicNumber = 0x184D2204;
 
-        public ulong Duration { get; private set; }
-        public ulong SampleCount { get; private set; }
+        private Stream _baseStream;
+        private Stream _stream;
 
-        private bool _closed;
-        private bool _loaded;
+        public float Progress { get; private set; }
 
-        public RecordLoader(RecordReader reader, MessageDescriptor[] descriptors) :
-            this(reader, TypeRegistry.FromMessages(descriptors))
+        public LoadingStatus Status { get; private set; }
+
+        private readonly TypeRegistry _sampleTypeRegistry;
+
+        public RecordLoader(string recordPath, TypeRegistry sampleTypeRegistry)
         {
+            Status = LoadingStatus.NotLoading;
+            Progress = 0;
+
+            _sampleTypeRegistry = sampleTypeRegistry;
+
+            _baseStream = File.Open(recordPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+            if (IsLZ4Compressed(_baseStream))
+                _stream = LZ4Stream.Decode(_baseStream);
+            else
+                _stream = _baseStream;
         }
 
-        public RecordLoader(RecordReader reader, TypeRegistry typeRegistry)
+        public async UniTask<Record> LoadAsync()
         {
-            _reader = reader;
-            _loadedSamples = new OrderedSamplesList();
-            _typeRegistry = typeRegistry;
-        }
+            Status = LoadingStatus.Loading;
+            Progress = 0;
 
-        public void Load()
-        {
-            if (_loaded)
-                return;
+            var packedMetadata = PackedSample.Parser.ParseDelimitedFrom(_stream);
+            var metadata = packedMetadata.Payload.Unpack<RecordMetadata>();
 
-            var recordMetadata = _reader.ReadNextSample().Payload.Unpack<RecordMetadata>();
+            var record = new Record(metadata);
 
-            Debug.Log(recordMetadata);
-
-            while (_reader.TryReadNextSample(out var sample))
+            var loadingThread = new Thread(() =>
             {
-                // Skip samples without timestamp
-                if (!sample.HasTimestamp)
-                    continue;
+                Profiler.BeginThreadProfiling("PLUME", "RecordLoader.LoadAsync");
 
-                var payload = sample.Payload.Unpack(_typeRegistry);
-
-                // Unpacking might fail if the message descriptor is not found in the type registry.
-                if (payload == null)
+                while (_baseStream.Position < _baseStream.Length)
                 {
-                    Debug.LogWarning($"Could not load payload with type {sample.Payload.TypeUrl}");
-                    continue;
-                }
-
-                var unpackedSample = new UnpackedSample(sample.Timestamp, payload);
-
-                if (_loadedSamples.Count > 0)
-                {
-                    var idx = _loadedSamples.FirstIndexAfterOrAtTime(sample.Timestamp);
-
-                    // No samples after or at the current sample's timestamp, inserting at the end
-                    if (idx == -1)
+                    try
                     {
-                        _loadedSamples.Add(unpackedSample);
+                        var packedSample = PackedSample.Parser.ParseDelimitedFrom(_stream);
+                        ulong? timestamp = packedSample.HasTimestamp ? packedSample.Timestamp : null;
+                        var payload = packedSample.Payload;
+                        var unpackedSample = RawSampleUtils.UnpackAsRawSample(timestamp, payload, _sampleTypeRegistry);
+
+                        switch (unpackedSample)
+                        {
+                            case RawSample<Frame> frame:
+                                // Unpack frame
+                                var frameSample = UnpackFrame(frame);
+                                record.AddFrame(frameSample);
+                                break;
+                            case RawSample<Marker> marker:
+                                record.AddMarkerSample(marker);
+                                break;
+                            case RawSample<InputAction> inputAction:
+                                record.AddInputActionSample(inputAction);
+                                break;
+                            case RawSample<StreamSample> streamSample:
+                                record.AddStreamSample(streamSample);
+                                break;
+                            case RawSample<StreamOpen> streamOpen:
+                                record.AddStreamOpenSample(streamOpen);
+                                break;
+                            case RawSample<StreamClose> streamClose:
+                                record.AddStreamCloseSample(streamClose);
+                                break;
+                            default:
+                                record.AddOtherSample(unpackedSample);
+                                break;
+                        }
+
+                        Progress = _baseStream.Position / (float)_baseStream.Length;
                     }
-                    else
+                    catch (InvalidProtocolBufferException)
                     {
-                        _loadedSamples.Insert(idx, unpackedSample);
+                        break;
                     }
                 }
-                else
-                {
-                    // No samples, inserting at the beginning
-                    _loadedSamples.Add(unpackedSample);
-                }
 
-                SampleCount++;
-                Duration = Math.Max(Duration, sample.Timestamp);
-            }
-
-            _loaded = true;
-        }
-
-        public UnpackedSample SampleAtIndex(int index)
-        {
-            if (!_loaded)
-                Load();
-
-            if (index < 0 || index >= (int)SampleCount)
+                Profiler.EndThreadProfiling();
+            })
             {
-                return null;
-            }
+                Name = "RecordLoader.LoadAsync"
+            };
 
-            if (index < _loadedSamples.Count)
-            {
-                return _loadedSamples[index] as UnpackedSample;
-            }
+            loadingThread.Start();
 
-            return null;
+            // Wait until thread finishes loading the record.
+            await UniTask.WaitUntil(() => !loadingThread.IsAlive);
+
+            Status = LoadingStatus.Done;
+            Progress = 1;
+
+            _stream.Close();
+            _stream = null;
+
+            return record;
         }
 
-        public int FirstSampleIndexAfterOrAtTime(ulong time)
+        private FrameSample UnpackFrame(ISample<Frame> frame)
         {
-            if (!_loaded)
-                Load();
-
-            return _loadedSamples.FirstIndexAfterOrAtTime(time);
+            var unpackedFrameData = frame.Payload.Data.Select(frameData =>
+                RawSampleUtils.UnpackAsRawSample(frame.Timestamp, frameData, _sampleTypeRegistry)).ToList();
+            return new FrameSample(frame.Timestamp, frame.Payload.FrameNumber, unpackedFrameData);
         }
 
-        public IEnumerable<UnpackedSample> SamplesInTimeRange(ulong startTime, ulong endTime)
+        private static bool IsLZ4Compressed(Stream fileStream)
         {
-            if (!_loaded)
-                Load();
-
-            var startIdx = FirstSampleIndexAfterOrAtTime(startTime);
-
-            if (startIdx < 0)
-                yield break;
-
-            var idx = startIdx;
-
-            do
-            {
-                var sample = SampleAtIndex(idx);
-
-                if (sample == null)
-                    yield break;
-
-                if (sample.Timestamp > endTime)
-                    yield break;
-
-                yield return sample;
-                idx++;
-            } while (true);
-        }
-
-        public void Close()
-        {
-            _reader.Close();
-
-            if (_closed)
-                return;
-
-            _loadedSamples.Clear();
-            _closed = true;
+            // Read magic number
+            var magicNumber = new byte[4];
+            _ = fileStream.Read(magicNumber, 0, 4);
+            fileStream.Seek(0, SeekOrigin.Begin);
+            var compressed = BitConverter.ToUInt32(magicNumber, 0) == LZ4MagicNumber;
+            return compressed;
         }
 
         public void Dispose()
         {
-            Close();
+            _stream?.Dispose();
+        }
+
+        public enum LoadingStatus
+        {
+            NotLoading,
+            Loading,
+            Done
         }
     }
 }

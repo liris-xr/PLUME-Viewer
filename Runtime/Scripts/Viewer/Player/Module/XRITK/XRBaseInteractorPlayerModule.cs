@@ -1,15 +1,14 @@
-﻿using PLUME.Sample;
-using PLUME.Sample.Unity.XRITK;
+﻿using PLUME.Sample.Unity.XRITK;
 using UnityEngine;
 
 namespace PLUME.Viewer.Player.Module.XRITK
 {
     public class XRBaseInteractorPlayerModule : PlayerModule
     {
-        public override void PlaySample(PlayerContext ctx, UnpackedSample sample)
+        public override void PlaySample(PlayerContext ctx, RawSample rawSample)
         {
-            var payload = sample.Payload;
-            var time = sample.Timestamp;
+            var payload = rawSample.Payload;
+            var time = rawSample.Timestamp;
 
             switch (payload)
             {

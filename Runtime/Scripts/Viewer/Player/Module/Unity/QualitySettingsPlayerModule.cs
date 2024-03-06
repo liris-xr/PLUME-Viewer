@@ -7,9 +7,9 @@ namespace PLUME.Viewer.Player.Module.Unity
 {
     public class QualitySettingsPlayerModule : PlayerModule
     {
-        public override void PlaySample(PlayerContext ctx, UnpackedSample sample)
+        public override void PlaySample(PlayerContext ctx, RawSample rawSample)
         {
-            if (sample.Payload is QualitySettingsUpdate qualitySettingsUpdate)
+            if (rawSample.Payload is QualitySettingsUpdate qualitySettingsUpdate)
             {
                 QualitySettings.renderPipeline =
                     ctx.GetOrDefaultAssetByIdentifier<RenderPipelineAsset>(qualitySettingsUpdate.RenderPipelineAssetId);

@@ -181,16 +181,14 @@ namespace PLUME.Viewer
             Timeline.ClearMarkers();
             MarkersListView.Clear();
 
-            var markersLoader = player.GetMarkersLoader();
             var markerColors = new Dictionary<string, Color>();
 
             var groupedMarkerTimelineElements = new Dictionary<string, List<TimelineMarkerElement>>();
-            var groupedMarkerSamples = new Dictionary<string, List<UnpackedSample>>();
+            var groupedMarkerSamples = new Dictionary<string, List<RawSample<Marker>>>();
 
-            foreach (var s in markersLoader.All())
+            foreach (var s in player.Record.Markers)
             {
-                if (s.Payload is not Marker marker)
-                    continue;
+                var marker = s.Payload;
 
                 if (!markerColors.TryGetValue(marker.Label, out var markerColor))
                 {
@@ -201,7 +199,7 @@ namespace PLUME.Viewer
 
                 var markerElement = new TimelineMarkerElement();
                 markerElement.SetColor(markerColor);
-                markerElement.SetTime(s.Timestamp!.Value);
+                markerElement.SetTime(s.Timestamp);
                 Timeline.AddMarker(markerElement);
 
                 if (groupedMarkerSamples.ContainsKey(marker.Label))
@@ -212,7 +210,7 @@ namespace PLUME.Viewer
                 else
                 {
                     groupedMarkerTimelineElements.Add(marker.Label, new List<TimelineMarkerElement> { markerElement });
-                    groupedMarkerSamples.Add(marker.Label, new List<UnpackedSample> { s });
+                    groupedMarkerSamples.Add(marker.Label, new List<RawSample<Marker>> { s });
                 }
             }
 
@@ -252,7 +250,7 @@ namespace PLUME.Viewer
                     var snapMarker = markerSamples.OrderBy(s => s.Timestamp).LastOrDefault(s => s.Timestamp < t);
                     if (snapMarker != null)
                     {
-                        player.JumpToTime(snapMarker.Timestamp!.Value);
+                        player.JumpToTime(snapMarker.Timestamp);
                     }
                 };
                 nextBtn.clicked += () =>
@@ -261,7 +259,7 @@ namespace PLUME.Viewer
                     var snapMarker = markerSamples.OrderBy(s => s.Timestamp).FirstOrDefault(s => s.Timestamp > t);
                     if (snapMarker != null)
                     {
-                        player.JumpToTime(snapMarker.Timestamp!.Value);
+                        player.JumpToTime(snapMarker.Timestamp);
                     }
                 };
                 MarkersListView.Q<ScrollView>().Add(entry);
@@ -272,15 +270,11 @@ namespace PLUME.Viewer
         {
             Timeline.ClearTracks();
 
-            var physioSignalsLoader = player.GetPhysiologicalSignalsLoader();
-
             var tracks = new Dictionary<string, TimelinePhysiologicalSignalTrackElement[]>();
 
-            foreach (var s in physioSignalsLoader.AllOfType<StreamOpen>())
+            foreach (var s in player.Record.LslStreamOpenSamples)
             {
-                if (s.Payload is not StreamOpen streamOpen)
-                    continue;
-
+                var streamOpen = s.Payload;
                 var xmlInfo = XElement.Parse(streamOpen.XmlHeader);
                 var streamName = xmlInfo.Element("name")!.Value;
                 var channelFormat = xmlInfo.Element("channel_format")!.Value;
@@ -310,9 +304,7 @@ namespace PLUME.Viewer
                 tracks.Add(streamOpen.StreamId, channelsTrack);
             }
 
-            var streamSamples = physioSignalsLoader.AllOfType<StreamSample>()
-                .OrderBy(s => s.Timestamp)
-                .GroupBy(s => ((StreamSample)s.Payload).StreamId);
+            var streamSamples = player.Record.LslStreamSamples.GroupBy(s => s.Payload.StreamId);
 
             foreach (var streamSamplesGroup in streamSamples)
             {
@@ -330,8 +322,7 @@ namespace PLUME.Viewer
 
                     foreach (var unpackedSample in streamSamplesGroup)
                     {
-                        if (unpackedSample.Payload is not StreamSample sample)
-                            continue;
+                        var sample = unpackedSample.Payload;
 
                         switch (sample.ValuesCase)
                         {
@@ -339,37 +330,37 @@ namespace PLUME.Viewer
                                 min = Math.Min(min, sample.FloatValues.Value[channelIdx]);
                                 max = Math.Max(max, sample.FloatValues.Value[channelIdx]);
                                 points.Add(
-                                    new Vector2(unpackedSample.Timestamp!.Value, sample.FloatValues.Value[channelIdx]));
+                                    new Vector2(unpackedSample.Timestamp, sample.FloatValues.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.DoubleValues:
                                 min = Math.Min(min, (float)sample.DoubleValues.Value[channelIdx]);
                                 max = Math.Max(max, (float)sample.DoubleValues.Value[channelIdx]);
-                                points.Add(new Vector2(unpackedSample.Timestamp!.Value,
+                                points.Add(new Vector2(unpackedSample.Timestamp,
                                     (float)sample.DoubleValues.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.Int8Values:
                                 min = Math.Min(min, sample.Int8Values.Value[channelIdx]);
                                 max = Math.Max(max, sample.Int8Values.Value[channelIdx]);
-                                points.Add(new Vector2(unpackedSample.Timestamp!.Value,
+                                points.Add(new Vector2(unpackedSample.Timestamp,
                                     sample.Int8Values.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.Int16Values:
                                 min = Math.Min(min, sample.Int16Values.Value[channelIdx]);
                                 max = Math.Max(max, sample.Int16Values.Value[channelIdx]);
                                 points.Add(
-                                    new Vector2(unpackedSample.Timestamp!.Value, sample.Int16Values.Value[channelIdx]));
+                                    new Vector2(unpackedSample.Timestamp, sample.Int16Values.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.Int32Values:
                                 min = Math.Min(min, sample.Int32Values.Value[channelIdx]);
                                 max = Math.Max(max, sample.Int32Values.Value[channelIdx]);
                                 points.Add(
-                                    new Vector2(unpackedSample.Timestamp!.Value, sample.Int32Values.Value[channelIdx]));
+                                    new Vector2(unpackedSample.Timestamp, sample.Int32Values.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.Int64Values:
                                 min = Math.Min(min, sample.Int64Values.Value[channelIdx]);
                                 max = Math.Max(max, sample.Int64Values.Value[channelIdx]);
                                 points.Add(
-                                    new Vector2(unpackedSample.Timestamp!.Value, sample.Int64Values.Value[channelIdx]));
+                                    new Vector2(unpackedSample.Timestamp, sample.Int64Values.Value[channelIdx]));
                                 break;
                             case StreamSample.ValuesOneofCase.None:
                             case StreamSample.ValuesOneofCase.StringValues:
@@ -388,7 +379,7 @@ namespace PLUME.Viewer
 
         public void RefreshTimelineScale()
         {
-            Timeline.Duration = player.GetRecordDurationInNanoseconds();
+            Timeline.Duration = player.Record.Duration;
             Timeline.TicksPerDivision = 10;
             Timeline.TimeDivisionDuration = 100000000;
             Timeline.TimeDivisionWidth = 100;

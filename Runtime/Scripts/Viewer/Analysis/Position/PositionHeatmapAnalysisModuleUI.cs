@@ -85,7 +85,7 @@ namespace PLUME.Viewer.Analysis.Position
         public void RefreshTimeRangeLimits()
         {
             TimeRange.LowLimit = 0u;
-            TimeRange.HighLimit = player.GetRecordDurationInNanoseconds();
+            TimeRange.HighLimit = player.Record.Duration;
         }
 
         public override string GetTitle()

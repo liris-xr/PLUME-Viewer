@@ -6,9 +6,9 @@ namespace PLUME.Viewer.Player.Module.Unity
 {
     public class TerrainPlayerModule : PlayerModule
     {
-        public override void PlaySample(PlayerContext ctx, UnpackedSample sample)
+        public override void PlaySample(PlayerContext ctx, RawSample rawSample)
         {
-            switch (sample.Payload)
+            switch (rawSample.Payload)
             {
                 case TerrainCreate terrainCreate:
                 {

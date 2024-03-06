@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Globalization;
 using System.Threading;
-using PLUME.Sample.Common;
-using PLUME.Sample.LSL;
+using Cysharp.Threading.Tasks;
 using PLUME.Viewer.Analysis;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Color = UnityEngine.Color;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 
 namespace PLUME.Viewer.Player
 {
+    // TODO: decouple the player from the record loading process
     [DisallowMultipleComponent]
     public class Player : SingletonMonoBehaviour<Player>, IDisposable
     {
@@ -24,19 +23,20 @@ namespace PLUME.Viewer.Player
 
         private float _playSpeed = 1;
 
-        private PlayerAssets _assets;
         public PlayerModule[] PlayerModules { get; private set; }
 
-        private BufferedAsyncFramesLoader _framesLoader;
-        private BufferedAsyncRecordLoader _markersLoader;
-        private BufferedAsyncRecordLoader _physioSignalsLoader;
+        private RecordLoader _recordLoader;
+        public Record Record { get; private set; }
+        public bool IsRecordLoaded => Record != null;
+        
+        private AssetBundleLoader _assetBundleLoader;
+        public RecordAssetBundle RecordAssetBundle { get; private set; }
+        public bool IsRecordAssetBundleLoaded => RecordAssetBundle != null;
 
         private PlayerContext _playerContext;
         private bool _isPlaying;
         private ulong _currentTimeNanoseconds;
-
-        private bool _isLoading;
-
+        
         public RenderTexture PreviewRenderTexture { get; private set; }
 
         public FreeCamera freeCamera;
@@ -75,27 +75,20 @@ namespace PLUME.Viewer.Player
             topViewCamera.GetCamera().orthographicSize = 7;
 
             PlayerModules = FindObjectsOfType<PlayerModule>();
-            _assets = new PlayerAssets(assetBundlePath);
-
-            _markersLoader = new BufferedAsyncRecordLoader(new RecordReader(recordPath),
-                typeRegistryProvider.GetTypeRegistry(),
-                sample => sample.Payload.Is(Marker.Descriptor));
-
-            _physioSignalsLoader = new BufferedAsyncRecordLoader(new RecordReader(recordPath),
-                typeRegistryProvider.GetTypeRegistry(),
-                sample => sample.Payload.Is(StreamOpen.Descriptor)
-                          || sample.Payload.Is(StreamClose.Descriptor)
-                          || sample.Payload.Is(StreamSample.Descriptor)
-            );
-
-            _framesLoader =
-                new BufferedAsyncFramesLoader(new RecordReader(recordPath), typeRegistryProvider.GetTypeRegistry());
-
-            _markersLoader.StartLoading();
-            _physioSignalsLoader.StartLoading();
-            _framesLoader.StartLoading();
-
-            _playerContext = PlayerContext.NewContext("MainPlayerContext", _assets);
+            _assetBundleLoader = new AssetBundleLoader(assetBundlePath);
+            _assetBundleLoader.LoadAsync().ContinueWith(recordAssetBundle =>
+            {
+                RecordAssetBundle = recordAssetBundle;
+                _playerContext = PlayerContext.NewContext("MainPlayerContext", recordAssetBundle);
+            }).Forget();
+            
+            // TODO: load all assets async
+            
+            _recordLoader = new RecordLoader(recordPath, typeRegistryProvider.GetTypeRegistry());
+            _recordLoader.LoadAsync().ContinueWith(record =>
+            {
+                Record = record;
+            }).Forget();
         }
 
         public void SetCurrentPreviewCamera(PreviewCamera camera)
@@ -117,11 +110,6 @@ namespace PLUME.Viewer.Player
             return _currentCamera;
         }
 
-        public PlayerAssets GetPlayerAssets()
-        {
-            return _assets;
-        }
-
         private void FixedUpdate()
         {
             if (_isPlaying)
@@ -138,10 +126,7 @@ namespace PLUME.Viewer.Player
         public void OnDestroy()
         {
             PreviewRenderTexture.Release();
-
-            _framesLoader?.Dispose();
-            _markersLoader?.Dispose();
-            _physioSignalsLoader?.Dispose();
+            _recordLoader.Dispose();
         }
 
         public bool TogglePlaying()
@@ -204,16 +189,14 @@ namespace PLUME.Viewer.Player
         private void PlayForward(ulong durationNanoseconds)
         {
             var endTime = _currentTimeNanoseconds + durationNanoseconds;
-
-            _isLoading = true;
-            var frames = _framesLoader.FramesInTimeRangeAsync(_currentTimeNanoseconds, endTime).Result;
-            _isLoading = false;
+            
+            var frames = Record.Frames.GetInTimeRange(_currentTimeNanoseconds, endTime);
 
             _playerContext.PlayFrames(PlayerModules, frames);
 
-            _currentTimeNanoseconds = Math.Clamp(endTime, 0, _framesLoader.Duration + 1);
+            _currentTimeNanoseconds = Math.Clamp(endTime, 0, Record.Duration + 1);
 
-            if (endTime > _framesLoader.Duration)
+            if (endTime > Record.Duration)
             {
                 if (loop)
                 {
@@ -224,6 +207,16 @@ namespace PLUME.Viewer.Player
                     _isPlaying = false;
                 }
             }
+        }
+        
+        public float GetRecordLoadingProgress()
+        {
+            return _recordLoader.Progress;
+        }
+        
+        public float GetRecordAssetBundleLoadingProgress()
+        {
+            return _assetBundleLoader.GetLoadingProgress();
         }
 
         public void SetPlaySpeed(float playSpeed)
@@ -246,31 +239,6 @@ namespace PLUME.Viewer.Player
         public bool IsPlaying()
         {
             return _isPlaying;
-        }
-
-        public bool IsLoading()
-        {
-            return _isLoading;
-        }
-
-        public ulong GetRecordDurationInNanoseconds()
-        {
-            return _framesLoader.Duration;
-        }
-
-        public BufferedAsyncFramesLoader GetFramesLoader()
-        {
-            return _framesLoader;
-        }
-
-        public BufferedAsyncRecordLoader GetMarkersLoader()
-        {
-            return _markersLoader;
-        }
-
-        public BufferedAsyncRecordLoader GetPhysiologicalSignalsLoader()
-        {
-            return _physioSignalsLoader;
         }
 
         public ulong GetCurrentPlayTimeInNanoseconds()
@@ -322,9 +290,7 @@ namespace PLUME.Viewer.Player
 
         public void Dispose()
         {
-            _framesLoader?.Dispose();
-            _markersLoader?.Dispose();
-            _physioSignalsLoader?.Dispose();
+            _recordLoader.Dispose();
         }
     }
 }

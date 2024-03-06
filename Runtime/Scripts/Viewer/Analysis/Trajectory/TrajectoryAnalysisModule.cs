@@ -28,8 +28,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
         public bool IsGenerating { get; private set; }
         public float GenerationProgress { get; private set; }
 
-        public IEnumerator GenerateTrajectory(BufferedAsyncFramesLoader framesLoader,
-            BufferedAsyncRecordLoader markersLoader, PlayerAssets assets,
+        public IEnumerator GenerateTrajectory(Record record, RecordAssetBundle recordAssetBundle,
             TrajectoryAnalysisModuleParameters parameters, Action<TrajectoryAnalysisModuleResult> finishCallback)
         {
             if (parameters.EndTime < parameters.StartTime)
@@ -48,26 +47,25 @@ namespace PLUME.Viewer.Analysis.Trajectory
             IsGenerating = true;
             player.SetModuleGenerating(this);
 
-            _generationContext = PlayerContext.NewContext("GenerateTrajectoryContext_" + Guid.NewGuid(), assets);
+            _generationContext = PlayerContext.NewContext("GenerateTrajectoryContext_" + Guid.NewGuid(), recordAssetBundle);
 
             // Skip frames before the start time
             if (parameters.StartTime > 0)
             {
-                var skippedFramesLoadingTask = framesLoader.FramesInTimeRangeAsync(0, parameters.StartTime - 1u);
-                yield return new WaitUntil(() => skippedFramesLoadingTask.IsCompleted);
-                _generationContext.PlayFrames(player.PlayerModules, skippedFramesLoadingTask.Result);
+                var skippedFrames = record.Frames.GetInTimeRange(0, parameters.StartTime - 1u);
+                _generationContext.PlayFrames(player.PlayerModules, skippedFrames);
             }
 
             // Frames in the time range
-            var framesLoadingTask = framesLoader.FramesInTimeRangeAsync(parameters.StartTime, parameters.EndTime);
-            yield return new WaitUntil(() => framesLoadingTask.IsCompleted);
-            var frames = framesLoadingTask.Result;
+            var frames = record.Frames.GetInTimeRange(parameters.StartTime, parameters.EndTime);
 
             var teleportationIndices = new List<int>();
             var markersIndices = new List<int>();
             var points = new List<TrajectorySegmentPoint>();
             var teleportationToleranceSq = parameters.TeleportationTolerance * parameters.TeleportationTolerance;
 
+            var lastYieldTime = Time.unscaledTimeAsDouble;
+            
             foreach (var frame in frames)
             {
                 _generationContext.PlayFrame(player.PlayerModules, frame);
@@ -93,31 +91,34 @@ namespace PLUME.Viewer.Analysis.Trajectory
 
                 GenerationProgress = (frame.Timestamp - parameters.StartTime) /
                                      (float)(parameters.EndTime - parameters.StartTime);
+                
+                var time = Time.unscaledTimeAsDouble;
+                if (time - lastYieldTime > 1.0f / Application.targetFrameRate)
+                {
+                    lastYieldTime = time;
+                    // Only used to not freeze the game while generating
+                    yield return new WaitForEndOfFrame();
+                }
             }
 
             GenerationProgress = 1;
 
             if (parameters.VisibleMarkers != null)
             {
-                var markersLoadingTask =
-                    markersLoader.SamplesInTimeRangeAsync(parameters.StartTime, parameters.EndTime);
-                yield return new WaitUntil(() => markersLoadingTask.IsCompleted);
-                var markers = markersLoadingTask.Result;
+                var markers = record.Markers.GetInTimeRange(parameters.StartTime, parameters.EndTime);
 
                 // Used to skip the points that we know are before the marker timestamp
                 var startSearchIdx = 0;
 
                 foreach (var sample in markers)
                 {
-                    // Sanity check
-                    if (sample.Payload is not Marker marker)
-                        continue;
+                    var marker = sample.Payload;
 
                     if (!parameters.VisibleMarkers.Contains(marker.Label))
                         continue;
 
                     var lookupTrajectoryPoint =
-                        new TrajectorySegmentPoint(sample.Timestamp!.Value, Vector3.zero, null, null);
+                        new TrajectorySegmentPoint(sample.Timestamp, Vector3.zero, null, null);
 
                     var idx = points.BinarySearch(startSearchIdx, points.Count - startSearchIdx, lookupTrajectoryPoint,
                         TrajectorySegmentPoint.TimestampComparer.Instance);
@@ -125,6 +126,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
                     if (idx >= 0)
                     {
                         points[idx].Marker = marker;
+                        markersIndices.Add(idx);
                     }
                     else
                     {
@@ -133,6 +135,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
                         if (idx < points.Count)
                         {
                             points[idx].Marker = marker;
+                            markersIndices.Add(idx);
                         }
                     }
 

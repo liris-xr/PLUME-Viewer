@@ -16,7 +16,7 @@ namespace PLUME.Viewer.Player
 
         private static readonly List<PlayerContext> Contexts = new();
 
-        private readonly PlayerAssets _assets;
+        private readonly RecordAssetBundle _recordAssetBundle;
         private readonly string _name;
         private Scene _scene;
         private readonly Dictionary<int, bool> _sceneRootObjectsActive = new();
@@ -37,14 +37,14 @@ namespace PLUME.Viewer.Player
         private readonly Dictionary<int, Transform> _transformsByInstanceId = new();
         private readonly Dictionary<int, Component> _componentByInstanceId = new();
 
-        private PlayerContext(string name, PlayerAssets assets, Scene scene)
+        private PlayerContext(string name, RecordAssetBundle recordAssetBundle, Scene scene)
         {
             _name = name;
-            _assets = assets;
+            _recordAssetBundle = recordAssetBundle;
             _scene = scene;
         }
 
-        public static PlayerContext NewContext(string name, PlayerAssets assets)
+        public static PlayerContext NewContext(string name, RecordAssetBundle assets)
         {
             if (Contexts.Select(ctx => ctx._name).Contains(name))
             {
@@ -165,7 +165,7 @@ namespace PLUME.Viewer.Player
             _invertIdMap.Clear();
         }
 
-        public void PlayFrames(PlayerModule[] playerModules, IEnumerable<UnpackedFrame> frames)
+        public void PlayFrames(PlayerModule[] playerModules, IEnumerable<FrameSample> frames)
         {
             if (!IsActive())
             {
@@ -178,7 +178,7 @@ namespace PLUME.Viewer.Player
             }
         }
 
-        public void PlayFrame(PlayerModule[] playerModules, UnpackedFrame frame)
+        public void PlayFrame(PlayerModule[] playerModules, FrameSample frame)
         {
             if (!IsActive())
             {
@@ -423,7 +423,7 @@ namespace PLUME.Viewer.Player
 
         public T GetOrDefaultAssetByIdentifier<T>(AssetIdentifier id) where T : Object
         {
-            return _assets.GetOrDefaultAssetByIdentifier<T>(id);
+            return _recordAssetBundle.GetOrDefaultAssetByIdentifier<T>(id);
         }
 
         public T GetOrCreateComponentByIdentifier<T>(ComponentIdentifier id) where T : Component

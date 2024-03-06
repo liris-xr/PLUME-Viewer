@@ -41,7 +41,7 @@ namespace PLUME.Viewer.Analysis.Interaction
             _interactionHeatmapMaterial.SetColor(EndColor, endColor);
         }
 
-        public IEnumerator GenerateHeatmap(BufferedAsyncFramesLoader framesLoader,
+        public void GenerateHeatmap(Record record,
             InteractionAnalysisModuleParameters parameters,
             Action<InteractionHeatmapAnalysisResult> finishCallback)
         {
@@ -56,10 +56,9 @@ namespace PLUME.Viewer.Analysis.Interaction
                     $"{nameof(parameters.EndTime)} should be less or equal {nameof(parameters.StartTime)}.");
             }
 
-            var framesLoadingTask = framesLoader.FramesInTimeRangeAsync(parameters.StartTime, parameters.EndTime);
-            yield return new WaitUntil(() => framesLoadingTask.IsCompleted);
+            var frames = record.Frames.GetInTimeRange(parameters.StartTime, parameters.EndTime);
 
-            foreach (var frame in framesLoadingTask.Result)
+            foreach (var frame in frames)
             {
                 foreach (var sample in frame.Data)
                 {
@@ -142,9 +141,8 @@ namespace PLUME.Viewer.Analysis.Interaction
                 goRenderer.SetSharedMaterials(new List<Material>());
             }
 
-            var frames = player.GetFramesLoader()
-                .FramesInTimeRangeAsync(0, player.GetCurrentPlayTimeInNanoseconds());
-            foreach (var frame in frames.Result)
+            var frames = player.Record.Frames.GetInTimeRange(0, player.GetCurrentPlayTimeInNanoseconds());
+            foreach (var frame in frames)
             {
                 foreach (var data in frame.Data)
                 {

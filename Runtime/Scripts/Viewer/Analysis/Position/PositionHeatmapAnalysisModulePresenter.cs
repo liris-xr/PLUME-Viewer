@@ -75,9 +75,8 @@ namespace PLUME.Viewer.Analysis.Position
                 ui.RefreshResults();
             });
 
-            _generationCoroutine = StartCoroutine(module.GenerateHeatmap(player.GetFramesLoader(),
-                player.GetPlayerAssets(), parameters,
-                onFinishCallback));
+            _generationCoroutine = StartCoroutine(module.GenerateHeatmap(player.Record, player.RecordAssetBundle,
+                parameters, onFinishCallback));
         }
 
         private void OnClickCancel()

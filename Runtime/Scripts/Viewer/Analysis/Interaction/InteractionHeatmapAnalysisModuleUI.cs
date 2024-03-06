@@ -80,7 +80,7 @@ namespace PLUME.Viewer.Analysis.Interaction
         public void RefreshTimeRangeLimits()
         {
             TimeRange.LowLimit = 0u;
-            TimeRange.HighLimit = player.GetRecordDurationInNanoseconds();
+            TimeRange.HighLimit = player.Record.Duration;
         }
 
 

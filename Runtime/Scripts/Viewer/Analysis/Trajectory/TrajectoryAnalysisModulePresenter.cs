@@ -78,8 +78,8 @@ namespace PLUME.Viewer.Analysis.Trajectory
             parameters.StartTime = startTime;
             parameters.EndTime = endTime;
 
-            _generationCoroutine = StartCoroutine(module.GenerateTrajectory(player.GetFramesLoader(),
-                player.GetMarkersLoader(), player.GetPlayerAssets(), parameters, onFinishCallback));
+            _generationCoroutine = StartCoroutine(module.GenerateTrajectory(player.Record, player.RecordAssetBundle,
+                parameters, onFinishCallback));
         }
 
         public void FixedUpdate()

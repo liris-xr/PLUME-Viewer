@@ -6,9 +6,9 @@ namespace PLUME.Viewer.Player.Module.Unity
 {
     public class RenderSettingsPlayerModule : PlayerModule
     {
-        public override void PlaySample(PlayerContext ctx, UnpackedSample sample)
+        public override void PlaySample(PlayerContext ctx, RawSample rawSample)
         {
-            if (sample.Payload is RenderSettingsUpdate renderSettingsUpdate)
+            if (rawSample.Payload is RenderSettingsUpdate renderSettingsUpdate)
             {
                 RenderSettings.skybox = ctx.GetOrDefaultAssetByIdentifier<Material>(renderSettingsUpdate.SkyboxId);
                 ctx.TryAddAssetIdentifierCorrespondence(renderSettingsUpdate.SkyboxId, RenderSettings.skybox);

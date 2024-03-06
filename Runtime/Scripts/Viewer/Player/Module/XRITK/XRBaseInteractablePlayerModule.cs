@@ -6,10 +6,10 @@ namespace PLUME.Viewer.Player.Module.XRITK
 {
     public class XRBaseInteractablePlayerModule : PlayerModule
     {
-        public override void PlaySample(PlayerContext ctx, UnpackedSample sample)
+        public override void PlaySample(PlayerContext ctx, RawSample rawSample)
         {
-            var payload = sample.Payload;
-            var time = sample.Timestamp;
+            var payload = rawSample.Payload;
+            var time = rawSample.Timestamp;
 
             switch (payload)
             {
