@@ -48,6 +48,9 @@ namespace PLUME.Viewer.Player.Module.Unity
 
                     if (cameraUpdate.HasOrthographic)
                         cam.orthographic = cameraUpdate.Orthographic;
+                    
+                    if (cameraUpdate.HasCullingMask)
+                        cam.cullingMask = cameraUpdate.CullingMask;
 
                     // if (cameraUpdate.HasOpaqueSortMode)
                     //     cam.opaqueSortMode = cameraUpdate.OpaqueSortMode.ToEngineType();
@@ -64,8 +67,6 @@ namespace PLUME.Viewer.Player.Module.Unity
                     // if (cameraUpdate.HasAspect)
                     //     cam.aspect = cameraUpdate.Aspect;
                     //
-                    // if (cameraUpdate.HasCullingMask)
-                    //     cam.cullingMask = cameraUpdate.CullingMask;
                     //
                     // if (cameraUpdate.HasEventMask)
                     //     cam.eventMask = cameraUpdate.EventMask;

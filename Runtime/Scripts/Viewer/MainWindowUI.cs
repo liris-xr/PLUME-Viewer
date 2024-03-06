@@ -104,7 +104,18 @@ namespace PLUME.Viewer
                     : new StyleColor(Color.gray);
 
                 // Dirty fix for selection not working in tree view
-                element.RegisterCallback<MouseDownEvent>(_ => { HierarchyTree.SetSelection(i); });
+                element.RegisterCallback<MouseDownEvent>(evt =>
+                {
+                    if (evt.shiftKey)
+                    {
+                        // Add to existing selection
+                        HierarchyTree.AddToSelection(i);
+                    }
+                    else
+                    {
+                        HierarchyTree.SetSelection(i);
+                    }
+                });
             };
             HierarchyTree.SetRootItems(new List<TreeViewItemData<GameObject>>());
 

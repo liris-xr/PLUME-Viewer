@@ -38,10 +38,14 @@ namespace PLUME.Viewer
 
             if (mainCamera != _followedMainCamera)
             {
-                // Main camera changed, copy all of its properties except target texture.
-                var prevTargetTexture = _camera.targetTexture;
-                _camera.CopyFrom(mainCamera);
-                _camera.targetTexture = prevTargetTexture;
+                if (mainCamera != null)
+                {
+                    // Main camera changed, copy all of its properties except target texture.
+                    var prevTargetTexture = _camera.targetTexture;
+                    _camera.CopyFrom(mainCamera);
+                    _camera.targetTexture = prevTargetTexture;
+                }
+
                 _followedMainCamera = mainCamera;
             }
         }
