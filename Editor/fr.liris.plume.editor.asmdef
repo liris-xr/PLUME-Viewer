@@ -1,19 +1,18 @@
 {
-  "name": "fr.liris.plume.editor",
-  "rootNamespace": "PLUME",
-  "references": [
-    "GUID:c12b1f5e343a8004f8c490f71c99500b",
-    "GUID:12a4ca2c2f650d143a0698d9418b9fd3"
-  ],
-  "includePlatforms": [
-    "Editor"
-  ],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "autoReferenced": true,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": false
+    "name": "fr.liris.plume.editor",
+    "rootNamespace": "PLUME",
+    "references": [
+        "GUID:12a4ca2c2f650d143a0698d9418b9fd3"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

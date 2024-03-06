@@ -65,10 +65,10 @@ namespace PLUME
                     "Metadata file not found. Need to recompute duration and sample count and verify samples order.");
             }
 
-            if (!recordMetrics.IsSequential)
-            {
-                throw new NotImplementedException("Record is not sequential and needs to be reordered.");
-            }
+            // if (!recordMetrics.IsSequential)
+            // {
+            //     throw new NotImplementedException("Record is not sequential and needs to be reordered.");
+            // }
 
             Duration = recordMetrics.Duration;
             SamplesCount = recordMetrics.NSamples;
