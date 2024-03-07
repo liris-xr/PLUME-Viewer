@@ -1,25 +1,29 @@
 <a name="readme-top"></a>
 <div align="center">
-    <a href="https://github.com/Plateforme-VR-ENISE/PLUME">
+    <a href="https://github.com/liris-xr/PLUME">
         <picture>
             <source media="(prefers-color-scheme: dark)" srcset="/Documentation~/Images/plume_banner_dark.png">
             <source media="(prefers-color-scheme: light)" srcset="/Documentation~/Images/plume_banner_light.png">
-            <img alt="PLUME banner." src="/Documentation~/Images/plume_banner_dark.png">
+            <img alt="PLUME banner." src="/Documentation~/Images/plume_banner_light.png">
         </picture>
     </a>
     <br />
     <br />
     <p align="center">
-        <strong>PLUME:</strong> <strong>PL</strong>ugin for <strong>U</strong>nity to <strong>M</strong>onitor <strong>E</strong>xperiments.
+        <strong>PLUME: Record, Replay, Analyze and Share User Behavior in 6DoF XR Experiences</strong>
         <br />
-        <a href="https://github.com/Plateforme-VR-ENISE/PLUME/Documentation~/"><strong>Explore the docs »</strong></a>
+        Charles Javerliat, Sophie Villenave, Pierre Raimbaud, Guillaume Lavoué
+        <br />
+        <em>(Journal Track) IEEE Conference on Virtual Reality and 3D User Interfaces</em>
+        <br />
+        <a href="https://www.youtube.com/watch?v=_6krSw7fNqg"><strong>Video »</strong><a>
+        <a href="https://hal.science/hal-04488824"><strong>Paper »</strong></a>
+        <a href="https://github.com/liris-xr/PLUME/wiki/"><strong>Explore the docs »</strong></a>
         <br />
         <br />
-        <a href="https://github.com/Plateforme-VR-ENISE/PLUME">View Demo</a>
+        <a href="https://github.com/liris-xr/PLUME/issues">Report Bug</a>
         ·
-        <a href="https://github.com/Plateforme-VR-ENISE/PLUME/issues">Report Bug</a>
-        ·
-        <a href="https://github.com/Plateforme-VR-ENISE/PLUME/issues">Request Feature</a>
+        <a href="https://github.com/liris-xr/PLUME/issues">Request Feature</a>
     </p>
 </div>
 
@@ -27,7 +31,7 @@
     <summary>Table of Contents</summary>
     <ol>
         <li>
-            <a href="#about-the-project">About The Project</a>
+            <a href="#about">About</a>
         </li>
         <li>
             <a href="#getting-started">Getting Started</a>
@@ -100,23 +104,60 @@ Displays the recorded hierarchy of the gameobjects in the scene, it is updated d
 
 #### Timeline
 Displays the replay timeline. There are two methods to navigate through the timeline: 
-1. Click on the timescale
-of the timeline to jump to desired time;
+1. Click on the timescale of the timeline to jump to desired time;
 2. Change the current time in the textfield on the left. The timeline is scrollable using the scroll bar at the bottom. The scrollbar can be used to change the timeline scale by dragging the left and right sides of the scrollbar.
 
 The timeline can contains tracks for physiological signals. Those signals can recorded using the Lab Streaming Layer integration from the PLUME Recorder. Information about the LSL stream's name and nominal frequency are displayed on the left, along with the maximum and minimum value of the signal, and the nearest value to the time cursor (last value before the cursor).
 
+### Analysis
+#### General use of analysis modules
+Analysis module can be found on the top-right corner of the viewer.
 
+For fields that require identifiers of objects, get the identifier by going to the hierarchy, selecting the object, copying its GUID by pressing `CTRL+C` and pasting it inside the field using `CTRL+V`.
+
+For every analysis module, a dedicated time range can be set to only generate the result for this specific
+interval.
+
+Click generate to create the visualization. Inside each module appears the list of generated results. They can
+be hidden / shown using the eye icon button. They can be deleted using the red bin button.
+
+#### Trajectory
+1. **Object Id** : GUID of the object used to compute the trajectory.
+2. **Markers** : List of string that represent recorded markers. Indicated markers are shown above the computed trajectory inside the virtual environment.
+3. **Teleportation Tolerance** : Represents (in meter) the maximal distance between 2 points before considering the gap to be a teleportation.
+4. **Teleportation Segments** : Enable the drawing of teleportation segments as dash lines.
+5. **Decimation Tolerance** : Minimum distance between 2 points. Any points inside the distance will be discarded to simplify the trajectory.
+6. **Include Rotations** : Show the orientation of the object above the computed trajectory inside the virtual environment.
+
+#### Interactions Highlight
+1. **Interactor(s)** : List of GUID of the interactors within the virtual environment. Can be left empty to select every interactor in the virtual environment.
+2. **Interactable(s)** : List of GUID of the interactors within the virtual environment. Can be left empty to select every interactable in the virtual environment.
+3. **Interaction** : Change the type of interaction to visualize using the dropdown.
+
+#### Position Heatmap
+1. **Projection Caster** : GUID of the object used to compute the heatmap. Its position is orthogonally projected towards the ground.
+2. **Projection Receivers** : List of GUID of the object that will receive the projection and be used to compute occlusion.
+3. **Include Children** : Recursively include children gameobjects of the listed projection receivers objects.
+
+#### Eye Gaze Heatmap
+1. **Projection Caster** : GUID of the object used to compute the heatmap. Its position is orthogonally projected towards the ground.
+2. **Projection Receivers** : List of GUID of the object that will receive the projection and be used to compute occlusion.
+3. **Include Children** : Recursively include children gameobjects of the listed projection receivers objects.
+
+### Markers
+List of all the recorded markers that can be found on the bottom-right of the viewer. Markers appear as coloured vertical lines in the timeline. 
+
+Click on the checkbox to show or hide them in the timeline.
+
+Click on the left arrow to jump to the nearest marker to the left of the time cursor.
+
+Click on the right arrow to jump to the nearest marker to the right of the time cursor.
 
 ## Roadmap
-
-TODO
-
 See the [open issues](https://github.com/Plateforme-VR-ENISE/PLUME/issues) for a full list of proposed features (and
 known issues).
 
 ## Contributing
-
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any
 contributions you make are **greatly appreciated**.
 
@@ -132,13 +173,24 @@ Don't forget to give the project a star! Thanks again!
 
 ## License
 
-Distributed under the <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Licence Creative Commons
-Attribution - Non Commercial 4.0 International</a>. See `LICENSE.md` for more information.
-
-<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Licence Creative Commons" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a>
+Distributed under the <a rel="license" href="https://github.com/liris-xr/PLUME/blob/master/LICENSE">GPLv3 License</a>.
 
 ## Contact
 
 Charles JAVERLIAT - charles.javerliat@gmail.com
 
-Sophie VILLENAVE - sophie.villenave@enise.fr
+Sophie VILLENAVE - sophie.villenave@ec-lyon.fr
+
+## Citation
+```
+@article{javerliat_plume_2024,
+	title = {{PLUME}: {Record}, {Replay}, {Analyze} and {Share} {User} {Behavior} in {6DoF} {XR} {Experiences}},
+	url = {https://ieeexplore.ieee.org/document/10458415},
+	doi = {10.1109/TVCG.2024.3372107},
+	journal = {IEEE Transactions on Visualization and Computer Graphics},
+	author = {Javerliat, Charles and Villenave, Sophie and Raimbaud, Pierre and Lavoué, Guillaume},
+	year = {2024},
+	note = {Conference Name: IEEE Transactions on Visualization and Computer Graphics},
+	pages = {1--11}
+}
+```
