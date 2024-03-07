@@ -180,7 +180,7 @@ namespace PLUME.Viewer.Player
                 Object.DestroyImmediate(rootGameObject);
             }
 
-            updatedHierarchy?.Invoke(new HierarchyUpdateResetEvent());
+            updatedHierarchy?.Invoke(new HierarchyForceRebuild());
 
             _gameObjectsByInstanceId.Clear();
             _gameObjectsTagByInstanceId.Clear();
@@ -236,23 +236,30 @@ namespace PLUME.Viewer.Player
             var t = GetOrCreateTransformByIdentifier(transformIdentifier);
             var parent = GetOrCreateTransformByIdentifier(parentTransformIdentifier);
             t.SetParent(parent);
-            updatedHierarchy?.Invoke(new HierarchyUpdateParentEvent(transformIdentifier.ParentId,
+            updatedHierarchy?.Invoke(new HierarchyUpdateGameObjectParentEvent(transformIdentifier.ParentId,
                 parentTransformIdentifier.ParentId, t.GetSiblingIndex()));
         }
 
+        public void SetName(GameObjectIdentifier id, string name)
+        {
+            var go = GetOrCreateGameObjectByIdentifier(id);
+            go.name = name;
+            updatedHierarchy?.Invoke(new HierarchyUpdateGameObjectNameEvent(id, name));
+        }
+        
         public void SetSiblingIndex(ComponentIdentifier transformIdentifier, int siblingIndex)
         {
             var t = GetOrCreateTransformByIdentifier(transformIdentifier);
             t.SetSiblingIndex(siblingIndex);
             updatedHierarchy?.Invoke(
-                new HierarchyUpdateSiblingIndexEvent(transformIdentifier.ParentId, siblingIndex));
+                new HierarchyUpdateGameObjectSiblingIndexEvent(transformIdentifier.ParentId, siblingIndex));
         }
 
         public void SetActive(GameObjectIdentifier id, bool active)
         {
             var go = GetOrCreateGameObjectByIdentifier(id);
             go.SetActive(active);
-            updatedHierarchy?.Invoke(new HierarchyUpdateEnabledEvent(id, active));
+            updatedHierarchy?.Invoke(new HierarchyUpdateGameObjectEnabledEvent(id, active));
         }
 
         private void EnableRootGameObjects()
@@ -333,7 +340,7 @@ namespace PLUME.Viewer.Player
             _transformsByInstanceId[newTransform.GetInstanceID()] = newTransform;
             TryAddIdentifierCorrespondence(id.GameObjectId, newGameObject.GetInstanceID());
             TryAddIdentifierCorrespondence(id.TransformId, newTransform.GetInstanceID());
-            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(id));
+            updatedHierarchy?.Invoke(new HierarchyCreateGameObjectEvent(id));
             return newGameObject;
         }
 
@@ -383,7 +390,7 @@ namespace PLUME.Viewer.Player
             _transformsByInstanceId[newTransform.GetInstanceID()] = newTransform;
             TryAddIdentifierCorrespondence(transformGuid, newTransform.GetInstanceID());
             TryAddIdentifierCorrespondence(gameObjectGuid, newGameObject.GetInstanceID());
-            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(id.ParentId));
+            updatedHierarchy?.Invoke(new HierarchyCreateGameObjectEvent(id.ParentId));
             return newTransform;
         }
 
@@ -442,7 +449,7 @@ namespace PLUME.Viewer.Player
             _transformsByInstanceId[newTransform.GetInstanceID()] = newTransform;
             TryAddIdentifierCorrespondence(transformGuid, newTransform.GetInstanceID());
             TryAddIdentifierCorrespondence(gameObjectGuid, newGameObject.GetInstanceID());
-            updatedHierarchy?.Invoke(new HierarchyUpdateCreateTransformEvent(id.ParentId));
+            updatedHierarchy?.Invoke(new HierarchyCreateGameObjectEvent(id.ParentId));
             return newTransform;
         }
 
@@ -506,7 +513,7 @@ namespace PLUME.Viewer.Player
 
             if (go != null)
             {
-                updatedHierarchy?.Invoke(new HierarchyUpdateDestroyTransformEvent(id));
+                updatedHierarchy?.Invoke(new HierarchyDestroyGameObjectEvent(id));
                 
                 _gameObjectsByInstanceId.Remove(go.GetInstanceID());
                 _gameObjectsTagByInstanceId.Remove(go.GetInstanceID());

@@ -15,6 +15,7 @@ using Vector2 = UnityEngine.Vector2;
 
 namespace PLUME.Viewer
 {
+    // TODO: split into more small classes
     [RequireComponent(typeof(UIDocument))]
     public class MainWindowUI : MonoBehaviour
     {
@@ -44,8 +45,6 @@ namespace PLUME.Viewer
         public VisualElement Preview { get; private set; }
         public AspectRatioContainerElement PreviewRenderAspectRatio { get; private set; }
         public VisualElement PreviewRender { get; private set; }
-
-        public TreeView HierarchyTree { get; private set; }
 
         public CollapseBarElement RecordsCollapseBar { get; private set; }
         public CollapseBarElement TimelineCollapseBar { get; private set; }
@@ -84,52 +83,6 @@ namespace PLUME.Viewer
             Preview = ViewerPanel.Q("preview");
             PreviewRenderAspectRatio = ViewerPanel.Q("preview").Q<AspectRatioContainerElement>("aspect-ratio");
             PreviewRender = PreviewRenderAspectRatio.Q<VisualElement>("render");
-
-            HierarchyTree = ViewerPanel.Q<TreeView>("hierarchy-tree");
-            HierarchyTree.makeItem = () =>
-            {
-                var container = new VisualElement();
-                container.style.flexDirection = FlexDirection.Row;
-                container.Add(new Label { name = "name" });
-                return container;
-            };
-            HierarchyTree.bindItem = (element, i) =>
-            {
-                var t = HierarchyTree.GetItemDataForIndex<GameObject>(i);
-                if (t == null)
-                    return;
-                element.Q<Label>("name").text = t.gameObject.name;
-                element.Q<Label>("name").style.color = t.gameObject.activeInHierarchy
-                    ? new StyleColor(Color.white)
-                    : new StyleColor(Color.gray);
-
-                // Dirty fix for selection not working in tree view
-                element.RegisterCallback<MouseDownEvent>(evt =>
-                {
-                    if (evt.shiftKey)
-                    {
-                        // Add to existing selection
-                        HierarchyTree.AddToSelection(i);
-                    }
-                    else
-                    {
-                        HierarchyTree.SetSelection(i);
-                    }
-                });
-            };
-            HierarchyTree.SetRootItems(new List<TreeViewItemData<GameObject>>());
-
-            HierarchyTree.RegisterCallback<KeyDownEvent>(evt =>
-            {
-                if (evt.ctrlKey && evt.keyCode == KeyCode.C)
-                {
-                    var selectedItems = HierarchyTree.GetSelectedItems<GameObject>();
-
-                    GUIUtility.systemCopyBuffer = string.Join(",",
-                        selectedItems.Select(t =>
-                            player.GetPlayerContext().GetRecordIdentifier(t.data.GetInstanceID())));
-                }
-            });
 
             RecordsCollapseBar = ViewerPanel.Q<CollapseBarElement>("records-collapse-bar");
             TimelineCollapseBar = ViewerPanel.Q<CollapseBarElement>("timeline-collapse-bar");

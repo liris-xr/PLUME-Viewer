@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -10,6 +9,9 @@ namespace PLUME.Viewer
     public class MainWindowPresenter : MonoBehaviour
     {
         public Player.Player player;
+
+        public GameObject analysisModulesUI;
+        public GameObject analysisModules;
 
         private MainWindowUI _mainWindowUI;
 
@@ -50,8 +52,6 @@ namespace PLUME.Viewer
 
             RefreshResetViewButton();
             _mainWindowUI.ResetViewButton.clicked += OnClickResetView;
-
-            player.GetPlayerContext().updatedHierarchy += OnHierarchyUpdateEvent;
         }
 
         private void OnClickResetView()
@@ -90,119 +90,6 @@ namespace PLUME.Viewer
             }
 
             RefreshResetViewButton();
-        }
-
-        public void OnHierarchyUpdateEvent(IHierarchyUpdateEvent evt)
-        {
-            var controller = _mainWindowUI.HierarchyTree.viewController;
-            var ctx = player.GetPlayerContext();
-            
-            // switch (evt)
-            // {
-            //     case HierarchyUpdateCreateTransformEvent createEvt:
-            //     {
-            //         var instanceId = player.GetPlayerContext()
-            //             .GetReplayInstanceId(createEvt.gameObjectIdentifier.GameObjectId);
-            //
-            //         if (!instanceId.HasValue)
-            //             return;
-            //
-            //         var go = ObjectExtensions.FindObjectFromInstanceID(instanceId.Value) as GameObject;
-            //
-            //         if (go == null)
-            //             return;
-            //
-            //         var itemData = new TreeViewItemData<GameObject>(instanceId.Value, go);
-            //         _mainWindowUI.HierarchyTree.AddItem(itemData);
-            //
-            //         break;
-            //     }
-            //     case HierarchyUpdateDestroyTransformEvent destroyEvt:
-            //     {
-            //         var instanceId = player.GetPlayerContext()
-            //             .GetReplayInstanceId(destroyEvt.gameObjectIdentifier.GameObjectId);
-            //
-            //         if (!instanceId.HasValue)
-            //             return;
-            //
-            //         _mainWindowUI.HierarchyTree.TryRemoveItem(instanceId.Value);
-            //         break;
-            //     }
-            //     case HierarchyUpdateSiblingIndexEvent siblingUpdateEvt:
-            //     {
-            //         var instanceId = player.GetPlayerContext()
-            //             .GetReplayInstanceId(siblingUpdateEvt.gameObjectIdentifier.GameObjectId);
-            //         
-            //         if (!instanceId.HasValue)
-            //             return;
-            //
-            //         var go = _mainWindowUI.HierarchyTree.GetItemDataForId<GameObject>(instanceId.Value);
-            //
-            //         if (go != null)
-            //         {
-            //             if (go.transform.parent == null)
-            //             {
-            //                 controller.Move(instanceId.Value, -1, siblingUpdateEvt.siblingIndex);
-            //             }
-            //             else
-            //             {
-            //                 var parentId = go.transform.parent.gameObject.GetInstanceID();
-            //                 controller.Move(instanceId.Value, parentId, siblingUpdateEvt.siblingIndex);
-            //             }
-            //         }
-            //
-            //         break;
-            //     }
-            //     case HierarchyUpdateEnabledEvent enabledUpdateEvt:
-            //     {
-            //         var instanceId = player.GetPlayerContext()
-            //             .GetReplayInstanceId(enabledUpdateEvt.gameObjectIdentifier.GameObjectId);
-            //         
-            //         if (!instanceId.HasValue)
-            //             return;
-            //         
-            //         var index = controller.GetIndexForId(instanceId.Value);
-            //         if (index != -1)
-            //         {
-            //             _mainWindowUI.HierarchyTree.RefreshItem(index);
-            //         }
-            //
-            //         break;
-            //     }
-            //     case HierarchyUpdateParentEvent updateParentEvt:
-            //     {
-            //         var instanceId = player.GetPlayerContext()
-            //             .GetReplayInstanceId(updateParentEvt.gameObjectIdentifier.GameObjectId);
-            //
-            //         if (!instanceId.HasValue)
-            //             return;
-            //
-            //         // Null Guid
-            //         if (updateParentEvt.parentIdentifier.GameObjectId == "00000000000000000000000000000000")
-            //         {
-            //             controller.Move(instanceId.Value, -1, updateParentEvt.siblingIdx);
-            //         }
-            //         else
-            //         {
-            //             var parentId = player.GetPlayerContext()
-            //                 .GetReplayInstanceId(updateParentEvt.parentIdentifier.GameObjectId);
-            //             
-            //             if(!parentId.HasValue)
-            //                 return;
-            //             
-            //             controller.Move(instanceId.Value, parentId.Value, updateParentEvt.siblingIdx);
-            //         }
-            //
-            //         break;
-            //     }
-            //     case HierarchyUpdateResetEvent:
-            //     {
-            //         _mainWindowUI.HierarchyTree.ClearSelection();
-            //         _mainWindowUI.HierarchyTree.SetRootItems(new List<TreeViewItemData<GameObject>>());
-            //         _mainWindowUI.HierarchyTree.Rebuild();
-            //         break;
-            //     }
-            // }
         }
 
         private void OnTimeIndicatorChanged(ChangeEvent<ulong> evt)
@@ -339,7 +226,8 @@ namespace PLUME.Viewer
             _mainWindowUI.Timeline.ShowTimePeriod(0, 60_000_000_000);
             _mainWindowUI.Timeline.Focus();
 
-            _mainWindowUI.HierarchyTree.ClearSelection();
+            analysisModulesUI.SetActive(true);
+            analysisModules.SetActive(true);
         }
 
         public void FixedUpdate()
@@ -361,8 +249,10 @@ namespace PLUME.Viewer
                     }
                     else if (!player.IsRecordLoaded)
                     {
-                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").value = player.GetRecordLoadingProgress();
-                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").title = $"Loading record... {player.GetRecordLoadingProgress():P}%";
+                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").value =
+                            player.GetRecordLoadingProgress();
+                        _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").title =
+                            $"Loading record... {player.GetRecordLoadingProgress():P}%";
                     }
                 }
                 else

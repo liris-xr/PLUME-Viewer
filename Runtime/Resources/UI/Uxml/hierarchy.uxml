@@ -1,9 +1,9 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
     <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global" />
-    <ui:VisualElement focusable="true" picking-mode="Ignore" style="flex-grow: 1;">
+    <ui:VisualElement style="flex-grow: 1;">
         <ui:VisualElement name="header" class="panel-header">
             <ui:Label text="Hierarchy" display-tooltip-when-elided="true" class="panel-header__title" />
         </ui:VisualElement>
-        <ui:TreeView name="hierarchy-tree" focusable="true" selection-type="Multiple" picking-mode="Ignore" />
+        <ui:TreeView name="hierarchy-tree" selection-type="Multiple" show-alternating-row-backgrounds="ContentOnly" show-border="true" usage-hints="-1" picking-mode="Ignore" />
     </ui:VisualElement>
 </ui:UXML>

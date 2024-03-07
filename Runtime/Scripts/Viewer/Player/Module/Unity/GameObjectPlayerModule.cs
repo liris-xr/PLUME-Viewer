@@ -25,7 +25,7 @@ namespace PLUME.Viewer.Player.Module.Unity
 
                     if (gameObjectUpdate.HasName)
                     {
-                        go.name = gameObjectUpdate.Name;
+                        ctx.SetName(gameObjectUpdate.Id, gameObjectUpdate.Name);
                     }
 
                     if (gameObjectUpdate.HasActive)

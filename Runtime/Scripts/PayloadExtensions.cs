@@ -153,7 +153,7 @@ namespace PLUME
                 Sample.Unity.LightType.Spot => LightType.Spot,
                 Sample.Unity.LightType.Rectangle => LightType.Rectangle,
                 Sample.Unity.LightType.Disc => LightType.Disc,
-                Sample.Unity.LightType.Area => LightType.Area,
+                // Sample.Unity.LightType.Area => LightType.Area,
                 _ => throw new ArgumentOutOfRangeException(nameof(lightType), lightType, null)
             };
         }

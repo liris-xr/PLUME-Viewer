@@ -27,9 +27,20 @@ namespace PLUME.Viewer
         private Camera GetMainCamera()
         {
             var ctx = PlayerContext.GetActiveContext();
-            var mainCamera = ctx?.GetAllComponents().FirstOrDefault(c =>
-                c is Camera && ctx.GetGameObjectTag(c.gameObject.GetInstanceID()) == "MainCamera") as Camera;
-            return mainCamera;
+            
+            if(ctx == null)
+                return null;
+
+            foreach (var component in ctx.GetAllComponents())
+            {
+                if(component == null)
+                    continue;
+                
+                if (component is Camera c && ctx.GetGameObjectTag(c.gameObject.GetInstanceID()) == "MainCamera")
+                    return c;
+            }
+
+            return null;
         }
 
         public void FixedUpdate()
