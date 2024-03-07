@@ -6,12 +6,14 @@ using UnityEngine.InputSystem;
 namespace PLUME.Viewer
 {
     [RequireComponent(typeof(Camera))]
+    [RequireComponent(typeof(OrthoCameraController))]
     public class TopViewCamera : PreviewCamera
     {
         [NonSerialized] public bool InputDisabled = true;
         [NonSerialized] public bool ZoomDisabled = true;
 
         private Camera _camera;
+        private OrthoCameraController _orthoCameraController;
 
         /// <summary>
         /// Movement speed.
@@ -42,6 +44,8 @@ namespace PLUME.Viewer
             _camera = GetComponent<Camera>();
             _camera.orthographic = true;
             _camera.transform.rotation = Quaternion.LookRotation(Vector3.down);
+            
+            _orthoCameraController = GetComponent<OrthoCameraController>();
         }
 
         private void OnEnable()
@@ -99,11 +103,19 @@ namespace PLUME.Viewer
         private void Update()
         {
             if (InputDisabled)
+            {
+                _orthoCameraController.enabled = false;
                 return;
+            }
 
             // Disable inputs if the camera is not selected
             if (Player.Player.Instance.GetCurrentPreviewCamera() != this)
+            {
+                _orthoCameraController.enabled = false;
                 return;
+            }
+            
+            _orthoCameraController.enabled = true;
 
             UpdateInputs();
 

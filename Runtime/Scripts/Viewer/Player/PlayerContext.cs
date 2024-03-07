@@ -5,6 +5,7 @@ using PLUME.Sample;
 using PLUME.Sample.Unity;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
@@ -43,9 +44,31 @@ namespace PLUME.Viewer.Player
             _recordAssetBundle = recordAssetBundle;
             _scene = scene;
         }
-
-        public static PlayerContext NewContext(string name, RecordAssetBundle assets)
+        
+        internal static PlayerContext CreateMainPlayerContext(RecordAssetBundle assets)
         {
+            const string mainPlayerContextName = "MainPlayerContext";
+            
+            if (Contexts.Select(ctx => ctx._name).Contains(mainPlayerContextName))
+            {
+                throw new Exception("MainPlayerContext already exists");
+            }
+            
+            var scene = SceneManager.GetSceneByName(mainPlayerContextName);
+            SceneManager.SetActiveScene(scene);
+            
+            var ctx = new PlayerContext(mainPlayerContextName, assets, scene);
+            Contexts.Add(ctx);
+            return ctx;
+        }
+
+        public static PlayerContext NewTemporaryContext(string name, RecordAssetBundle assets)
+        {
+            if (name == "MainPlayerContext")
+            {
+                throw new Exception("The name MainPlayerContext is reserved");
+            }
+            
             if (Contexts.Select(ctx => ctx._name).Contains(name))
             {
                 throw new Exception($"A context with this name already exists: {name}");
@@ -53,9 +76,11 @@ namespace PLUME.Viewer.Player
             
             var scene = SceneManager.CreateScene(name);
             SceneManager.SetActiveScene(scene);
-            RenderSettings.skybox = BuiltinAssets.Instance.defaultSkybox;
-            Lightmapping.lightingSettings = Resources.Load<LightingSettings>("Default Lighting Settings");
             
+            // Apply default lighting settings
+            // RenderSettings.skybox = BuiltinAssets.Instance.defaultSkybox;
+            // Lightmapping.lightingSettings = Resources.Load<LightingSettings>("Default Lighting Settings");
+
             var ctx = new PlayerContext(name, assets, scene);
             Contexts.Add(ctx);
             return ctx;

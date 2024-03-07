@@ -8,7 +8,7 @@ namespace PLUME.Viewer
         public float zoomFactor = 0.1f;
         private Camera _cam;
         private Vector2 _screen;
-        private Vector2 _translationFactor = new Vector2(1, 1);
+        private Vector2 _translationFactor = new(1, 1);
 
         private void Start()
         {

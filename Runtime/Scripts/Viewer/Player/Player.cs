@@ -33,7 +33,7 @@ namespace PLUME.Viewer.Player
         public RecordAssetBundle RecordAssetBundle { get; private set; }
         public bool IsRecordAssetBundleLoaded => RecordAssetBundle != null;
 
-        private PlayerContext _playerContext;
+        private PlayerContext _mainPlayerContext;
         private bool _isPlaying;
         private ulong _currentTimeNanoseconds;
         
@@ -79,7 +79,7 @@ namespace PLUME.Viewer.Player
             _assetBundleLoader.LoadAsync().ContinueWith(recordAssetBundle =>
             {
                 RecordAssetBundle = recordAssetBundle;
-                _playerContext = PlayerContext.NewContext("MainPlayerContext", recordAssetBundle);
+                _mainPlayerContext = PlayerContext.CreateMainPlayerContext(recordAssetBundle);
             }).Forget();
             
             // TODO: load all assets async
@@ -160,7 +160,7 @@ namespace PLUME.Viewer.Player
             _currentTimeNanoseconds = 0;
 
             foreach (var playerModule in PlayerModules) playerModule.Reset();
-            _playerContext.Reset();
+            _mainPlayerContext.Reset();
 
             return true;
         }
@@ -179,7 +179,7 @@ namespace PLUME.Viewer.Player
             else
             {
                 foreach (var playerModule in PlayerModules) playerModule.Reset();
-                _playerContext.Reset();
+                _mainPlayerContext.Reset();
 
                 _currentTimeNanoseconds = 0;
                 PlayForward(time);
@@ -192,7 +192,7 @@ namespace PLUME.Viewer.Player
             
             var frames = Record.Frames.GetInTimeRange(_currentTimeNanoseconds, endTime);
 
-            _playerContext.PlayFrames(PlayerModules, frames);
+            _mainPlayerContext.PlayFrames(PlayerModules, frames);
 
             _currentTimeNanoseconds = Math.Clamp(endTime, 0, Record.Duration + 1);
 
@@ -248,7 +248,7 @@ namespace PLUME.Viewer.Player
 
         public PlayerContext GetPlayerContext()
         {
-            return _playerContext;
+            return _mainPlayerContext;
         }
 
         public FreeCamera GetFreeCamera()

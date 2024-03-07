@@ -47,7 +47,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
             IsGenerating = true;
             player.SetModuleGenerating(this);
 
-            _generationContext = PlayerContext.NewContext("GenerateTrajectoryContext_" + Guid.NewGuid(), recordAssetBundle);
+            _generationContext = PlayerContext.NewTemporaryContext("GenerateTrajectoryContext_" + Guid.NewGuid(), recordAssetBundle);
 
             // Skip frames before the start time
             if (parameters.StartTime > 0)
