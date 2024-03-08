@@ -27,6 +27,8 @@
     </p>
 </div>
 
+<img alt="PLUME Viewer" src="/Documentation~/Images/plume_viewer_teaser.png">
+
 <details>
     <summary>Table of Contents</summary>
     <ol>
