@@ -82,10 +82,9 @@ namespace PLUME.Viewer
         {
             if (!evt.ctrlKey || evt.keyCode != KeyCode.C) return;
 
-            var selectedItems = HierarchyTree.GetSelectedItems<GameObject>();
+            var selectedItems = HierarchyTree.GetSelectedItems<HierarchyTreeItem>();
 
-            GUIUtility.systemCopyBuffer = string.Join(",", selectedItems.Select(t =>
-                player.GetPlayerContext().GetRecordIdentifier(t.data.GetInstanceID())));
+            GUIUtility.systemCopyBuffer = string.Join(",", selectedItems.Select(t => t.data.GameObjectGuid));
         }
     }
 }
