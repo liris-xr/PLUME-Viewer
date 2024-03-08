@@ -183,7 +183,7 @@ Don't forget to give the project a star! Thanks again!
 
 ## License
 
-Distributed under the <a rel="license" href="https://github.com/liris-xr/PLUME/blob/master/LICENSE">GPLv3 License</a>.
+Distributed under the <a rel="license" href="https://github.com/liris-xr/PLUME-Viewer/blob/master/LICENSE">GPLv3 License</a>.
 
 ## Contact
 
