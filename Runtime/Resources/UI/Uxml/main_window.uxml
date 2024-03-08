@@ -6,8 +6,8 @@
     <ui:Template name="markers" src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Uxml/markers.uxml?fileID=9197481963319205126&amp;guid=794da60d345679b4bbafe285732ee666&amp;type=3#markers" />
     <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&amp;guid=028e63fb930a6f74997dbdd7944d219b&amp;type=3#dark_theme" />
     <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&amp;guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&amp;type=3#global" />
-    <ui:VisualElement style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); justify-content: flex-start; flex-basis: 100%; width: 100%; height: 100%;">
-        <ui:VisualElement name="loading-panel" class="panel-container-primary" style="flex-grow: 1; display: none;">
+    <ui:VisualElement picking-mode="Ignore" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); justify-content: flex-start; flex-basis: 100%; width: 100%; height: 100%;">
+        <ui:VisualElement name="loading-panel" picking-mode="Ignore" class="panel-container-primary" style="flex-grow: 1; display: none;">
             <ui:VisualElement name="navbar" style="flex-grow: 0;">
                 <ui:VisualElement name="logo" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); height: 100%; max-height: 100%; min-height: 100%; align-items: flex-start; width: 80px; padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px;">
                     <PLUME.UI.Element.AspectRatioContainerElement aspect-ratio-width="418" aspect-ratio-height="119" style="width: 100%; max-width: 100%; min-width: 100%; height: 100%; max-height: 100%; min-height: 100%;">
@@ -26,22 +26,22 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="viewer" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); display: flex;">
-            <ui:VisualElement name="navbar" style="flex-grow: 0;">
+            <ui:VisualElement name="navbar" picking-mode="Ignore" style="flex-grow: 0;">
                 <ui:VisualElement name="logo" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); height: 100%; max-height: 100%; min-height: 100%; align-items: flex-start; width: 80px; padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px;">
                     <PLUME.UI.Element.AspectRatioContainerElement aspect-ratio-width="418" aspect-ratio-height="119" style="width: 100%; max-width: 100%; min-width: 100%; height: 100%; max-height: 100%; min-height: 100%;">
                         <ui:VisualElement name="Image" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); background-image: url(&quot;project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Images/logo-dark.png?fileID=2800000&amp;guid=8a27b2be8237e7647a8ce439f4a16f56&amp;type=3#logo-dark&quot;); max-width: 100%; max-height: 100%; left: auto; height: 100%; min-height: 100%; width: 100%; min-width: 100%; align-items: center; justify-content: center; align-self: center;" />
                     </PLUME.UI.Element.AspectRatioContainerElement>
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:TwoPaneSplitView fixed-pane-index="1" orientation="Vertical" fixed-pane-initial-dimension="300" name="vertical-pane-split-view">
-                <ui:VisualElement name="middle-container" style="flex-grow: 1; align-self: flex-start; top: auto; flex-direction: row; display: flex;">
-                    <ui:TwoPaneSplitView fixed-pane-initial-dimension="300" name="horizontal-pane-split-view-1">
-                        <ui:TwoPaneSplitView orientation="Vertical" fixed-pane-initial-dimension="300" name="vertical-pane-split-view" style="min-width: 200px;">
+            <ui:TwoPaneSplitView fixed-pane-index="1" orientation="Vertical" fixed-pane-initial-dimension="300" name="vertical-pane-split-view" picking-mode="Ignore">
+                <ui:VisualElement name="middle-container" picking-mode="Ignore" style="flex-grow: 1; align-self: flex-start; top: auto; flex-direction: row; display: flex;">
+                    <ui:TwoPaneSplitView fixed-pane-initial-dimension="300" name="horizontal-pane-split-view-1" picking-mode="Ignore">
+                        <ui:TwoPaneSplitView orientation="Vertical" fixed-pane-initial-dimension="300" name="vertical-pane-split-view" picking-mode="Ignore" style="min-width: 200px;">
                             <ui:Instance template="records" name="records-container" style="flex-grow: 1; min-height: 200px; display: none;" />
                             <ui:Instance template="hierarchy" name="hierarchy" style="flex-grow: 1; min-height: 200px;" />
                         </ui:TwoPaneSplitView>
-                        <ui:TwoPaneSplitView fixed-pane-index="1" fixed-pane-initial-dimension="300" name="horizontal-pane-split-view-2">
-                            <ui:VisualElement name="container" style="flex-grow: 1;">
+                        <ui:TwoPaneSplitView fixed-pane-index="1" fixed-pane-initial-dimension="300" name="horizontal-pane-split-view-2" picking-mode="Ignore">
+                            <ui:VisualElement name="container" picking-mode="Ignore" style="flex-grow: 1;">
                                 <ui:VisualElement name="top-container" style="flex-grow: 1; flex-direction: row;">
                                     <PLUME.UI.Element.CollapseBarElement orientation="Vertical" name="records-collapse-bar" />
                                     <ui:Instance template="preview" name="preview-container" focusable="true" style="flex-grow: 1; display: flex; visibility: visible;" />
@@ -51,18 +51,18 @@
                                     <PLUME.UI.Element.CollapseBarElement orientation="ReversedHorizontal" name="timeline-collapse-bar" />
                                 </ui:VisualElement>
                             </ui:VisualElement>
-                            <ui:TwoPaneSplitView orientation="Vertical" fixed-pane-initial-dimension="300" name="vertical-pane-split-view" style="min-width: 200px;">
+                            <ui:TwoPaneSplitView orientation="Vertical" fixed-pane-initial-dimension="300" name="vertical-pane-split-view" picking-mode="Ignore" style="min-width: 200px;">
                                 <ui:Instance template="analysis" name="analysis-container" focusable="true" style="flex-grow: 1; min-height: 200px;" />
                                 <ui:Instance template="markers" name="markers" focusable="true" style="flex-grow: 1; min-height: 200px;" />
                             </ui:TwoPaneSplitView>
                         </ui:TwoPaneSplitView>
                     </ui:TwoPaneSplitView>
                 </ui:VisualElement>
-                <ui:VisualElement name="timeline-container" style="min-height: 200px;">
+                <ui:VisualElement name="timeline-container" picking-mode="Ignore" style="min-height: 200px;">
                     <Style src="project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/timeline.uss?fileID=7433441132597879392&amp;guid=065e6bcb56164071a2a204af9ea21686&amp;type=3#timeline" />
-                    <ui:VisualElement style="flex-grow: 1;">
-                        <ui:VisualElement name="Header" class="panel-header" />
-                        <PLUME.UI.Element.TimelineElement name="timeline" style="flex-grow: 1;" />
+                    <ui:VisualElement picking-mode="Ignore" style="flex-grow: 1;">
+                        <ui:VisualElement name="Header" picking-mode="Ignore" class="panel-header" />
+                        <PLUME.UI.Element.TimelineElement name="timeline" picking-mode="Ignore" style="flex-grow: 1;" />
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:TwoPaneSplitView>

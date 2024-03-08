@@ -1,16 +1,15 @@
 ﻿using System;
 using Google.Protobuf.Collections;
+using PLUME.Sample.Common;
 using PLUME.Sample.Unity;
 using PLUME.Sample.Unity.UI;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
-using AmbientMode = UnityEngine.Rendering.AmbientMode;
-using AntialiasingMode = UnityEngine.Rendering.Universal.AntialiasingMode;
-using AntialiasingQuality = UnityEngine.Rendering.Universal.AntialiasingQuality;
-using DefaultReflectionMode = UnityEngine.Rendering.DefaultReflectionMode;
-using FogMode = UnityEngine.FogMode;
+using AnimationCurve = UnityEngine.AnimationCurve;
+using Bounds = UnityEngine.Bounds;
+using Color = UnityEngine.Color;
+using ColorSpace = UnityEngine.ColorSpace;
 using FontStyle = UnityEngine.FontStyle;
 using HorizontalWrapMode = UnityEngine.HorizontalWrapMode;
 using LightmapsMode = UnityEngine.LightmapsMode;
@@ -19,20 +18,28 @@ using LightShadowResolution = UnityEngine.Rendering.LightShadowResolution;
 using LightShadows = UnityEngine.LightShadows;
 using LightShape = UnityEngine.LightShape;
 using LightType = UnityEngine.LightType;
-using OpaqueSortMode = PLUME.Sample.Unity.OpaqueSortMode;
+using Matrix4x4 = UnityEngine.Matrix4x4;
+using OpaqueSortMode = UnityEngine.Rendering.OpaqueSortMode;
+using Quaternion = UnityEngine.Quaternion;
+using Rect = UnityEngine.Rect;
 using ReflectionProbeClearFlags = UnityEngine.Rendering.ReflectionProbeClearFlags;
 using ReflectionProbeMode = UnityEngine.Rendering.ReflectionProbeMode;
 using ReflectionProbeRefreshMode = UnityEngine.Rendering.ReflectionProbeRefreshMode;
 using ReflectionProbeTimeSlicingMode = UnityEngine.Rendering.ReflectionProbeTimeSlicingMode;
-using ReflectionProbeUsage = PLUME.Sample.Unity.ReflectionProbeUsage;
-using RenderingPath = PLUME.Sample.Unity.RenderingPath;
+using ReflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage;
+using RenderingPath = UnityEngine.RenderingPath;
 using RenderMode = UnityEngine.RenderMode;
 using ScaleMode = PLUME.Sample.Unity.UI.ScaleMode;
-using ShadowCastingMode = PLUME.Sample.Unity.ShadowCastingMode;
+using ShadowCastingMode = UnityEngine.Rendering.ShadowCastingMode;
+using SphericalHarmonicsL2 = UnityEngine.Rendering.SphericalHarmonicsL2;
 using StandaloneRenderResize = UnityEngine.StandaloneRenderResize;
 using TextAnchor = UnityEngine.TextAnchor;
-using TransparencySortMode = PLUME.Sample.Unity.TransparencySortMode;
+using TransparencySortMode = UnityEngine.TransparencySortMode;
+using Vector2 = UnityEngine.Vector2;
+using Vector3 = UnityEngine.Vector3;
+using Vector4 = UnityEngine.Vector4;
 using VerticalWrapMode = UnityEngine.VerticalWrapMode;
+using WeightedMode = UnityEngine.WeightedMode;
 
 namespace PLUME
 {
@@ -206,40 +213,6 @@ namespace PLUME
             };
         }
 
-        public static FogMode ToEngineType(this Sample.Unity.FogMode fogMode)
-        {
-            return fogMode switch
-            {
-                Sample.Unity.FogMode.Linear => FogMode.Linear,
-                Sample.Unity.FogMode.Exponential => FogMode.Exponential,
-                Sample.Unity.FogMode.ExponentialSquared => FogMode.ExponentialSquared,
-                _ => throw new ArgumentOutOfRangeException(nameof(fogMode), fogMode, null)
-            };
-        }
-
-        public static DefaultReflectionMode ToEngineType(
-            this Sample.Unity.DefaultReflectionMode defaultReflectionMode)
-        {
-            return defaultReflectionMode switch
-            {
-                Sample.Unity.DefaultReflectionMode.Skybox => DefaultReflectionMode.Skybox,
-                Sample.Unity.DefaultReflectionMode.Custom => DefaultReflectionMode.Custom,
-                _ => throw new ArgumentOutOfRangeException(nameof(defaultReflectionMode), defaultReflectionMode, null)
-            };
-        }
-
-        public static AmbientMode ToEngineType(this Sample.Unity.AmbientMode ambientMode)
-        {
-            return ambientMode switch
-            {
-                Sample.Unity.AmbientMode.Skybox => AmbientMode.Skybox,
-                Sample.Unity.AmbientMode.Trilight => AmbientMode.Trilight,
-                Sample.Unity.AmbientMode.Flat => AmbientMode.Flat,
-                Sample.Unity.AmbientMode.Custom => AmbientMode.Custom,
-                _ => throw new ArgumentOutOfRangeException(nameof(ambientMode), ambientMode, null)
-            };
-        }
-
         public static Bounds ToEngineType(this Sample.Common.Bounds bounds)
         {
             return new Bounds
@@ -350,68 +323,68 @@ namespace PLUME
             };
         }
 
-        public static UnityEngine.Rendering.ShadowCastingMode ToEngineType(this ShadowCastingMode shadowCastingMode)
+        public static ShadowCastingMode ToEngineType(this Sample.Unity.ShadowCastingMode shadowCastingMode)
         {
             return shadowCastingMode switch
             {
-                ShadowCastingMode.Off => UnityEngine.Rendering.ShadowCastingMode.Off,
-                ShadowCastingMode.On => UnityEngine.Rendering.ShadowCastingMode.On,
-                ShadowCastingMode.ShadowsOnly => UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly,
-                ShadowCastingMode.TwoSided => UnityEngine.Rendering.ShadowCastingMode.TwoSided,
+                Sample.Unity.ShadowCastingMode.Off => ShadowCastingMode.Off,
+                Sample.Unity.ShadowCastingMode.On => ShadowCastingMode.On,
+                Sample.Unity.ShadowCastingMode.ShadowsOnly => ShadowCastingMode.ShadowsOnly,
+                Sample.Unity.ShadowCastingMode.TwoSided => ShadowCastingMode.TwoSided,
                 _ => throw new ArgumentOutOfRangeException(nameof(shadowCastingMode), shadowCastingMode,
                     null)
             };
         }
 
-        public static UnityEngine.Rendering.ReflectionProbeUsage ToEngineType(
-            this ReflectionProbeUsage reflectionProbeUsage)
+        public static ReflectionProbeUsage ToEngineType(
+            this Sample.Unity.ReflectionProbeUsage reflectionProbeUsage)
         {
             return reflectionProbeUsage switch
             {
-                ReflectionProbeUsage.Off => UnityEngine.Rendering.ReflectionProbeUsage.Off,
-                ReflectionProbeUsage.BlendProbes => UnityEngine.Rendering.ReflectionProbeUsage.BlendProbes,
-                ReflectionProbeUsage.BlendProbesAndSkybox => UnityEngine.Rendering.ReflectionProbeUsage
+                Sample.Unity.ReflectionProbeUsage.Off => ReflectionProbeUsage.Off,
+                Sample.Unity.ReflectionProbeUsage.BlendProbes => ReflectionProbeUsage.BlendProbes,
+                Sample.Unity.ReflectionProbeUsage.BlendProbesAndSkybox => ReflectionProbeUsage
                     .BlendProbesAndSkybox,
-                ReflectionProbeUsage.Simple => UnityEngine.Rendering.ReflectionProbeUsage.Simple,
+                Sample.Unity.ReflectionProbeUsage.Simple => ReflectionProbeUsage.Simple,
                 _ => throw new ArgumentOutOfRangeException(nameof(reflectionProbeUsage), reflectionProbeUsage,
                     null)
             };
         }
 
-        public static UnityEngine.Rendering.OpaqueSortMode ToEngineType(this OpaqueSortMode opaqueSortMode)
+        public static OpaqueSortMode ToEngineType(this Sample.Unity.OpaqueSortMode opaqueSortMode)
         {
             return opaqueSortMode switch
             {
-                OpaqueSortMode.Default => UnityEngine.Rendering.OpaqueSortMode.Default,
-                OpaqueSortMode.NoDistanceSort => UnityEngine.Rendering.OpaqueSortMode.NoDistanceSort,
-                OpaqueSortMode.FrontToBack => UnityEngine.Rendering.OpaqueSortMode.FrontToBack,
+                Sample.Unity.OpaqueSortMode.Default => OpaqueSortMode.Default,
+                Sample.Unity.OpaqueSortMode.NoDistanceSort => OpaqueSortMode.NoDistanceSort,
+                Sample.Unity.OpaqueSortMode.FrontToBack => OpaqueSortMode.FrontToBack,
                 _ => throw new ArgumentOutOfRangeException(nameof(opaqueSortMode), opaqueSortMode,
                     null)
             };
         }
 
-        public static UnityEngine.TransparencySortMode ToEngineType(this TransparencySortMode transparencySortMode)
+        public static TransparencySortMode ToEngineType(this Sample.Unity.TransparencySortMode transparencySortMode)
         {
             return transparencySortMode switch
             {
-                TransparencySortMode.Default => UnityEngine.TransparencySortMode.Default,
-                TransparencySortMode.Orthographic => UnityEngine.TransparencySortMode.Orthographic,
-                TransparencySortMode.Perspective => UnityEngine.TransparencySortMode.Perspective,
-                TransparencySortMode.CustomAxis => UnityEngine.TransparencySortMode.CustomAxis,
+                Sample.Unity.TransparencySortMode.Default => TransparencySortMode.Default,
+                Sample.Unity.TransparencySortMode.Orthographic => TransparencySortMode.Orthographic,
+                Sample.Unity.TransparencySortMode.Perspective => TransparencySortMode.Perspective,
+                Sample.Unity.TransparencySortMode.CustomAxis => TransparencySortMode.CustomAxis,
                 _ => throw new ArgumentOutOfRangeException(nameof(transparencySortMode), transparencySortMode,
                     null)
             };
         }
 
-        public static UnityEngine.RenderingPath ToEngineType(this RenderingPath renderingPath)
+        public static RenderingPath ToEngineType(this Sample.Unity.RenderingPath renderingPath)
         {
             return renderingPath switch
             {
-                RenderingPath.DeferredLighting => UnityEngine.RenderingPath.DeferredShading,
-                RenderingPath.DeferredShading => UnityEngine.RenderingPath.DeferredShading,
-                RenderingPath.Forward => UnityEngine.RenderingPath.Forward,
-                RenderingPath.VertexLit => UnityEngine.RenderingPath.VertexLit,
-                RenderingPath.UsePlayerSettings => UnityEngine.RenderingPath.UsePlayerSettings,
+                Sample.Unity.RenderingPath.DeferredLighting => RenderingPath.DeferredShading,
+                Sample.Unity.RenderingPath.DeferredShading => RenderingPath.DeferredShading,
+                Sample.Unity.RenderingPath.Forward => RenderingPath.Forward,
+                Sample.Unity.RenderingPath.VertexLit => RenderingPath.VertexLit,
+                Sample.Unity.RenderingPath.UsePlayerSettings => RenderingPath.UsePlayerSettings,
                 _ => throw new ArgumentOutOfRangeException(nameof(renderingPath), renderingPath,
                     null)
             };
@@ -493,27 +466,27 @@ namespace PLUME
             };
         }
 
-        public static AntialiasingMode ToEngineType(this Sample.Unity.AntialiasingMode antialiasingMode)
+        public static AntialiasingMode ToEngineType(this Sample.Unity.URP.AntialiasingMode antialiasingMode)
         {
             return antialiasingMode switch
             {
-                Sample.Unity.AntialiasingMode.None => AntialiasingMode.None,
-                Sample.Unity.AntialiasingMode.FastApproximateAntialiasing => AntialiasingMode
+                Sample.Unity.URP.AntialiasingMode.None => AntialiasingMode.None,
+                Sample.Unity.URP.AntialiasingMode.FastApproximateAntialiasing => AntialiasingMode
                     .FastApproximateAntialiasing,
-                Sample.Unity.AntialiasingMode.SubpixelMorphologicalAntiAliasing => AntialiasingMode
+                Sample.Unity.URP.AntialiasingMode.SubpixelMorphologicalAntiAliasing => AntialiasingMode
                     .SubpixelMorphologicalAntiAliasing,
                 _ => throw new ArgumentOutOfRangeException(nameof(antialiasingMode), antialiasingMode,
                     null)
             };
         }
 
-        public static AntialiasingQuality ToEngineType(this Sample.Unity.AntialiasingQuality antialiasingQuality)
+        public static AntialiasingQuality ToEngineType(this Sample.Unity.URP.AntialiasingQuality antialiasingQuality)
         {
             return antialiasingQuality switch
             {
-                Sample.Unity.AntialiasingQuality.Low => AntialiasingQuality.Low,
-                Sample.Unity.AntialiasingQuality.Medium => AntialiasingQuality.Medium,
-                Sample.Unity.AntialiasingQuality.High => AntialiasingQuality.High,
+                Sample.Unity.URP.AntialiasingQuality.Low => AntialiasingQuality.Low,
+                Sample.Unity.URP.AntialiasingQuality.Medium => AntialiasingQuality.Medium,
+                Sample.Unity.URP.AntialiasingQuality.High => AntialiasingQuality.High,
                 _ => throw new ArgumentOutOfRangeException(nameof(antialiasingQuality), antialiasingQuality,
                     null)
             };
@@ -580,7 +553,7 @@ namespace PLUME
                     null)
             };
         }
-        
+
         public static FontStyle ToEngineType(this Sample.Unity.UI.FontStyle fontStyle)
         {
             return fontStyle switch
@@ -593,7 +566,7 @@ namespace PLUME
                     null)
             };
         }
-        
+
         public static TextAnchor ToEngineType(this Sample.Unity.UI.TextAnchor textAnchor)
         {
             return textAnchor switch
@@ -611,7 +584,7 @@ namespace PLUME
                     null)
             };
         }
-        
+
         public static HorizontalWrapMode ToEngineType(this Sample.Unity.UI.HorizontalWrapMode horizontalWrapMode)
         {
             return horizontalWrapMode switch
@@ -622,7 +595,7 @@ namespace PLUME
                     null)
             };
         }
-        
+
         public static VerticalWrapMode ToEngineType(this Sample.Unity.UI.VerticalWrapMode verticalWrapMode)
         {
             return verticalWrapMode switch
@@ -633,7 +606,7 @@ namespace PLUME
                     null)
             };
         }
-        
+
         public static Image.Type ToEngineType(this ImageType imageType)
         {
             return imageType switch
@@ -644,6 +617,125 @@ namespace PLUME
                 ImageType.Filled => Image.Type.Filled,
                 _ => throw new ArgumentOutOfRangeException(nameof(imageType), imageType,
                     null)
+            };
+        }
+
+        public static LineAlignment ToEngineType(this Alignment lineAlignment)
+        {
+            return lineAlignment switch
+            {
+                Alignment.View => LineAlignment.View,
+                Alignment.TransformZ => LineAlignment.TransformZ,
+                _ => throw new ArgumentOutOfRangeException(nameof(lineAlignment), lineAlignment, null)
+            };
+        }
+        
+        public static LineTextureMode ToEngineType(this TextureMode lineTextureMode)
+        {
+            return lineTextureMode switch
+            {
+                TextureMode.Stretch => LineTextureMode.Stretch,
+                TextureMode.Tile => LineTextureMode.Tile,
+                TextureMode.DistributePerSegment => LineTextureMode.DistributePerSegment,
+                TextureMode.RepeatPerSegment => LineTextureMode.RepeatPerSegment,
+                TextureMode.Static => LineTextureMode.Static,
+                _ => throw new ArgumentOutOfRangeException(nameof(lineTextureMode), lineTextureMode, null)
+            };
+        }
+        
+        public static SpriteMaskInteraction ToEngineType(this MaskInteraction spriteMaskInteraction)
+        {
+            return spriteMaskInteraction switch
+            {
+                MaskInteraction.None => SpriteMaskInteraction.None,
+                MaskInteraction.VisibleInside => SpriteMaskInteraction.VisibleInsideMask,
+                MaskInteraction.VisibleOutside => SpriteMaskInteraction.VisibleOutsideMask,
+                _ => throw new ArgumentOutOfRangeException(nameof(spriteMaskInteraction), spriteMaskInteraction, null)
+            };
+        }
+
+        public static GradientMode ToEngineType(this ColorGradient.Types.GradientMode gradientMode)
+        {
+            return gradientMode switch
+            {
+                ColorGradient.Types.GradientMode.Blend => GradientMode.Blend,
+                ColorGradient.Types.GradientMode.Fixed => GradientMode.Fixed,
+                _ => throw new ArgumentOutOfRangeException(nameof(gradientMode), gradientMode, null)
+            };
+        }
+        
+        public static ColorSpace ToEngineType(this Sample.Common.ColorSpace colorSpace)
+        {
+            return colorSpace switch
+            {
+                Sample.Common.ColorSpace.Uninitialized => ColorSpace.Uninitialized,
+                Sample.Common.ColorSpace.Gamma => ColorSpace.Gamma,
+                Sample.Common.ColorSpace.Linear => ColorSpace.Linear,
+                _ => throw new ArgumentOutOfRangeException(nameof(colorSpace), colorSpace, null)
+            };
+        }
+        
+        public static WeightedMode ToEngineType(this Sample.Common.WeightedMode weightedMode)
+        {
+            return weightedMode switch
+            {
+                Sample.Common.WeightedMode.None => WeightedMode.None,
+                Sample.Common.WeightedMode.In => WeightedMode.In,
+                Sample.Common.WeightedMode.Out => WeightedMode.Out,
+                Sample.Common.WeightedMode.Both => WeightedMode.Both,
+                _ => throw new ArgumentOutOfRangeException(nameof(weightedMode), weightedMode, null)
+            };
+        }
+        
+        public static AnimationCurve ToEngineType(this Sample.Common.AnimationCurve curve)
+        {
+            var animationCurve = new AnimationCurve();
+
+            foreach (var keyframe in curve.Keyframes)
+            {
+                animationCurve.AddKey(new Keyframe
+                {
+                    time = keyframe.Time,
+                    value = keyframe.Value,
+                    inTangent = keyframe.InTangent,
+                    outTangent = keyframe.OutTangent,
+                    inWeight = keyframe.InWeight,
+                    outWeight = keyframe.OutWeight,
+                    weightedMode = keyframe.WeightedMode.ToEngineType()
+                });
+            }
+            
+            return animationCurve;
+        }
+        
+        public static Gradient ToEngineType(this ColorGradient gradient)
+        {
+            var colorKeys = new GradientColorKey[gradient.ColorKeys.Count];
+            for (var i = 0; i < gradient.ColorKeys.Count; ++i)
+            {
+                colorKeys[i] = new GradientColorKey
+                {
+                    color = gradient.ColorKeys[i].Color.ToEngineType(),
+                    time = gradient.ColorKeys[i].Time
+                };
+            }
+
+            var alphaKeys = new GradientAlphaKey[gradient.AlphaKeys.Count];
+            for (var i = 0; i < gradient.AlphaKeys.Count; ++i)
+            {
+                alphaKeys[i] = new GradientAlphaKey
+                {
+                    alpha = gradient.AlphaKeys[i].Alpha,
+                    time = gradient.AlphaKeys[i].Time
+                };
+            }
+
+            return new Gradient
+            {
+                colorKeys = colorKeys,
+                alphaKeys = alphaKeys,
+                colorSpace = gradient.ColorSpace.ToEngineType(),
+                mode = gradient.Mode.ToEngineType()
             };
         }
     }

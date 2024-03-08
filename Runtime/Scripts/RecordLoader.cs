@@ -11,6 +11,7 @@ using PLUME.Sample;
 using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
 using PLUME.Sample.Unity;
+using PLUME.Sample.Unity.Settings;
 using PLUME.Sample.Unity.XRITK;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -52,8 +53,17 @@ namespace PLUME
 
             var packedMetadata = PackedSample.Parser.ParseDelimitedFrom(_stream);
             var metadata = packedMetadata.Payload.Unpack<RecordMetadata>();
+            
+            if(metadata == null)
+                throw new Exception("Failed to load metadata from record file");
 
-            var record = new Record(metadata);
+            var packedGraphicsSettings = PackedSample.Parser.ParseDelimitedFrom(_stream);
+            var graphicsSettings = packedGraphicsSettings.Payload.Unpack<GraphicsSettings>();
+            
+            if(graphicsSettings == null)
+                throw new Exception("Failed to load graphics settings from record file");
+            
+            var record = new Record(metadata, graphicsSettings);
 
             var loadingThread = new Thread(() =>
             {
@@ -90,6 +100,8 @@ namespace PLUME
                             case RawSample<StreamClose> streamClose:
                                 record.AddStreamCloseSample(streamClose);
                                 break;
+                            case null:
+                                break;
                             default:
                                 record.AddOtherSample(unpackedSample);
                                 break;
@@ -113,7 +125,7 @@ namespace PLUME
 
             // Wait until thread finishes loading the record.
             await UniTask.WaitUntil(() => !loadingThread.IsAlive);
-
+            
             Status = LoadingStatus.Done;
             Progress = 1;
 

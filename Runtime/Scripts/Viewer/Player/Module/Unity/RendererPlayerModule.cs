@@ -13,6 +13,12 @@ namespace PLUME.Viewer.Player.Module.Unity
             {
                 var r = ctx.GetOrCreateComponentByIdentifier<Renderer>(rendererUpdate.Id);
 
+                if (r == null)
+                {
+                    Debug.LogWarning($"Renderer with id {rendererUpdate.Id} not found");
+                    return;
+                }
+                
                 if (rendererUpdate.HasEnabled)
                 {
                     r.enabled = rendererUpdate.Enabled;

@@ -19,6 +19,7 @@ namespace PLUME.Viewer.Player
         public Material defaultMaterial;
         public Material defaultDiffuse;
         public Material defaultTerrainStandard;
+        public Material defaultLine;
         
         public Sprite background;
         public Sprite checkmark;

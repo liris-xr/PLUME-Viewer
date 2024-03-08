@@ -69,6 +69,7 @@ namespace PLUME
                     "Default-Material" => builtinAssets.defaultMaterial,
                     "Default-Diffuse" => builtinAssets.defaultDiffuse,
                     "Default-Terrain-Standard" => builtinAssets.defaultTerrainStandard,
+                    "Default-Line" => builtinAssets.defaultLine,
                     _ => null
                 };
             }

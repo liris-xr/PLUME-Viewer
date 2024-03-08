@@ -4,9 +4,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using PLUME.Viewer.Analysis;
 using UnityEngine;
-using Color = UnityEngine.Color;
-using Quaternion = UnityEngine.Quaternion;
-using Vector3 = UnityEngine.Vector3;
+using UnityEngine.Rendering;
 
 namespace PLUME.Viewer.Player
 {
@@ -76,18 +74,27 @@ namespace PLUME.Viewer.Player
 
             PlayerModules = FindObjectsOfType<PlayerModule>();
             _assetBundleLoader = new AssetBundleLoader(assetBundlePath);
-            _assetBundleLoader.LoadAsync().ContinueWith(recordAssetBundle =>
+            
+            var assetBundleLoadTask = _assetBundleLoader.LoadAsync().ContinueWith(recordAssetBundle =>
             {
                 RecordAssetBundle = recordAssetBundle;
                 _mainPlayerContext = PlayerContext.CreateMainPlayerContext(recordAssetBundle);
-            }).Forget();
+            });
             
             // TODO: load all assets async
             
             _recordLoader = new RecordLoader(recordPath, typeRegistryProvider.GetTypeRegistry());
-            _recordLoader.LoadAsync().ContinueWith(record =>
+            
+            var recordLoadTask = _recordLoader.LoadAsync().ContinueWith(record =>
             {
                 Record = record;
+            });
+            
+            UniTask.WhenAll(recordLoadTask, assetBundleLoadTask).ContinueWith(() =>
+            {
+                GraphicsSettings.defaultRenderPipeline =
+                    RecordAssetBundle.GetOrDefaultAssetByIdentifier<RenderPipelineAsset>(Record.graphicsSettings
+                        .DefaultRenderPipelineAssetId);
             }).Forget();
         }
 

@@ -484,9 +484,10 @@ namespace PLUME.Viewer.Player
             if (component == null)
             {
                 component = go.GetComponent<T>();
-                Debug.Log(
-                    $"{component} must have been instantiated implicitly by RequireComponent. You can safely ignore the previous log message by the UnityEngine.");
             }
+
+            if (component == null)
+                return null;
 
             _componentByInstanceId[component.GetInstanceID()] = component;
             TryAddIdentifierCorrespondence(id.ComponentId, component.GetInstanceID());

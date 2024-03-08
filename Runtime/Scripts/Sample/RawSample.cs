@@ -2,6 +2,7 @@
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 using Google.Protobuf.WellKnownTypes;
+using UnityEngine;
 
 namespace PLUME
 {
@@ -21,6 +22,13 @@ namespace PLUME
         public static RawSample UnpackAsRawSample(ulong? timestamp, Any payload, TypeRegistry sampleTypeRegistry)
         {
             var unpackedPayload = payload.Unpack(sampleTypeRegistry);
+
+            if (unpackedPayload == null)
+            {
+                Debug.LogWarning($"Failed to unpack payload of type {payload.TypeUrl}");
+                return null;
+            }
+
             var rawSampleType = typeof(RawSample<>).MakeGenericType(unpackedPayload.GetType());
             return (RawSample)Activator.CreateInstance(rawSampleType, timestamp, unpackedPayload);
         }
