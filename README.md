@@ -31,24 +31,32 @@
     <summary>Table of Contents</summary>
     <ol>
         <li>
-            <a href="#about">About</a>
+            <a href="#about-plume-viewer">About PLUME Viewer</a>
         </li>
         <li>
             <a href="#getting-started">Getting Started</a>
             <ul>
                 <li><a href="#prerequisites">Prerequisites</a></li>
                 <li><a href="#installation">Installation</a></li>
+                <li><a href="#development">Development</a></li>
             </ul>
         </li>
         <li><a href="#usage">Usage</a></li>
+            <ul>
+                <li><a href="#start-the-viewer">Start the Viewer</a></li>
+                <li><a href="#interactive-replay">Interactive Replay</a></li>
+                <li><a href="#analysis">Analysis</a></li>
+                <li><a href="#markers">Markers</a></li>
+            </ul>
         <li><a href="#roadmap">Roadmap</a></li>
         <li><a href="#contributing">Contributing</a></li>
         <li><a href="#license">License</a></li>
         <li><a href="#contact">Contact</a></li>
+        <li><a href="#citation">Citation</a></li>
     </ol>
 </details>
 
-## About
+## About PLUME Viewer
 
 PLUME Viewer is a standalone application for viewing and analyzing PLUME record files generated with PLUME Recorder, independently of the Unity project. It offers analysis modules such as interactions analysis, 3D trajectories, in-context physiological signals tracks, position and eye gaze heatmaps. Heatmaps can be exported as point clouds with the scalar field embedded. PLUME Viewer is useful to review a recorded experiment, like you would a video in a media player, but you can explore the 3D scene. PLUME Viewer does not require the original Unity Project and only needs the record files and its associated asset bundle (built with PLUME Recorder).
 
