@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -8,6 +9,8 @@ using PLUME.Sample.Unity;
 using PLUME.Viewer.Player;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using UnityEngine.UI;
+using Debug = UnityEngine.Debug;
 
 namespace PLUME.Viewer.Analysis.Position
 {
@@ -25,12 +28,7 @@ namespace PLUME.Viewer.Analysis.Position
         public float nSigmas = 4;
 
         public float samplesPerSquareMeter = 1000;
-
-        /**
-         * Rate in Hz at which the object's position will be projected
-         */
-        public float projectionSamplingRate = 50;
-
+        
         /**
          * Shader used to encode the object's depth and instance id into a RenderTexture.
          */
@@ -135,32 +133,35 @@ namespace PLUME.Viewer.Analysis.Position
                 meshSamplerResults);
 
             SetVisibleResult(result);
-
-            var projectionSamplingInterval = (ulong)(1 / projectionSamplingRate * 1_000_000_000u);
-
+            
             PrepareProjectionShader(samplesMinValueBuffer, samplesMaxValueBuffer, projectionKernel);
-
-            var prevVSyncCount = QualitySettings.vSyncCount;
-            var prevTargetFrameRate = Application.targetFrameRate;
-            QualitySettings.vSyncCount = 0;
-            Application.targetFrameRate = int.MaxValue;
-
+            
             if (parameters.StartTime > 0)
             {
                 var skippedFrames = record.Frames.GetInTimeRange(0, parameters.StartTime - 1u);
                 _generationContext.PlayFrames(player.PlayerModules, skippedFrames);
             }
 
-            var lastYieldTime = Time.unscaledTimeAsDouble;
+            var stopwatch = Stopwatch.StartNew();
+            var lastYieldTime = stopwatch.ElapsedMilliseconds;
             
-            var currentTime = parameters.StartTime;
-
-            while (currentTime <= parameters.EndTime && currentTime <= record.Duration)
+            var frames = record.Frames.GetInTimeRange(parameters.StartTime, parameters.EndTime);
+            var nFrames = frames.Count;
+            
+            for(var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
             {
-                var startTime = currentTime;
-                var endTime = currentTime + projectionSamplingInterval;
-                var frames = record.Frames.GetInTimeRange(startTime, endTime);
-                _generationContext.PlayFrames(player.PlayerModules, frames);
+                var frame = frames[frameIdx];
+                
+                var time = stopwatch.ElapsedMilliseconds;
+                
+                // Yield every 33ms (~30fps) to avoid freezing the game
+                if (time - lastYieldTime > 33)
+                {
+                    lastYieldTime = time;
+                    yield return null;
+                }
+                
+                _generationContext.PlayFrame(player.PlayerModules, frame);
 
                 var replayProjectionCasterId = _generationContext.GetReplayInstanceId(parameters.CasterIdentifier);
                 var replayProjectionReceiversIds = new List<int>();
@@ -187,51 +188,35 @@ namespace PLUME.Viewer.Analysis.Position
 
                 if (replayProjectionCasterId.HasValue && replayProjectionReceiversIds.Count > 0)
                 {
-                    if (currentTime >= parameters.StartTime && currentTime <= parameters.EndTime)
+                    var projectionCaster =
+                        _generationContext.FindGameObjectByInstanceId(replayProjectionCasterId.Value);
+
+                    if (projectionCaster != null)
                     {
-                        var projectionCaster =
-                            _generationContext.FindGameObjectByInstanceId(replayProjectionCasterId.Value);
+                        var projectionReceiversGameObjects = replayProjectionReceiversIds
+                            .Select(replayId => _generationContext.FindGameObjectByInstanceId(replayId))
+                            .Where(t => t != null)
+                            .Select(t => t.gameObject)
+                            .ToArray();
 
-                        if (projectionCaster != null)
+                        if (projectionReceiversGameObjects.Length > 0)
                         {
-                            var projectionReceiversGameObjects = replayProjectionReceiversIds
-                                .Select(replayId => _generationContext.FindGameObjectByInstanceId(replayId))
-                                .Where(t => t != null)
-                                .Select(t => t.gameObject)
-                                .ToArray();
-
-                            if (projectionReceiversGameObjects.Length > 0)
-                            {
-                                ProjectCurrentPosition(_generationContext, projectionCaster,
-                                    projectionReceiversGameObjects,
-                                    meshSamplerResults, projectionKernel);
-                            }
+                            ProjectCurrentPosition(_generationContext, projectionCaster,
+                                projectionReceiversGameObjects,
+                                meshSamplerResults, projectionKernel);
                         }
                     }
                 }
-
-                currentTime = endTime + 1;
-                GenerationProgress = (currentTime - parameters.StartTime) /
-                                     (float)(parameters.EndTime - parameters.StartTime);
                 
-                var time = Time.unscaledTimeAsDouble;
-                if (time - lastYieldTime > 1.0f / Application.targetFrameRate)
-                {
-                    lastYieldTime = time;
-                    // Only used to not freeze the game while generating
-                    yield return new WaitForEndOfFrame();
-                }
+                GenerationProgress = (float)frameIdx / nFrames;
             }
 
             GenerationProgress = 1;
 
-            QualitySettings.vSyncCount = prevVSyncCount;
-            Application.targetFrameRate = prevTargetFrameRate;
-
             PlayerContext.Destroy(_generationContext);
             _generationContext = null;
 
-            PlayerContext.Activate(player.GetPlayerContext());
+            PlayerContext.Activate(player.GetMainPlayerContext());
             IsGenerating = false;
 
             if (player.GetModuleGenerating() == this)
@@ -333,7 +318,7 @@ namespace PLUME.Viewer.Analysis.Position
                 _generationContext = null;
             }
 
-            PlayerContext.Activate(player.GetPlayerContext());
+            PlayerContext.Activate(player.GetMainPlayerContext());
             IsGenerating = false;
 
             if (player.GetModuleGenerating() == this)
@@ -395,6 +380,11 @@ namespace PLUME.Viewer.Analysis.Position
 
             foreach (var go in gameObjects)
             {
+                if (go.TryGetComponent<Graphic>(out var graphic))
+                {
+                    graphic.enabled = true;
+                }
+                
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                     continue;
                 goRenderer.SetSharedMaterials(new List<Material>());
@@ -405,7 +395,15 @@ namespace PLUME.Viewer.Analysis.Position
             {
                 foreach (var sample in frame.Data)
                 {
-                    if (sample.Payload is RendererUpdate or SkinnedMeshRendererUpdate)
+                    if (sample.Payload is TerrainUpdate)
+                    {
+                        foreach (var playerModule in player.PlayerModules)
+                        {
+                            playerModule.PlaySample(ctx, sample);
+                        }
+                    }
+                    
+                    if (sample.Payload is RendererUpdate)
                     {
                         foreach (var playerModule in player.PlayerModules)
                         {
@@ -453,6 +451,19 @@ namespace PLUME.Viewer.Analysis.Position
 
             foreach (var go in gameObjects)
             {
+                if (go.TryGetComponent<Terrain>(out var terrain))
+                {
+                    // Disable trees and grass
+                    terrain.treeDistance = 0;
+                    terrain.detailObjectDensity = 0;
+                    terrain.materialTemplate = _defaultHeatmapMaterial;
+                }
+                
+                if (go.TryGetComponent<Graphic>(out var graphic))
+                {
+                    graphic.enabled = false;
+                }
+                
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                 {
                     continue;
@@ -659,7 +670,7 @@ namespace PLUME.Viewer.Analysis.Position
 
             if (result == null && prevVisibleResult != null)
             {
-                RestoreRecordMaterials(player.GetPlayerContext());
+                RestoreRecordMaterials(player.GetMainPlayerContext());
             }
         }
 

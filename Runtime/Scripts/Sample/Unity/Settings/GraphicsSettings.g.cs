@@ -44,6 +44,7 @@ namespace PLUME.Sample.Unity.Settings {
   /// <summary>
   /// Corresponds to the settings in Project Settings > Graphics
   /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class GraphicsSettings : pb::IMessage<GraphicsSettings>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage

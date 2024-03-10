@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using PLUME.Sample.Common;
 using PLUME.Viewer.Player;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 
@@ -58,16 +60,29 @@ namespace PLUME.Viewer.Analysis.Trajectory
 
             // Frames in the time range
             var frames = record.Frames.GetInTimeRange(parameters.StartTime, parameters.EndTime);
+            var nFrames = frames.Count;
 
             var teleportationIndices = new List<int>();
             var markersIndices = new List<int>();
             var points = new List<TrajectorySegmentPoint>();
             var teleportationToleranceSq = parameters.TeleportationTolerance * parameters.TeleportationTolerance;
 
-            var lastYieldTime = Time.unscaledTimeAsDouble;
+            var stopwatch = Stopwatch.StartNew();
+            var lastYieldTime = stopwatch.ElapsedMilliseconds;
             
-            foreach (var frame in frames)
+            for(var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
             {
+                var frame = frames[frameIdx];
+                
+                var time = stopwatch.ElapsedMilliseconds;
+                
+                // Yield every 100ms (~10fps) to avoid freezing the game
+                if (time - lastYieldTime > 100)
+                {
+                    lastYieldTime = time;
+                    yield return null;
+                }
+                
                 _generationContext.PlayFrame(player.PlayerModules, frame);
 
                 var replayId = _generationContext.GetReplayInstanceId(parameters.ObjectIdentifier);
@@ -89,16 +104,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
 
                 points.Add(point);
 
-                GenerationProgress = (frame.Timestamp - parameters.StartTime) /
-                                     (float)(parameters.EndTime - parameters.StartTime);
-                
-                var time = Time.unscaledTimeAsDouble;
-                if (time - lastYieldTime > 1.0f / Application.targetFrameRate)
-                {
-                    lastYieldTime = time;
-                    // Only used to not freeze the game while generating
-                    yield return new WaitForEndOfFrame();
-                }
+                GenerationProgress = (float) frameIdx / nFrames;
             }
 
             GenerationProgress = 1;
@@ -197,7 +203,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
             PlayerContext.Destroy(_generationContext);
             _generationContext = null;
 
-            PlayerContext.Activate(player.GetPlayerContext());
+            PlayerContext.Activate(player.GetMainPlayerContext());
             IsGenerating = false;
 
             if (player.GetModuleGenerating() == this)
@@ -215,7 +221,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
                 _generationContext = null;
             }
 
-            PlayerContext.Activate(player.GetPlayerContext());
+            PlayerContext.Activate(player.GetMainPlayerContext());
             IsGenerating = false;
 
             if (player.GetModuleGenerating() == this)

@@ -41,6 +41,7 @@ namespace PLUME.Sample.Unity {
 
   }
   #region Messages
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class MeshRendererCreate : pb::IMessage<MeshRendererCreate>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -239,6 +240,7 @@ namespace PLUME.Sample.Unity {
 
   }
 
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class MeshRendererDestroy : pb::IMessage<MeshRendererDestroy>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage

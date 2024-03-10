@@ -27,6 +27,8 @@ namespace PLUME.Viewer
 
         public VisualElement ViewerPanel { get; private set; }
 
+        public Button CloseButton { get; private set; }
+        
         public TimelineElement Timeline { get; private set; }
         public TimeFieldElement TimeIndicator { get; private set; }
         public TimeScaleElement TimeScale { get; private set; }
@@ -64,6 +66,8 @@ namespace PLUME.Viewer
 
             LoadingPanel = root.Q("loading-panel");
             ViewerPanel = root.Q("viewer");
+            
+            CloseButton = ViewerPanel.Q<Button>("close-btn");
 
             Timeline = ViewerPanel.Q<TimelineElement>("timeline");
             TimeIndicator = Timeline.Q<TimeFieldElement>();

@@ -43,6 +43,7 @@ namespace PLUME.Sample.Unity.Settings {
   /// <summary>
   /// Corresponds to the properties of a quality level defined in Project Settings > Graphics > URP Global Settings
   /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class URPGlobalSettingsUpdate : pb::IMessage<URPGlobalSettingsUpdate>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage

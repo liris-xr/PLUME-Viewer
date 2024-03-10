@@ -30,7 +30,7 @@ namespace PLUME.Viewer
         private void Start()
         {
             _hierarchyTree = _hierarchyTreeUI.HierarchyTree;
-            player.GetPlayerContext().updatedHierarchy += OnHierarchyUpdateEvent;
+            player.mainContextUpdatedHierarchy += OnHierarchyUpdateEvent;
         }
 
         public void OnHierarchyUpdateEvent(IHierarchyUpdateEvent evt)
@@ -115,21 +115,23 @@ namespace PLUME.Viewer
                 }
                 case HierarchyForceRebuild:
                 {
-                    var playerCtx = player.GetPlayerContext();
-                    var goGuids = playerCtx.GetAllGameObjects().Select(go =>
-                        playerCtx.GetRecordIdentifier(go.GetInstanceID())).ToList();
+                    var playerCtx = player.GetMainPlayerContext();
+                    var goGuids = playerCtx.GetAllGameObjects()
+                        .Select(go => playerCtx.GetRecordIdentifier(go.GetInstanceID()))
+                        .Where(id => id != null)
+                        .ToList();
 
                     var keptItems = new Dictionary<string, HierarchyTreeItem>();
                     var createdGoGuids = new List<string>(goGuids);
-                    
-                    foreach(var goGuid in goGuids)
+
+                    foreach (var goGuid in goGuids)
                     {
                         keptItems.Add(goGuid, _items[goGuid]);
                         createdGoGuids.Remove(goGuid);
                     }
 
                     var deletedItems = _items.Except(keptItems).ToList();
-                    
+
                     foreach (var deletedItem in deletedItems)
                     {
                         _deletedItems.Add(deletedItem.Value);
@@ -137,7 +139,7 @@ namespace PLUME.Viewer
                         _createdItems.Remove(deletedItem.Value);
                         _items.Remove(deletedItem.Key);
                     }
-                    
+
                     foreach (var createdGoGuid in createdGoGuids)
                     {
                         var newHierarchyItem = new HierarchyTreeItem(createdGoGuid);
@@ -145,7 +147,7 @@ namespace PLUME.Viewer
                         _createdItems.Add(newHierarchyItem);
                         _deletedItems.Remove(newHierarchyItem);
                     }
-                    
+
                     _forceRebuild = true;
                     break;
                 }

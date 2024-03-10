@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 
 namespace PLUME.Viewer.Analysis.Trajectory
@@ -9,18 +10,25 @@ namespace PLUME.Viewer.Analysis.Trajectory
     {
         public Player.Player player;
 
+        public string defaultObjectId = "";
+        public string defaultMarkers = "";
+        public float defaultTeleportationTolerance = 0.1f;
+        public bool defaultTeleportationSegments = true;
+        public float defaultDecimationTolerance = 0.01f;
+        public bool defaultIncludeRotations;
+        
         private Coroutine _generationCoroutine;
 
         public void Start()
         {
             ui.GenerateButton.clicked += OnClickGenerate;
             ui.CancelButton.clicked += OnClickCancel;
-            ui.ObjectIdTextField.value = "882be9d0-c9cc-4b78-b6b3-1d5419f4cd83";
-            ui.MarkersTextField.value = "Egg Pick Up";
-            ui.TeleportationToleranceTextField.value = "0.1";
-            ui.TeleportationSegments.value = true;
-            ui.DecimationToleranceTextField.value = "0.01";
-            ui.IncludeRotations.value = false;
+            ui.ObjectIdTextField.value = defaultObjectId;
+            ui.MarkersTextField.value = defaultMarkers;
+            ui.TeleportationToleranceTextField.value = defaultTeleportationTolerance.ToString(CultureInfo.InvariantCulture);
+            ui.TeleportationSegments.value = defaultTeleportationSegments;
+            ui.DecimationToleranceTextField.value = defaultDecimationTolerance.ToString(CultureInfo.InvariantCulture);
+            ui.IncludeRotations.value = defaultIncludeRotations;
 
             ui.clickedDeleteResult += OnClickDeleteResult;
             ui.toggledResultVisibility += OnToggleResultVisibility;

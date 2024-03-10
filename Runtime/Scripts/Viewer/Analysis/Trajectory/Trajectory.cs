@@ -83,7 +83,8 @@ namespace PLUME.Viewer.Analysis.Trajectory
             var gradient = new Gradient();
             var key0 = new GradientColorKey(GetColorAtTime(t0), 0);
             var key1 = new GradientColorKey(GetColorAtTime(t1), 1);
-            gradient.SetKeys(new[] { key0, key1 }, new GradientAlphaKey[] { });
+            var alphaKey = new GradientAlphaKey(0.5f, 0);
+            gradient.SetKeys(new[] { key0, key1 }, new[] { alphaKey });
 
             var segmentGameObject = new GameObject("Teleportation Segment");
             var lineRenderer = segmentGameObject.AddComponent<LineRenderer>();

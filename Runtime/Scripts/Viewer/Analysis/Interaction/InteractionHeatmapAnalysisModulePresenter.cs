@@ -7,6 +7,10 @@ namespace PLUME.Viewer.Analysis.Interaction
     public class InteractionHeatmapAnalysisModulePresenter : MonoBehaviour
     {
         public Player.Player player;
+        
+        public string defaultInteractorsIds = "";
+        public string defaultInteractablesIds = "";
+        public InteractionType defaultInteractionType = InteractionType.Hover;
 
         public InteractionHeatmapAnalysisModule module;
         public InteractionHeatmapAnalysisModuleUI ui;
@@ -14,10 +18,9 @@ namespace PLUME.Viewer.Analysis.Interaction
         public void Start()
         {
             ui.GenerateButton.clicked += OnClickGenerate;
-            ui.InteractorsIdsTextField.value =
-                "f73a0170-aa81-4305-806b-3eadcb864441,32fbd30a-f825-45d9-b929-3f16d339fefa";
-            ui.InteractablesIdsTextField.value = "";
-            ui.InteractionTypeDropdownField.value = "Hover";
+            ui.InteractorsIdsTextField.value = defaultInteractorsIds;
+            ui.InteractablesIdsTextField.value = defaultInteractablesIds;
+            ui.InteractionTypeEnumField.value = defaultInteractionType;
 
             ui.clickedDeleteResult += OnClickDeleteResult;
             ui.toggledResultVisibility += OnToggleResultVisibility;
@@ -54,7 +57,7 @@ namespace PLUME.Viewer.Analysis.Interaction
             var interactablesIds =
                 ui.InteractablesIdsTextField.value.Trim().Split(",").Where(s => s.Length > 0).ToArray();
 
-            var interactionType = (InteractionType)ui.InteractionTypeDropdownField.index;
+            var interactionType = (InteractionType)ui.InteractionTypeEnumField.value;
             var startTime = ui.TimeRange.StartTime;
             var endTime = ui.TimeRange.EndTime;
 

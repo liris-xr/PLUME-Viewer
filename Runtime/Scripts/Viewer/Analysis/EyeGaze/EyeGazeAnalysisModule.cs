@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -9,6 +10,8 @@ using PLUME.Sample.Unity.XRITK;
 using PLUME.Viewer.Player;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using UnityEngine.UI;
+using Debug = UnityEngine.Debug;
 
 namespace PLUME.Viewer.Analysis.EyeGaze
 {
@@ -27,11 +30,6 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         public float nSigmas = 4;
 
         public float samplesPerSquareMeter = 1000;
-
-        /**
-         * Rate in Hz at which the eye gaze's position will be projected
-         */
-        public float projectionSamplingRate = 120;
 
         /**
          * Shader used to encode the object's depth and instance id into a RenderTexture.
@@ -74,10 +72,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             new();
 
         private readonly Dictionary<int, MaterialPropertyBlock> _cachedSegmentedObjectsDepthPropertyBlocks = new();
-
-        private Vector3? _lastEyeGazePosition;
-        private Quaternion? _lastEyeGazeRotation;
-
+        
         private void Awake()
         {
             SetupProjectionCamera(segmentedObjectDepthTextureResolution, fovealVisionOpticalAxisAngle * 2, 0.3f,
@@ -109,9 +104,6 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         public IEnumerator GenerateHeatmap(Record record, RecordAssetBundle assets,
             EyeGazeAnalysisModuleParameters parameters, Action<EyeGazeAnalysisResult> finishCallback)
         {
-            _lastEyeGazePosition = null;
-            _lastEyeGazeRotation = null;
-
             if (parameters.EndTime < parameters.StartTime)
             {
                 throw new Exception(
@@ -144,30 +136,40 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 meshSamplerResults);
 
             SetVisibleResult(result);
-
-            var projectionSamplingInterval = (ulong)(1 / projectionSamplingRate * 1_000_000_000u);
-
+            
             PrepareProjectionShader(samplesMinValueBuffer, samplesMaxValueBuffer, projectionKernel);
-
-            var prevVSyncCount = QualitySettings.vSyncCount;
-            var prevTargetFrameRate = Application.targetFrameRate;
-            QualitySettings.vSyncCount = 0;
-            Application.targetFrameRate = int.MaxValue;
 
             if (parameters.StartTime > 0)
             {
-                PlaySamplesInTimeRange(record, _generationContext, 0, parameters.StartTime - 1u);
+                var skippedFrames = record.Frames.GetInTimeRange(0, parameters.StartTime - 1u);
+                _generationContext.PlayFrames(player.PlayerModules, skippedFrames);
             }
-
-            var lastYieldTime = Time.unscaledTimeAsDouble;
             
-            var currentTime = parameters.StartTime;
+            var stopwatch = Stopwatch.StartNew();
+            var lastYieldTime = stopwatch.ElapsedMilliseconds;
+            
+            var frames = record.Frames.GetInTimeRange(parameters.StartTime, parameters.EndTime);
+            
+            var nFrames = frames.Count;
+            
+            var inputActionSamples = record.InputActions.GetInTimeRange(parameters.StartTime, parameters.EndTime);
+            var eyeGazePositionSamples = inputActionSamples.Where(s => s.Payload.BindingPaths.Contains("<EyeGaze>/pose/position"));
+            var eyeGazeRotationSamples = inputActionSamples.Where(s => s.Payload.BindingPaths.Contains("<EyeGaze>/pose/rotation"));
 
-            while (currentTime <= parameters.EndTime && currentTime <= record.Duration)
+            for(var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
             {
-                var startTime = currentTime;
-                var endTime = currentTime + projectionSamplingInterval;
-                PlaySamplesInTimeRange(record, _generationContext, startTime, endTime);
+                var frame = frames[frameIdx];
+                
+                var time = stopwatch.ElapsedMilliseconds;
+                
+                // Yield every 33ms (~30fps) to avoid freezing the game
+                if (time - lastYieldTime > 33)
+                {
+                    lastYieldTime = time;
+                    yield return null;
+                }
+                
+                _generationContext.PlayFrame(player.PlayerModules, frame);
 
                 var replayCameraId = _generationContext.GetReplayInstanceId(parameters.XrCameraIdentifier);
                 var replayProjectionReceiversIds = new List<int>();
@@ -194,8 +196,6 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
                 if (replayCameraId.HasValue && replayProjectionReceiversIds.Count > 0)
                 {
-                    if (currentTime >= parameters.StartTime && currentTime <= parameters.EndTime)
-                    {
                         var xrCamera = _generationContext.FindGameObjectByInstanceId(replayCameraId.Value);
 
                         if (xrCamera != null)
@@ -208,38 +208,40 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
                             if (projectionReceiversGameObjects.Length > 0)
                             {
+                                Vector3? eyeGazePosition;
+                                Quaternion? eyeGazeRotation;
+                                
+                                var eyeGazePositionIdx = eyeGazePositionSamples.FirstIndexBeforeTimestamp(frame.Timestamp);
+                                var eyeGazeRotationIdx = eyeGazeRotationSamples.FirstIndexBeforeTimestamp(frame.Timestamp);
+
+                                if (eyeGazePositionIdx >= 0)
+                                    eyeGazePosition = eyeGazePositionSamples[eyeGazePositionIdx].Payload.Vector3.ToEngineType();
+                                else
+                                    eyeGazePosition = null;
+                                
+                                if (eyeGazeRotationIdx >= 0)
+                                    eyeGazeRotation = eyeGazeRotationSamples[eyeGazeRotationIdx].Payload.Quaternion.ToEngineType();
+                                else
+                                    eyeGazeRotation = null;
+                                
                                 ProjectCurrentEyeGaze(_generationContext, xrCamera,
                                     parameters.CoordinateSystem,
-                                    _lastEyeGazePosition, _lastEyeGazeRotation,
+                                    eyeGazePosition, eyeGazeRotation,
                                     projectionReceiversGameObjects,
                                     meshSamplerResults, projectionKernel);
                             }
                         }
-                    }
                 }
 
-                currentTime = endTime + 1;
-                GenerationProgress = (currentTime - parameters.StartTime) /
-                                     (float)(parameters.EndTime - parameters.StartTime);
-                
-                var time = Time.unscaledTimeAsDouble;
-                if (time - lastYieldTime > 1.0f / Application.targetFrameRate)
-                {
-                    lastYieldTime = time;
-                    // Only used to not freeze the game while generating
-                    yield return new WaitForEndOfFrame();
-                }
+                GenerationProgress = (float)frameIdx / nFrames;
             }
 
             GenerationProgress = 1;
 
-            QualitySettings.vSyncCount = prevVSyncCount;
-            Application.targetFrameRate = prevTargetFrameRate;
-
             PlayerContext.Destroy(_generationContext);
             _generationContext = null;
 
-            PlayerContext.Activate(player.GetPlayerContext());
+            PlayerContext.Activate(player.GetMainPlayerContext());
             IsGenerating = false;
 
             if (player.GetModuleGenerating() == this)
@@ -256,7 +258,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 _generationContext = null;
             }
 
-            PlayerContext.Activate(player.GetPlayerContext());
+            PlayerContext.Activate(player.GetMainPlayerContext());
             IsGenerating = false;
 
             if (player.GetModuleGenerating() == this)
@@ -459,36 +461,6 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             return meshSamplerResult;
         }
 
-        private void PlaySamplesInTimeRange(Record record, PlayerContext ctx,
-            ulong startTime,
-            ulong endTime)
-        {
-            var frameSamples = record.Frames.GetInTimeRange(startTime, endTime);
-            var inputActionSamples = record.InputActions.GetInTimeRange(startTime, endTime);
-
-            foreach (var inputActionSample in inputActionSamples)
-            {
-                var inputAction = inputActionSample.Payload;
-
-                if (inputAction.BindingPaths.Contains("<EyeGaze>/pose/position"))
-                {
-                    if (inputAction.Vector3 == null)
-                        _lastEyeGazePosition = null;
-                    else
-                        _lastEyeGazePosition = inputAction.Vector3.ToEngineType();
-                }
-                else if (inputAction.BindingPaths.Contains("<EyeGaze>/pose/rotation"))
-                {
-                    if (inputAction.Quaternion == null)
-                        _lastEyeGazeRotation = null;
-                    else
-                        _lastEyeGazeRotation = inputAction.Quaternion.ToEngineType();
-                }
-            }
-
-            ctx.PlayFrames(player.PlayerModules, frameSamples);
-        }
-
         private void PrepareProjectionShader(ComputeBuffer samplesMinValueBuffer, ComputeBuffer samplesMaxValueBuffer,
             int projectionKernel)
         {
@@ -520,6 +492,11 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
             foreach (var go in gameObjects)
             {
+                if (go.TryGetComponent<Graphic>(out var graphic))
+                {
+                    graphic.enabled = true;
+                }
+                
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                     continue;
                 goRenderer.SetSharedMaterials(new List<Material>());
@@ -531,7 +508,15 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             {
                 foreach (var sample in frameSample.Data)
                 {
-                    if (sample.Payload is RendererUpdate or SkinnedMeshRendererUpdate)
+                    if (sample.Payload is TerrainUpdate)
+                    {
+                        foreach (var playerModule in player.PlayerModules)
+                        {
+                            playerModule.PlaySample(ctx, sample);
+                        }
+                    }
+                    
+                    if (sample.Payload is RendererUpdate)
                     {
                         foreach (var playerModule in player.PlayerModules)
                         {
@@ -579,6 +564,19 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
             foreach (var go in gameObjects)
             {
+                if (go.TryGetComponent<Terrain>(out var terrain))
+                {
+                    // Disable trees and grass
+                    terrain.treeDistance = 0;
+                    terrain.detailObjectDensity = 0;
+                    terrain.materialTemplate = _defaultHeatmapMaterial;
+                }
+                
+                if (go.TryGetComponent<Graphic>(out var graphic))
+                {
+                    graphic.enabled = false;
+                }
+                
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                 {
                     continue;
@@ -783,7 +781,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
             if (result == null && prevVisibleResult != null)
             {
-                RestoreRecordMaterials(player.GetPlayerContext());
+                RestoreRecordMaterials(player.GetMainPlayerContext());
             }
         }
 

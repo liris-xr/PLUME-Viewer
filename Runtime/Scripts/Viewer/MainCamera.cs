@@ -21,6 +21,9 @@ namespace PLUME.Viewer
 
         public override Camera GetCamera()
         {
+            if (_camera == null)
+                _camera = GetComponent<Camera>();
+            
             return _camera;
         }
 
@@ -73,8 +76,8 @@ namespace PLUME.Viewer
 
         public override void SetEnabled(bool enabled)
         {
-            _camera.targetTexture = enabled ? PreviewRenderTexture : null;
-            _camera.enabled = enabled;
+            GetCamera().targetTexture = enabled ? PreviewRenderTexture : null;
+            GetCamera().enabled = enabled;
         }
 
         public override PreviewCameraType GetCameraType()

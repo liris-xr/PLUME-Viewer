@@ -11,8 +11,14 @@
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Google.Protobuf.dll",
+        "K4os.Hash.xxHash.dll",
+        "K4os.Compression.LZ4.dll",
+        "K4os.Compression.LZ4.Streams.dll",
+        "System.Windows.Forms.dll"
+    ],
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],

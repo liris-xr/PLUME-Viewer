@@ -61,6 +61,7 @@ namespace PLUME.Sample.Unity.Settings {
   /// <summary>
   /// Corresponds to the properties of a quality level defined in Project Settings > Audio
   /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class AudioSettingsUpdate : pb::IMessage<AudioSettingsUpdate>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage

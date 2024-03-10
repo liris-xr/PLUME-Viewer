@@ -18,7 +18,7 @@ namespace PLUME.Viewer.Analysis.Interaction
         public Button GenerateButton { get; private set; }
         public TextField InteractorsIdsTextField { get; private set; }
         public TextField InteractablesIdsTextField { get; private set; }
-        public DropdownField InteractionTypeDropdownField { get; private set; }
+        public EnumField InteractionTypeEnumField { get; private set; }
         public TimeRangeElement TimeRange { get; private set; }
 
         protected new void Awake()
@@ -28,7 +28,7 @@ namespace PLUME.Viewer.Analysis.Interaction
             GenerateButton = Options.Q<Button>("generate-btn");
             InteractorsIdsTextField = Options.Q<TextField>("interactors");
             InteractablesIdsTextField = Options.Q<TextField>("interactables");
-            InteractionTypeDropdownField = Options.Q<DropdownField>("interaction-type");
+            InteractionTypeEnumField = Options.Q<EnumField>("interaction-type");
             TimeRange = Options.Q<TimeRangeElement>("time-range");
         }
 

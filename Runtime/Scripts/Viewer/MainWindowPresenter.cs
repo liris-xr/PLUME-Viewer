@@ -20,10 +20,17 @@ namespace PLUME.Viewer
         private void Awake()
         {
             _mainWindowUI = GetComponent<MainWindowUI>();
+            player.OnFinishLoading += () =>
+            {
+                player.StartPlaying();
+                _mainWindowUI.RefreshPlayPauseButton();
+            };
         }
 
         private void Start()
         {
+            _mainWindowUI.CloseButton.clicked += Application.Quit;
+            
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<FocusInEvent>(OnPreviewRenderFocused);
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<FocusOutEvent>(OnPreviewRenderUnfocused);
 

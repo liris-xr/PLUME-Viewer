@@ -6,6 +6,7 @@ using PLUME.Sample.Unity;
 using PLUME.Sample.Unity.XRITK;
 using PLUME.Viewer.Player;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace PLUME.Viewer.Analysis.Interaction
 {
@@ -56,59 +57,50 @@ namespace PLUME.Viewer.Analysis.Interaction
                     $"{nameof(parameters.EndTime)} should be less or equal {nameof(parameters.StartTime)}.");
             }
 
-            var frames = record.Frames.GetInTimeRange(parameters.StartTime, parameters.EndTime);
+            var samples = record.OtherSamples.GetInTimeRange(parameters.StartTime, parameters.EndTime);
 
-            foreach (var frame in frames)
+            foreach (var sample in samples)
             {
-                foreach (var sample in frame.Data)
+                GameObjectIdentifier interactorIdentifier;
+                GameObjectIdentifier interactableIdentifier;
+
+                if (parameters.InteractionType == InteractionType.Hover &&
+                    sample.Payload is XRBaseInteractableHoverEnter hoverEnter)
                 {
-                    GameObjectIdentifier interactorIdentifier;
-                    GameObjectIdentifier interactableIdentifier;
-
-                    if (parameters.InteractionType == InteractionType.Hover &&
-                        sample.Payload is XRBaseInteractableHoverEnter hoverEnter)
-                    {
-                        interactorIdentifier = hoverEnter.InteractorCurrent.ParentId;
-                        interactableIdentifier = hoverEnter.Id.ParentId;
-                    }
-                    else if (parameters.InteractionType == InteractionType.Select &&
-                             sample.Payload is XRBaseInteractableSelectEnter selectEnter)
-                    {
-                        interactorIdentifier = selectEnter.InteractorCurrent.ParentId;
-                        interactableIdentifier = selectEnter.Id.ParentId;
-                    }
-                    else if (parameters.InteractionType == InteractionType.Activate &&
-                             sample.Payload is XRBaseInteractableActivateEnter activateEnter)
-                    {
-                        interactorIdentifier = activateEnter.InteractorCurrent.ParentId;
-                        interactableIdentifier = activateEnter.Id.ParentId;
-                    }
-                    else
-                    {
-                        continue;
-                    }
-
-                    if (interactorIdentifier == null || interactableIdentifier == null)
-                        continue;
-
-                    if (!parameters.InteractorsIds.Contains(interactorIdentifier.GameObjectId)) continue;
-
-                    if (parameters.InteractablesIds.Length > 0 &&
-                        !parameters.InteractablesIds.Contains(interactableIdentifier.GameObjectId)) continue;
-
-                    if (interactions.ContainsKey(interactableIdentifier.GameObjectId))
-                    {
-                        interactions[interactableIdentifier.GameObjectId]++;
-                    }
-                    else
-                    {
-                        interactions.Add(interactableIdentifier.GameObjectId, 1);
-                    }
-
-                    maxInteractionsCount = Math.Max(maxInteractionsCount,
-                        interactions[interactableIdentifier.GameObjectId]);
-                    totalInteractionsCount++;
+                    interactorIdentifier = hoverEnter.InteractorCurrent.ParentId;
+                    interactableIdentifier = hoverEnter.Id.ParentId;
                 }
+                else if (parameters.InteractionType == InteractionType.Select &&
+                         sample.Payload is XRBaseInteractableSelectEnter selectEnter)
+                {
+                    interactorIdentifier = selectEnter.InteractorCurrent.ParentId;
+                    interactableIdentifier = selectEnter.Id.ParentId;
+                }
+                else if (parameters.InteractionType == InteractionType.Activate &&
+                         sample.Payload is XRBaseInteractableActivateEnter activateEnter)
+                {
+                    interactorIdentifier = activateEnter.InteractorCurrent.ParentId;
+                    interactableIdentifier = activateEnter.Id.ParentId;
+                }
+                else
+                {
+                    continue;
+                }
+
+                if (interactorIdentifier == null || interactableIdentifier == null)
+                    continue;
+
+                if (!parameters.InteractorsIds.Contains(interactorIdentifier.GameObjectId)) continue;
+
+                if (parameters.InteractablesIds.Length > 0 &&
+                    !parameters.InteractablesIds.Contains(interactableIdentifier.GameObjectId)) continue;
+
+                var nInteractions = interactions.GetValueOrDefault(interactableIdentifier.GameObjectId, 0);
+                interactions[interactableIdentifier.GameObjectId] = nInteractions + 1;
+
+                maxInteractionsCount = Math.Max(maxInteractionsCount,
+                    interactions[interactableIdentifier.GameObjectId]);
+                totalInteractionsCount++;
             }
 
             var result = new InteractionHeatmapAnalysisResult(parameters, interactions, totalInteractionsCount,
@@ -136,6 +128,11 @@ namespace PLUME.Viewer.Analysis.Interaction
 
             foreach (var go in gameObjects)
             {
+                if (go.TryGetComponent<Graphic>(out var graphic))
+                {
+                    graphic.enabled = true;
+                }
+                
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                     continue;
                 goRenderer.SetSharedMaterials(new List<Material>());
@@ -144,13 +141,21 @@ namespace PLUME.Viewer.Analysis.Interaction
             var frames = player.Record.Frames.GetInTimeRange(0, player.GetCurrentPlayTimeInNanoseconds());
             foreach (var frame in frames)
             {
-                foreach (var data in frame.Data)
+                foreach (var sample in frame.Data)
                 {
-                    if (data.Payload is RendererUpdate or SkinnedMeshRendererUpdate)
+                    if (sample.Payload is TerrainUpdate)
                     {
                         foreach (var playerModule in player.PlayerModules)
                         {
-                            playerModule.PlaySample(ctx, data);
+                            playerModule.PlaySample(ctx, sample);
+                        }
+                    }
+                    
+                    if (sample.Payload is RendererUpdate)
+                    {
+                        foreach (var playerModule in player.PlayerModules)
+                        {
+                            playerModule.PlaySample(ctx, sample);
                         }
                     }
                 }
@@ -164,6 +169,19 @@ namespace PLUME.Viewer.Analysis.Interaction
             // For GameObjects with interactions, apply the custom heatmap material to its render and its children
             foreach (var go in gameObjects)
             {
+                if (go.TryGetComponent<Terrain>(out var terrain))
+                {
+                    // Disable trees and grass
+                    terrain.treeDistance = 0;
+                    terrain.detailObjectDensity = 0;
+                    terrain.materialTemplate = _defaultHeatmapMaterial;
+                }
+                
+                if (go.TryGetComponent<Graphic>(out var graphic))
+                {
+                    graphic.enabled = false;
+                }
+                
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                     continue;
 
@@ -230,7 +248,7 @@ namespace PLUME.Viewer.Analysis.Interaction
 
             if (result == null && prevVisibleResult != null)
             {
-                RestoreRecordMaterials(player.GetPlayerContext());
+                RestoreRecordMaterials(player.GetMainPlayerContext());
             }
         }
 

@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Cysharp.Threading.Tasks;
 using PLUME.Sample;
 using PLUME.Sample.Unity;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
+using LoadSceneMode = UnityEngine.SceneManagement.LoadSceneMode;
 using Object = UnityEngine.Object;
 
 namespace PLUME.Viewer.Player
@@ -45,7 +47,7 @@ namespace PLUME.Viewer.Player
             _scene = scene;
         }
         
-        internal static PlayerContext CreateMainPlayerContext(RecordAssetBundle assets)
+        internal static async UniTask<PlayerContext> CreateMainPlayerContext(RecordAssetBundle assets)
         {
             const string mainPlayerContextName = "MainPlayerContext";
             
@@ -54,7 +56,13 @@ namespace PLUME.Viewer.Player
                 throw new Exception("MainPlayerContext already exists");
             }
             
+            var loadSceneParameters = new LoadSceneParameters(LoadSceneMode.Additive);
+            await SceneManager.LoadSceneAsync(mainPlayerContextName, loadSceneParameters);
             var scene = SceneManager.GetSceneByName(mainPlayerContextName);
+
+            if (!scene.IsValid())
+                throw new Exception("Failed to load MainPlayerContext scene");
+            
             SceneManager.SetActiveScene(scene);
             
             var ctx = new PlayerContext(mainPlayerContextName, assets, scene);

@@ -1,6 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
+using System.Linq;
 
 namespace PLUME
 {
@@ -10,7 +11,105 @@ namespace PLUME
 
         public int FirstIndexAfterTimestamp(ulong time);
 
-        public IEnumerable<T> GetInTimeRange(ulong startTime, ulong endTime);
+        public int FirstIndexBeforeTimestamp(ulong time);
+
+        public IReadOnlySamplesSortedList<T> GetInTimeRange(ulong startTime, ulong endTime);
+
+        public IReadOnlySamplesSortedList<T> Where(Predicate<T> predicate);
+
+        public T this[int index] { get; }
+    }
+
+    public class SamplesSortedListSlice<T> : IReadOnlySamplesSortedList<T> where T : ISample
+    {
+        private readonly SamplesSortedList<T> _samples;
+        public readonly int start;
+        public readonly int count;
+        public int Count => count;
+
+        internal SamplesSortedListSlice(SamplesSortedList<T> samples, int start, int count)
+        {
+            if (start < 0)
+                throw new ArgumentOutOfRangeException(nameof(start));
+            if (count < 0)
+                throw new ArgumentOutOfRangeException(nameof(count));
+            if (start > samples.Count)
+                throw new ArgumentOutOfRangeException(nameof(start));
+            if (start + count > samples.Count)
+                throw new ArgumentOutOfRangeException(nameof(count));
+
+            _samples = samples;
+            this.start = start;
+            this.count = count;
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            for (var i = start; i < start + count; i++)
+            {
+                yield return _samples[i];
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public int IndexOf(T item)
+        {
+            var idx = _samples.IndexOf(item);
+            if (idx < start || idx >= start + count)
+                return -1;
+            return idx - start;
+        }
+
+        public int FirstIndexAfterTimestamp(ulong time)
+        {
+            if (_samples.Count == 0)
+                return -1;
+
+            var idx = _samples.FirstIndexAfterTimestamp(time);
+            if (idx < start)
+                return 0;
+            if (idx >= start + count)
+                return -1;
+            return idx - start;
+        }
+
+        public int FirstIndexBeforeTimestamp(ulong time)
+        {
+            if (_samples.Count == 0)
+                return -1;
+
+            var idx = _samples.FirstIndexBeforeTimestamp(time);
+            if (idx <= start)
+                return -1;
+            if (idx >= start + count)
+                return count - 1;
+            return idx - start;
+        }
+
+        public IReadOnlySamplesSortedList<T> Where(Predicate<T> predicate)
+        {
+            var newSamples = new SamplesSortedList<T>();
+            for (var i = start; i < start + count; i++)
+            {
+                if (predicate(_samples[i]))
+                {
+                    newSamples.Add(_samples[i]);
+                }
+            }
+
+            return new ReadOnlySamplesSortedList<T>(newSamples);
+        }
+
+        public IReadOnlySamplesSortedList<T> GetInTimeRange(ulong startTime, ulong endTime)
+        {
+            return _samples.GetInTimeRange(startTime, endTime);
+        }
+
+        public T this[int index] => _samples[start + index];
     }
 
     public class ReadOnlySamplesSortedList<T> : IReadOnlySamplesSortedList<T> where T : ISample
@@ -44,10 +143,22 @@ namespace PLUME
             return _samples.FirstIndexAfterTimestamp(time);
         }
 
-        public IEnumerable<T> GetInTimeRange(ulong startTime, ulong endTime)
+        public int FirstIndexBeforeTimestamp(ulong time)
+        {
+            return _samples.FirstIndexBeforeTimestamp(time);
+        }
+
+        public IReadOnlySamplesSortedList<T> GetInTimeRange(ulong startTime, ulong endTime)
         {
             return _samples.GetInTimeRange(startTime, endTime);
         }
+
+        public IReadOnlySamplesSortedList<T> Where(Predicate<T> predicate)
+        {
+            return _samples.Where(predicate);
+        }
+
+        public T this[int index] => _samples[index];
     }
 
     public class SamplesSortedList<T> : ICollection<T>, IReadOnlySamplesSortedList<T>
@@ -69,25 +180,25 @@ namespace PLUME
         {
             if (item == null)
                 return;
-            
-            if(_samples.Count == 0)
+
+            if (_samples.Count == 0)
             {
                 _samples.Add(item);
                 return;
             }
-            
+
             if (!item.HasTimestamp)
             {
                 _samples.Add(item);
                 return;
             }
-            
-            if(item.Timestamp >= _samples[^1].Timestamp)
+
+            if (item.Timestamp >= _samples[^1].Timestamp)
             {
                 _samples.Add(item);
                 return;
             }
-            
+
             // Find where to insert the item
             var idx = FirstIndexAfterTimestamp(item.Timestamp);
             if (idx < 0)
@@ -180,28 +291,53 @@ namespace PLUME
             return -1;
         }
 
-        public IEnumerable<T> GetInTimeRange(ulong startTime, ulong endTime)
+        public int FirstIndexBeforeTimestamp(ulong time)
+        {
+            if (_samples.Count == 0)
+                return -1;
+            if (time > _samples[^1].Timestamp)
+                return _samples.Count - 1;
+
+            var idx = FirstIndexAfterTimestamp(time) - 1;
+            if (idx < 0)
+                return -1;
+
+            while(idx > 0 && this[idx].Timestamp >= time)
+            {
+                idx--;
+            }
+            
+            return idx;
+        }
+
+        public IReadOnlySamplesSortedList<T> GetInTimeRange(ulong startTime, ulong endTime)
         {
             var startIdx = FirstIndexAfterTimestamp(startTime);
 
             if (startIdx < 0)
-                yield break;
+                return new SamplesSortedListSlice<T>(this, 0, 0);
 
             var idx = startIdx;
+            var count = 0;
 
-            do
+            while (idx < _samples.Count && this[idx].Timestamp <= endTime)
             {
-                var sample = this[idx];
-
-                if (sample == null)
-                    yield break;
-
-                if (sample.Timestamp > endTime)
-                    yield break;
-
-                yield return sample;
+                count++;
                 idx++;
-            } while (idx < _samples.Count);
+            }
+
+            return new SamplesSortedListSlice<T>(this, startIdx, count);
+        }
+
+        public IReadOnlySamplesSortedList<T> Where(Predicate<T> predicate)
+        {
+            var newSamples = new SamplesSortedList<T>();
+            foreach (var sample in _samples.Where(t => predicate(t)))
+            {
+                newSamples.Add(sample);
+            }
+
+            return new ReadOnlySamplesSortedList<T>(newSamples);
         }
 
         public T this[int index] => _samples[index];

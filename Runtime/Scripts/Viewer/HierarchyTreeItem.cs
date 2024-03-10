@@ -60,7 +60,7 @@ namespace PLUME.Viewer
         {
             GameObjectGuid = gameObjectGuid;
             ItemId = gameObjectGuid.GetHashCode();
-            GameObjectName = "<Unknown>";
+            GameObjectName = "New Game Object";
             _parentGuid = "00000000000000000000000000000000"; // null guid by default (item is at root level)
             ParentId = -1;
             _siblingIndex = -1;

@@ -21,7 +21,7 @@ namespace PLUME
         public readonly IReadOnlySamplesSortedList<RawSample<StreamSample>> LslStreamSamples;
         public readonly IReadOnlySamplesSortedList<RawSample<StreamOpen>> LslStreamOpenSamples;
         public readonly IReadOnlySamplesSortedList<RawSample<StreamClose>> LslStreamCloseSamples;
-        public readonly IReadOnlySamplesSortedList<ISample> OtherSamples;
+        public readonly IReadOnlySamplesSortedList<RawSample> OtherSamples;
 
         private readonly SamplesSortedList<FrameSample> _frames;
         private readonly SamplesSortedList<RawSample<Marker>> _markers;
@@ -32,7 +32,7 @@ namespace PLUME
         private readonly SamplesSortedList<RawSample<StreamOpen>> _lslStreamOpenSamples;
         private readonly SamplesSortedList<RawSample<StreamClose>> _lslStreamCloseSamples;
 
-        private readonly SamplesSortedList<ISample> _otherSamples;
+        private readonly SamplesSortedList<RawSample> _otherSamples;
 
         internal Record(RecordMetadata metadata, GraphicsSettings graphicsSettings)
         {
@@ -45,7 +45,7 @@ namespace PLUME
             _lslStreamSamples = new SamplesSortedList<RawSample<StreamSample>>();
             _lslStreamOpenSamples = new SamplesSortedList<RawSample<StreamOpen>>();
             _lslStreamCloseSamples = new SamplesSortedList<RawSample<StreamClose>>();
-            _otherSamples = new SamplesSortedList<ISample>();
+            _otherSamples = new SamplesSortedList<RawSample>();
 
             Frames = _frames.AsReadOnly();
             Markers = _markers.AsReadOnly();
@@ -92,7 +92,7 @@ namespace PLUME
             Duration = Math.Max(Duration, streamClose.Timestamp);
         }
 
-        internal void AddOtherSample(ISample sample)
+        internal void AddOtherSample(RawSample sample)
         {
             _otherSamples.Add(sample);
             Duration = Math.Max(Duration, sample.Timestamp);

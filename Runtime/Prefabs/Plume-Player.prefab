@@ -47,7 +47,6 @@ MonoBehaviour:
   radius: 0.5
   nSigmas: 4
   samplesPerSquareMeter: 1000
-  projectionSamplingRate: 50
   segmentedObjectDepthShader: {fileID: 4800000, guid: 8a8e86676da12f4459f2967ab39fdfa0, type: 3}
   segmentedObjectDepthTextureResolution: 512
   projectionShader: {fileID: 7200000, guid: ee558b7851a9c454086973b669398af2, type: 3}
@@ -1053,8 +1052,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   typeRegistryProvider: {fileID: 27516560266712775}
-  recordPath: 
-  assetBundlePath: 
   loop: 0
   freeCamera: {fileID: 5243149662805609015}
   topViewCamera: {fileID: 5720294478372019317}
@@ -1719,8 +1716,8 @@ GameObject:
   m_Component:
   - component: {fileID: 8366639237142470988}
   - component: {fileID: 1483920958723933126}
-  - component: {fileID: 7333346258209044708}
   - component: {fileID: 4958596500381266705}
+  - component: {fileID: 7333346258209044708}
   m_Layer: 0
   m_Name: MainCamera
   m_TagString: Untagged
@@ -1794,6 +1791,18 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &4958596500381266705
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6924069166259963095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fc6b4e4d0f149108ec2bac4669ab9a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &7333346258209044708
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1838,18 +1847,6 @@ MonoBehaviour:
     mipBias: 0
     varianceClampScale: 0.9
     contrastAdaptiveSharpening: 0
---- !u!114 &4958596500381266705
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6924069166259963095}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0fc6b4e4d0f149108ec2bac4669ab9a1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &7168852224473867437
 GameObject:
   m_ObjectHideFlags: 0
@@ -2022,8 +2019,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7527870333109092093}
   - component: {fileID: 7527870333109092088}
-  - component: {fileID: 3958279258794922459}
   - component: {fileID: 5243149662805609015}
+  - component: {fileID: 3958279258794922459}
   m_Layer: 0
   m_Name: Free Camera
   m_TagString: Untagged
@@ -2097,6 +2094,22 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &5243149662805609015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7527870333109092092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c391dbac358d44359e503c70edd24cdb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lookSpeedMouse: 4
+  moveSpeed: 10
+  moveSpeedIncrement: 2.5
+  turbo: 10
 --- !u!114 &3958279258794922459
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2141,22 +2154,6 @@ MonoBehaviour:
     mipBias: 0
     varianceClampScale: 0.9
     contrastAdaptiveSharpening: 0
---- !u!114 &5243149662805609015
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7527870333109092092}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c391dbac358d44359e503c70edd24cdb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lookSpeedMouse: 4
-  moveSpeed: 10
-  moveSpeedIncrement: 2.5
-  turbo: 10
 --- !u!1 &7621889230006188065
 GameObject:
   m_ObjectHideFlags: 0
@@ -2379,7 +2376,6 @@ MonoBehaviour:
   fovealVisionOpticalAxisAngle: 2.5
   nSigmas: 4
   samplesPerSquareMeter: 1000
-  projectionSamplingRate: 120
   segmentedObjectDepthShader: {fileID: 4800000, guid: 8a8e86676da12f4459f2967ab39fdfa0, type: 3}
   segmentedObjectDepthTextureResolution: 512
   projectionShader: {fileID: 7200000, guid: ee558b7851a9c454086973b669398af2, type: 3}

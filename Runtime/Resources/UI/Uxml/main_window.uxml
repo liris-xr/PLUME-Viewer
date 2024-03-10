@@ -26,12 +26,14 @@
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement name="viewer" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); display: flex;">
-            <ui:VisualElement name="navbar" picking-mode="Ignore" style="flex-grow: 0;">
-                <ui:VisualElement name="logo" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); height: 100%; max-height: 100%; min-height: 100%; align-items: flex-start; width: 80px; padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px;">
+            <ui:VisualElement name="navbar" picking-mode="Ignore" style="flex-grow: 0; flex-direction: row;">
+                <ui:VisualElement name="logo" style="flex-grow: 0; background-color: rgba(0, 0, 0, 0); height: 100%; max-height: 100%; min-height: 100%; align-items: flex-start; width: 80px; padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px; flex-shrink: 0;">
                     <PLUME.UI.Element.AspectRatioContainerElement aspect-ratio-width="418" aspect-ratio-height="119" style="width: 100%; max-width: 100%; min-width: 100%; height: 100%; max-height: 100%; min-height: 100%;">
                         <ui:VisualElement name="Image" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); background-image: url(&quot;project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Images/logo-dark.png?fileID=2800000&amp;guid=8a27b2be8237e7647a8ce439f4a16f56&amp;type=3#logo-dark&quot;); max-width: 100%; max-height: 100%; left: auto; height: 100%; min-height: 100%; width: 100%; min-width: 100%; align-items: center; justify-content: center; align-self: center;" />
                     </PLUME.UI.Element.AspectRatioContainerElement>
                 </ui:VisualElement>
+                <ui:VisualElement style="flex-grow: 1;" />
+                <ui:Button text="✕" parse-escape-sequences="true" display-tooltip-when-elided="true" name="close-btn" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
             </ui:VisualElement>
             <ui:TwoPaneSplitView fixed-pane-index="1" orientation="Vertical" fixed-pane-initial-dimension="300" name="vertical-pane-split-view" picking-mode="Ignore">
                 <ui:VisualElement name="middle-container" picking-mode="Ignore" style="flex-grow: 1; align-self: flex-start; top: auto; flex-direction: row; display: flex;">

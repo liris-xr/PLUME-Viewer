@@ -59,6 +59,7 @@ namespace PLUME.Sample.Unity.UI {
   #endregion
 
   #region Messages
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class ContentSizeFitterCreate : pb::IMessage<ContentSizeFitterCreate>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -257,6 +258,7 @@ namespace PLUME.Sample.Unity.UI {
 
   }
 
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class ContentSizeFitterDestroy : pb::IMessage<ContentSizeFitterDestroy>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -455,6 +457,7 @@ namespace PLUME.Sample.Unity.UI {
 
   }
 
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class ContentSizeFitterUpdate : pb::IMessage<ContentSizeFitterUpdate>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage

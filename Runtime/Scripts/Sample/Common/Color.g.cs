@@ -61,6 +61,7 @@ namespace PLUME.Sample.Common {
   #endregion
 
   #region Messages
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class Color : pb::IMessage<Color>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -361,6 +362,7 @@ namespace PLUME.Sample.Common {
 
   }
 
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class ColorGradient : pb::IMessage<ColorGradient>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -648,6 +650,7 @@ namespace PLUME.Sample.Common {
         [pbr::OriginalName("GRADIENT_MODE_PERCEPTUAL_BLEND")] PerceptualBlend = 2,
       }
 
+      [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
       public sealed partial class ColorKey : pb::IMessage<ColorKey>
       #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
           , pb::IBufferMessage
@@ -883,6 +886,7 @@ namespace PLUME.Sample.Common {
 
       }
 
+      [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
       public sealed partial class AlphaKey : pb::IMessage<AlphaKey>
       #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
           , pb::IBufferMessage

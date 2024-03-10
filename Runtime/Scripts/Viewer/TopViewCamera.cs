@@ -42,9 +42,6 @@ namespace PLUME.Viewer
         private void Awake()
         {
             _camera = GetComponent<Camera>();
-            _camera.orthographic = true;
-            _camera.transform.rotation = Quaternion.LookRotation(Vector3.down);
-            
             _orthoCameraController = GetComponent<OrthoCameraController>();
         }
 
@@ -151,6 +148,9 @@ namespace PLUME.Viewer
 
         public override Camera GetCamera()
         {
+            if(_camera == null)
+                _camera = GetComponent<Camera>();
+            
             return _camera;
         }
 

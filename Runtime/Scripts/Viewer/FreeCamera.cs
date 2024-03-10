@@ -158,6 +158,9 @@ namespace PLUME.Viewer
 
         public override Camera GetCamera()
         {
+            if (_camera == null)
+                _camera = GetComponent<Camera>();
+            
             return _camera;
         }
 

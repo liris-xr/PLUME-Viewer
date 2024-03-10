@@ -1,10 +1,15 @@
-﻿using System;
+﻿#if UNITY_STANDALONE_WIN
+#endif
+using System;
 using System.Globalization;
+using System.IO;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using PLUME.Viewer.Analysis;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Application = UnityEngine.Application;
 
 namespace PLUME.Viewer.Player
 {
@@ -13,9 +18,6 @@ namespace PLUME.Viewer.Player
     public class Player : SingletonMonoBehaviour<Player>, IDisposable
     {
         public TypeRegistryProvider typeRegistryProvider;
-
-        public string recordPath;
-        public string assetBundlePath;
 
         public bool loop;
 
@@ -26,22 +28,26 @@ namespace PLUME.Viewer.Player
         private RecordLoader _recordLoader;
         public Record Record { get; private set; }
         public bool IsRecordLoaded => Record != null;
-        
-        private AssetBundleLoader _assetBundleLoader;
+
+        private BundleLoader _bundleLoader;
         public RecordAssetBundle RecordAssetBundle { get; private set; }
         public bool IsRecordAssetBundleLoaded => RecordAssetBundle != null;
 
         private PlayerContext _mainPlayerContext;
         private bool _isPlaying;
         private ulong _currentTimeNanoseconds;
-        
+
         public RenderTexture PreviewRenderTexture { get; private set; }
+
+        public event Action OnFinishLoading = delegate { };
 
         public FreeCamera freeCamera;
         public TopViewCamera topViewCamera;
         public MainCamera mainCamera;
 
         private PreviewCamera _currentCamera;
+        
+        public Action<IHierarchyUpdateEvent> mainContextUpdatedHierarchy;
 
         private AnalysisModule _generatingModule;
         private AnalysisModule _visibleHeatmapModule;
@@ -61,41 +67,132 @@ namespace PLUME.Viewer.Player
         {
             base.Awake();
 
+            var recordPath = GetRecordPath();
+            var bundlePath = GetBundlePath(recordPath);
+
             PreviewRenderTexture = RenderTexture.GetTemporary(1920, 1080);
             freeCamera.PreviewRenderTexture = PreviewRenderTexture;
             topViewCamera.PreviewRenderTexture = PreviewRenderTexture;
             mainCamera.PreviewRenderTexture = PreviewRenderTexture;
-            SetCurrentPreviewCamera(mainCamera);
-
             freeCamera.transform.position = new Vector3(-2.24f, 1.84f, 0.58f);
             freeCamera.transform.rotation = Quaternion.Euler(25f, -140f, 0f);
             topViewCamera.transform.position = new Vector3(0, 3.25f, -4);
             topViewCamera.GetCamera().orthographicSize = 7;
+            SetCurrentPreviewCamera(mainCamera);
 
             PlayerModules = FindObjectsOfType<PlayerModule>();
-            _assetBundleLoader = new AssetBundleLoader(assetBundlePath);
-            
-            var assetBundleLoadTask = _assetBundleLoader.LoadAsync().ContinueWith(recordAssetBundle =>
+            _bundleLoader = new BundleLoader(bundlePath);
+
+            var assetBundleLoadTask = _bundleLoader.LoadAsync().ContinueWith(async recordAssetBundle =>
             {
                 RecordAssetBundle = recordAssetBundle;
-                _mainPlayerContext = PlayerContext.CreateMainPlayerContext(recordAssetBundle);
+                _mainPlayerContext = await PlayerContext.CreateMainPlayerContext(recordAssetBundle);
+                _mainPlayerContext.updatedHierarchy += mainContextUpdatedHierarchy;
             });
-            
-            // TODO: load all assets async
-            
+
             _recordLoader = new RecordLoader(recordPath, typeRegistryProvider.GetTypeRegistry());
-            
-            var recordLoadTask = _recordLoader.LoadAsync().ContinueWith(record =>
-            {
-                Record = record;
-            });
-            
-            UniTask.WhenAll(recordLoadTask, assetBundleLoadTask).ContinueWith(() =>
+
+            var recordLoadTask = _recordLoader.LoadAsync().ContinueWith(record => { Record = record; });
+
+            OnFinishLoading += () =>
             {
                 GraphicsSettings.defaultRenderPipeline =
                     RecordAssetBundle.GetOrDefaultAssetByIdentifier<RenderPipelineAsset>(Record.graphicsSettings
                         .DefaultRenderPipelineAssetId);
+            };
+
+            UniTask.WhenAll(recordLoadTask, assetBundleLoadTask).ContinueWith(() =>
+            {
+                OnFinishLoading();
             }).Forget();
+        }
+
+        private static string GetRecordPath()
+        {
+            // Try to get the record file path from the command line arguments
+            var arguments = Environment.GetCommandLineArgs();
+
+            if (arguments.Length > 0)
+            {
+                var lastArgument = arguments[^1];
+
+                if (lastArgument.EndsWith(".plm") && File.Exists(lastArgument))
+                {
+                    return lastArgument;
+                }
+            }
+
+#if UNITY_EDITOR
+            var filePath = EditorUtility.OpenFilePanel("Open record file", Application.dataPath, "plm");
+
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                return filePath;
+            }
+#elif UNITY_STANDALONE_WIN
+            using (var fd = new OpenFileDialog())
+            {
+                fd.Title = "Open record file";
+                fd.Filter = "plm files (*.plm)|*.plm";
+                fd.FilterIndex = 0;
+
+                if (fd.ShowDialog() == DialogResult.OK)
+                {
+                    //Get the path of specified file
+                    return fd.FileName;
+                }
+            }
+#endif
+
+            Application.Quit(127);
+            throw new FileNotFoundException("Failed to open record file.");
+        }
+
+        private static string GetBundlePath(string recordFilePath = null)
+        {
+            if (recordFilePath != null)
+            {
+                // Try to find the asset bundle file from the same directory as the record file
+                var recordDirectory = Path.GetDirectoryName(recordFilePath);
+
+                if (recordDirectory == null)
+                {
+                    Application.Quit(127);
+                    throw new DirectoryNotFoundException("Failed to find the directory of the record file.");
+                }
+
+                var path = Path.Combine(recordDirectory, "plume_bundle.zip");
+
+                if (File.Exists(path))
+                {
+                    return path;
+                }
+            }
+
+#if UNITY_EDITOR
+            var bundlePath = EditorUtility.OpenFilePanel("Open bundle", Environment.CurrentDirectory, "");
+
+            if (!string.IsNullOrEmpty(bundlePath))
+            {
+                return bundlePath;
+            }
+#elif UNITY_STANDALONE_WIN
+            using (var fd = new OpenFileDialog())
+            {
+                fd.Title = "Open asset bundle file";
+                fd.Filter = "asset bundle (*.zip)|*.zip";
+                fd.FilterIndex = 0;
+
+                if (fd.ShowDialog() == DialogResult.OK)
+                {
+                    //Get the path of specified file
+                    return fd.FileName;
+                }
+            }
+#endif
+
+            Application.Quit(127);
+            throw new FileNotFoundException("Failed to open bundle file.");
         }
 
         public void SetCurrentPreviewCamera(PreviewCamera camera)
@@ -196,7 +293,7 @@ namespace PLUME.Viewer.Player
         private void PlayForward(ulong durationNanoseconds)
         {
             var endTime = _currentTimeNanoseconds + durationNanoseconds;
-            
+
             var frames = Record.Frames.GetInTimeRange(_currentTimeNanoseconds, endTime);
 
             _mainPlayerContext.PlayFrames(PlayerModules, frames);
@@ -215,15 +312,15 @@ namespace PLUME.Viewer.Player
                 }
             }
         }
-        
+
         public float GetRecordLoadingProgress()
         {
             return _recordLoader.Progress;
         }
-        
+
         public float GetRecordAssetBundleLoadingProgress()
         {
-            return _assetBundleLoader.GetLoadingProgress();
+            return _bundleLoader.GetLoadingProgress();
         }
 
         public void SetPlaySpeed(float playSpeed)
@@ -253,7 +350,7 @@ namespace PLUME.Viewer.Player
             return _currentTimeNanoseconds;
         }
 
-        public PlayerContext GetPlayerContext()
+        public PlayerContext GetMainPlayerContext()
         {
             return _mainPlayerContext;
         }
