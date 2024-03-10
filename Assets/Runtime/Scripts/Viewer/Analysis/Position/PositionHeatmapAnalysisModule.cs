@@ -563,7 +563,7 @@ namespace PLUME.Viewer.Analysis.Position
         public void ExportResult(PositionHeatmapAnalysisResult result)
         {
             var resultIdx = GetResultIndex(result);
-            var outputDir = $"Outputs/Analysis/EyeGazeHeatmaps/{resultIdx}";
+            var outputDir = $"Outputs/{player.Record.ToSafeString()}/Analysis/PositionHeatmaps/{resultIdx}";
 
             if (!Directory.Exists(outputDir))
             {

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using PLUME.Sample;
 using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
@@ -96,6 +97,15 @@ namespace PLUME
         {
             _otherSamples.Add(sample);
             Duration = Math.Max(Duration, sample.Timestamp);
+        }
+        
+        public string ToSafeString()
+        {
+            var recordName = metadata.Name;
+            var recordStartTime = metadata.StartTime.ToDateTime();
+            var formattedStartTime = recordStartTime.ToString("yyyy-MM-dd_HH-mm-ss");
+            var recordSafeName = string.Join("_", recordName.Split(Path.GetInvalidFileNameChars())) + "_" + formattedStartTime;
+            return recordSafeName;
         }
     }
 }

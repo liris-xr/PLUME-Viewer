@@ -661,7 +661,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         public void ExportResult(EyeGazeAnalysisResult result)
         {
             var resultIdx = GetResultIndex(result);
-            var outputDir = $"Outputs/Analysis/EyeGazeHeatmaps/{resultIdx}";
+            var outputDir = $"Outputs/{player.Record.ToSafeString()}/Analysis/EyeGazeHeatmaps/{resultIdx}";
 
             if (!Directory.Exists(outputDir))
             {
