@@ -1,0 +1,59 @@
+@import url('project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/dark_theme.uss?fileID=7433441132597879392&guid=028e63fb930a6f74997dbdd7944d219b&type=3#dark_theme');
+@import url('project://database/Packages/fr.liris.plume.viewer/Runtime/Resources/UI/Styles/global.uss?fileID=7433441132597879392&guid=ab73a4b1d27dd8b4f9ec2a5bd75e9cbf&type=3#global');
+
+.timeline {
+    width: 100%;
+    height: 100%;
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.time-label {
+    color: rgb(208, 208, 208);
+}
+
+#time-scale {
+    padding: 5px 0;
+    padding-bottom: 0;
+    background-color: var(--unity-colors-window-background);
+    border-color: var(--unity-colors-default-border);
+    border-bottom-width: 0;
+    overflow: hidden;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-left-width: 0;
+}
+
+#time-scale-scroll-view {
+    width: 100%;
+}
+
+#time-info-panel {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 300px;
+    max-width: 400px;
+}
+
+#time-field {
+    align-self: center;
+    width: 80%;
+}
+
+#time-field #unity-text-input {
+    padding: 10px;
+}
+
+#tracks-placeholder #unity-content-container {
+    height: 100%;
+}
+
+#track-content-container #unity-content-container {
+    height: 100%;
+    width: 100%;
+}
+
+.timeline-scroller Label {
+    display: none;
+}
