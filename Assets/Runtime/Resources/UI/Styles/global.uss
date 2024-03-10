@@ -1,0 +1,96 @@
+#navbar {
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 20px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+    background-color: var(--unity-theme-background-color-82);
+    border-width: 0;
+}
+
+.panel-header {
+    background-color: var(--unity-theme-border-color-9);
+    border-color: var(--unity-colors-default-border);
+    border-width: 1px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 20px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+.panel-footer {
+    background-color: rgb(56, 56, 56);
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 20px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+}
+
+.panel-header__title {
+    -unity-font-style: bold;
+}
+
+.panel-container-primary {
+    background-color: var(--unity-colors-window-background);
+    border-color: var(--unity-colors-default-border);
+    border-width: 1px;
+}
+
+.panel-container-secondary {
+    background-color: var(--unity-theme-background-color-5);
+}
+
+.horizontal-spacer {
+    visibility: hidden;
+    width: auto;
+    flex-grow: 1;
+}
+
+.gray-label {
+    -unity-font-style: italic;
+    color: rgb(125, 125, 125);
+    margin: 3px;
+}
+
+#vertical-pane-split-view > #unity-dragline-anchor > #unity-dragline {
+    top: -2px;
+    height: 5px;
+}
+
+#horizontal-pane-split-view-1 > #unity-dragline-anchor > #unity-dragline {
+    left: -3px;
+    width: 5px;
+}
+
+#horizontal-pane-split-view-2 > #unity-dragline-anchor > #unity-dragline {
+    left: -2px;
+    width: 5px;
+}
+
+.time-scale {
+}
+
+#close-btn {
+    color: rgb(84, 84, 84);
+    background-color: rgb(35, 35, 35);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+#close-btn:hover {
+    color: rgb(255, 255, 255);
+    background-color: rgb(255, 0, 0);
+}

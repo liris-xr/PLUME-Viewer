@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags: []
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - ReplayLayer1
+  - ReplayLayer2
+  - ReplayLayer3
+  - ReplayLayer4
+  - ReplayLayer5
+  - ReplayLayer6
+  - ReplayLayer7
+  - ReplayLayer8
+  - ReplayLayer9
+  - ReplayLayer10
+  - ReplayLayer11
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
