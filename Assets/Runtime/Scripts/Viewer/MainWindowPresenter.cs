@@ -259,7 +259,7 @@ namespace PLUME.Viewer
                         _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").value =
                             player.GetRecordLoadingProgress();
                         _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar").title =
-                            $"Loading record... {player.GetRecordLoadingProgress():P}%";
+                            $"Loading record... {player.GetRecordLoadingProgress():P}";
                     }
                 }
                 else
