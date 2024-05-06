@@ -24,6 +24,8 @@
 
 PLUME Viewer is a standalone application for viewing and analyzing PLUME record files generated with PLUME Recorder, independently of the Unity project. It offers analysis modules such as interactions analysis, 3D trajectories, in-context physiological signals tracks, position and eye gaze heatmaps. Heatmaps can be exported as point clouds with the scalar field embedded. PLUME Viewer is useful to review a recorded experiment, like you would a video in a media player, but you can explore the 3D scene. PLUME Viewer does not require the original Unity Project and only needs the record files and its associated asset bundle (built with PLUME Recorder).
 
+https://github.com/liris-xr/PLUME-Viewer/assets/20073809/7c594d2a-f9cb-4759-8192-04b3e44d9200
+
 ## Getting Started
 
 PLUME Viewer can be installed on Windows using the [latest release](https://www.github.com/liris-xr/PLUME-Viewer/releases/). Unzip the archive and launch the `PLUME-Viewer.exe` file. You will be prompted to select the record file and its associated asset bundle you want to replay. For more information, please refer to the [guide on how to replay a record](https://liris-xr.github.io/PLUME/viewer/replay/).
