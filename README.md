@@ -42,6 +42,21 @@ The full documentation is available at [liris-xr.github.io/PLUME/](https://liris
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**. You can [open an issue](https://github.com/liris-xr/PLUME-Recorder/issues) to report a bug, request a feature, or submit a pull request.
 
+### Development setup
+
+Use the following commands to install the dotnet tools:
+
+```bash
+# Install the dotnet tools
+make install
+# Format all the code in "**/*.cs" files
+make format
+# Format all the staged code in "**/*.cs" files
+make format-staged
+```
+
+Note that ReGitLint will run CleanupCode to format all staged files. If they don't match .editorconfig the commit will fail and you'll have to stage the newly formatted files.
+
 ## Contact
 
 Discord server **(Recommended)** <a href="https://discord.gg/c3evqEWMge">
