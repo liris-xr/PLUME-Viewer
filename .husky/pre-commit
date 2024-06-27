@@ -1,0 +1,5 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo 'Formatting code'
+dotnet regitlint -p "**/*.cs" -f staged --fail-on-diff --jb --exclude="**/*.g.cs"
