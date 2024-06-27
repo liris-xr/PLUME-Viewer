@@ -3,7 +3,7 @@
     <ui:VisualElement>
         <ui:TextField picking-mode="Ignore" label="Interactor(s)" text="Enter Instance ID" is-delayed="true" name="interactors" style="color: rgb(255, 255, 255);" />
         <ui:TextField picking-mode="Ignore" label="Interactable(s)" text="Enter Instance ID" is-delayed="true" name="interactables" style="color: rgb(255, 255, 255);" />
-        <ui:EnumField label="Interaction Type" type="PLUME.Viewer.Analysis.Interaction.InteractionType, Assembly-CSharp" name="interaction-type" />
+        <ui:EnumField label="Interaction Type" type="PLUME.Viewer.Analysis.Interaction.InteractionType, Runtime" name="interaction-type" />
         <ui:Label text="Time range:" display-tooltip-when-elided="true" class="unity-base-field__label" style="padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; margin-left: 3px;" />
         <PLUME.UI.Element.TimeRangeElement name="time-range" style="padding-left: 2px; padding-right: 2px; padding-top: 2px; padding-bottom: 2px;" />
         <ui:Button text="Generate" display-tooltip-when-elided="true" name="generate-btn" />

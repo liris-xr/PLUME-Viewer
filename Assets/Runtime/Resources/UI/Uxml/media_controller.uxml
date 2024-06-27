@@ -24,7 +24,7 @@
             </ui:VisualElement>
             <ui:VisualElement name="hspacer" class="horizontal-spacer"
                               style="max-width: 5px; flex-grow: 0; min-width: 2px;"/>
-            <ui:EnumField label="Camera:" type="PLUME.Viewer.PreviewCameraType, Assembly-CSharp"
+            <ui:EnumField label="Camera:" type="PLUME.Viewer.PreviewCameraType, Runtime"
                           name="camera-selection" style="width: 150px;"/>
             <ui:VisualElement name="hspacer" class="horizontal-spacer"
                               style="max-width: 5px; flex-grow: 0; min-width: 2px;"/>
