@@ -2,4 +2,4 @@
 . "$(dirname "$0")/_/husky.sh"
 
 echo 'Formatting code'
-dotnet regitlint -p "**/*.cs" -f staged --fail-on-diff --jb --exclude="**/*.g.cs"
+dotnet regitlint -s PLUME-Viewer.sln -p "**/*.cs" -f staged
