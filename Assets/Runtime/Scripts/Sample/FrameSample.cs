@@ -4,11 +4,9 @@ namespace PLUME.Sample
 {
     public class FrameSample : ISample
     {
-        public ulong Timestamp { get; }
-        public bool HasTimestamp => true;
+        public readonly List<RawSample> Data;
 
         public readonly int FrameNumber;
-        public readonly List<RawSample> Data;
 
         public FrameSample(ulong timestamp, int frameNumber, List<RawSample> data)
         {
@@ -16,5 +14,8 @@ namespace PLUME.Sample
             FrameNumber = frameNumber;
             Data = data;
         }
+
+        public ulong Timestamp { get; }
+        public bool HasTimestamp => true;
     }
 }

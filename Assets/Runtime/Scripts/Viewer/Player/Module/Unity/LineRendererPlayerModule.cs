@@ -29,10 +29,10 @@ namespace PLUME.Viewer.Player.Module.Unity
 
                     if (lineRendererUpdate.Color != null)
                         lineRenderer.colorGradient = lineRendererUpdate.Color.ToEngineType();
-                    
-                    if(lineRendererUpdate.WidthCurve != null)
+
+                    if (lineRendererUpdate.WidthCurve != null)
                         lineRenderer.widthCurve = lineRendererUpdate.WidthCurve.ToEngineType();
-                    
+
                     if (lineRendererUpdate.HasWidthMultiplier)
                         lineRenderer.widthMultiplier = lineRendererUpdate.WidthMultiplier;
 
@@ -62,14 +62,14 @@ namespace PLUME.Viewer.Player.Module.Unity
 
                     if (lineRendererUpdate.HasMaskInteraction)
                         lineRenderer.maskInteraction = lineRendererUpdate.MaskInteraction.ToEngineType();
-                    
+
                     if (lineRendererUpdate.Positions != null)
                     {
                         var positions = lineRendererUpdate.Positions.Positions_.Select(p => p.ToEngineType()).ToArray();
                         lineRenderer.positionCount = positions.Length;
                         lineRenderer.SetPositions(positions);
                     }
-                    
+
                     break;
                 }
             }

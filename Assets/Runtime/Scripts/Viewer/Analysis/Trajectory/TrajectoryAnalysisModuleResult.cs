@@ -10,10 +10,10 @@ namespace PLUME.Viewer.Analysis.Trajectory
 {
     public class TrajectorySegmentPoint
     {
-        public ulong Time;
+        [CanBeNull] public Marker Marker;
         public Vector3 Position;
         [CanBeNull] public Quaternion? Rotation;
-        [CanBeNull] public Marker Marker;
+        public ulong Time;
 
         public TrajectorySegmentPoint(ulong time, Vector3 position, Quaternion? rotation, [CanBeNull] Marker marker)
         {
@@ -39,10 +39,6 @@ namespace PLUME.Viewer.Analysis.Trajectory
 
     public class TrajectoryAnalysisModuleResult : AnalysisModuleResult
     {
-        public TrajectoryAnalysisModuleParameters GenerationParameters { get; }
-
-        public List<TrajectorySegmentPoint>[] Segments { get; }
-
         public TrajectoryAnalysisModuleResult()
         {
         }
@@ -53,6 +49,10 @@ namespace PLUME.Viewer.Analysis.Trajectory
             GenerationParameters = generationParameters;
             Segments = segments;
         }
+
+        public TrajectoryAnalysisModuleParameters GenerationParameters { get; }
+
+        public List<TrajectorySegmentPoint>[] Segments { get; }
 
         public override void Save(Stream outputStream)
         {

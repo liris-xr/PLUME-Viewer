@@ -7,50 +7,52 @@ namespace PLUME.UI.Element
 {
     public class TimeRangeElement : VisualElement
     {
-        [Preserve]
-        public new class UxmlFactory : UxmlFactory<TimeRangeElement, UxmlTraits>
-        {
-        }
-
-        [Preserve]
-        public new class UxmlTraits : VisualElement.UxmlTraits
-        {
-            private readonly UxmlUnsignedLongAttributeDescription _lowLimit = new()
-                { name = "low-limit", defaultValue = 0u };
-
-            private readonly UxmlUnsignedLongAttributeDescription _highLimit = new()
-                { name = "high-limit", defaultValue = 1_000_000_000u };
-
-            private readonly UxmlUnsignedLongAttributeDescription _startValue = new()
-                { name = "start-value", defaultValue = 0u };
-
-            private readonly UxmlUnsignedLongAttributeDescription _endValue = new()
-                { name = "end-value", defaultValue = 1_000_000_000u };
-
-            public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
-            {
-                base.Init(ve, bag, cc);
-                var ele = ve as TimeRangeElement;
-                ele.HighLimit = _highLimit.GetValueFromBag(bag, cc);
-                ele.LowLimit = _lowLimit.GetValueFromBag(bag, cc);
-                ele.EndTime = _endValue.GetValueFromBag(bag, cc);
-                ele.StartTime = _startValue.GetValueFromBag(bag, cc);
-            }
-        }
-
         private static readonly StyleSheet StyleSheet;
-
-        public EventCallback<ChangeEvent<ulong>> startTimeChanged;
-        public EventCallback<ChangeEvent<ulong>> endTimeChanged;
+        private readonly TimeFieldElement _endTimeField;
 
         private readonly MinMaxSlider _slider;
         private readonly TimeFieldElement _startTimeField;
-        private readonly TimeFieldElement _endTimeField;
+        private ulong _endTime;
+        private ulong _highLimit;
 
         private ulong _lowLimit;
-        private ulong _highLimit;
         private ulong _startTime;
-        private ulong _endTime;
+        public EventCallback<ChangeEvent<ulong>> endTimeChanged;
+
+        public EventCallback<ChangeEvent<ulong>> startTimeChanged;
+
+        static TimeRangeElement()
+        {
+            StyleSheet = Resources.Load<StyleSheet>("UI/Styles/time_range");
+        }
+
+        public TimeRangeElement()
+        {
+            styleSheets.Add(StyleSheet);
+
+            var mainContainer = new VisualElement { name = "container" };
+            var timeFields = new VisualElement { name = "time-fields" };
+
+            _startTimeField = new TimeFieldElement { name = "time-fields__start" };
+            _endTimeField = new TimeFieldElement { name = "time-fields__end" };
+            var toLabel = new Label("to");
+            toLabel.AddToClassList(".unity-base-field__label");
+
+            timeFields.Add(_startTimeField);
+            timeFields.Add(toLabel);
+            timeFields.Add(_endTimeField);
+
+            _slider = new MinMaxSlider("") { name = "time-slider" };
+
+            mainContainer.Add(timeFields);
+            mainContainer.Add(_slider);
+
+            Add(mainContainer);
+
+            _startTimeField.timeChanged += OnStartTimeFieldValueChanged;
+            _endTimeField.timeChanged += OnEndTimeFieldValueChanged;
+            _slider.RegisterValueChangedCallback(OnSliderValueChanged);
+        }
 
         public ulong LowLimit
         {
@@ -110,39 +112,6 @@ namespace PLUME.UI.Element
             }
         }
 
-        static TimeRangeElement()
-        {
-            StyleSheet = Resources.Load<StyleSheet>("UI/Styles/time_range");
-        }
-
-        public TimeRangeElement()
-        {
-            styleSheets.Add(StyleSheet);
-
-            var mainContainer = new VisualElement { name = "container" };
-            var timeFields = new VisualElement { name = "time-fields" };
-
-            _startTimeField = new TimeFieldElement { name = "time-fields__start" };
-            _endTimeField = new TimeFieldElement { name = "time-fields__end" };
-            var toLabel = new Label("to");
-            toLabel.AddToClassList(".unity-base-field__label");
-
-            timeFields.Add(_startTimeField);
-            timeFields.Add(toLabel);
-            timeFields.Add(_endTimeField);
-
-            _slider = new MinMaxSlider("") { name = "time-slider" };
-
-            mainContainer.Add(timeFields);
-            mainContainer.Add(_slider);
-
-            Add(mainContainer);
-
-            _startTimeField.timeChanged += OnStartTimeFieldValueChanged;
-            _endTimeField.timeChanged += OnEndTimeFieldValueChanged;
-            _slider.RegisterValueChangedCallback(OnSliderValueChanged);
-        }
-
         private void OnStartTimeFieldValueChanged(ChangeEvent<ulong> evt)
         {
             StartTime = evt.newValue;
@@ -163,6 +132,37 @@ namespace PLUME.UI.Element
         {
             StartTime = LowLimit;
             EndTime = HighLimit;
+        }
+
+        [Preserve]
+        public new class UxmlFactory : UxmlFactory<TimeRangeElement, UxmlTraits>
+        {
+        }
+
+        [Preserve]
+        public new class UxmlTraits : VisualElement.UxmlTraits
+        {
+            private readonly UxmlUnsignedLongAttributeDescription _endValue = new()
+                { name = "end-value", defaultValue = 1_000_000_000u };
+
+            private readonly UxmlUnsignedLongAttributeDescription _highLimit = new()
+                { name = "high-limit", defaultValue = 1_000_000_000u };
+
+            private readonly UxmlUnsignedLongAttributeDescription _lowLimit = new()
+                { name = "low-limit", defaultValue = 0u };
+
+            private readonly UxmlUnsignedLongAttributeDescription _startValue = new()
+                { name = "start-value", defaultValue = 0u };
+
+            public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
+            {
+                base.Init(ve, bag, cc);
+                var ele = ve as TimeRangeElement;
+                ele.HighLimit = _highLimit.GetValueFromBag(bag, cc);
+                ele.LowLimit = _lowLimit.GetValueFromBag(bag, cc);
+                ele.EndTime = _endValue.GetValueFromBag(bag, cc);
+                ele.StartTime = _startValue.GetValueFromBag(bag, cc);
+            }
         }
     }
 }

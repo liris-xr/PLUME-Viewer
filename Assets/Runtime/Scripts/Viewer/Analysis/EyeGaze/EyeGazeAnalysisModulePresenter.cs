@@ -7,16 +7,15 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 {
     public class EyeGazeAnalysisModulePresenter : MonoBehaviour
     {
-        public Player.Player player;
+        private Coroutine _generationCoroutine;
+        public EyeGazeCoordinateSystem defaultCoordinateSystem = EyeGazeCoordinateSystem.Camera;
+        public string defaultProjectionReceiversIds = "";
 
         public string defaultXrCameraId = "";
-        public string defaultProjectionReceiversIds = "";
-        public EyeGazeCoordinateSystem defaultCoordinateSystem = EyeGazeCoordinateSystem.Camera;
-        
-        public EyeGazeAnalysisModule module;
-        public EyeGazeAnalysisModuleUI ui;
 
-        private Coroutine _generationCoroutine;
+        public EyeGazeAnalysisModule module;
+        public Player.Player player;
+        public EyeGazeAnalysisModuleUI ui;
 
         public void Start()
         {
@@ -25,7 +24,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             ui.XrCameraIdTextField.value = defaultXrCameraId;
             ui.ProjectionReceiversIdsTextField.value = defaultProjectionReceiversIds;
             ui.EyeGazeCoordinateSystemEnumField.value = defaultCoordinateSystem;
-            
+
             ui.clickedDeleteResult += OnClickDeleteResult;
             ui.clickedExportResult += OnClickExportResult;
             ui.toggledResultVisibility += OnToggleResultVisibility;
@@ -75,10 +74,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 module.AddResult(result);
                 module.SetVisibleResult(result);
 
-                if (player.GetVisibleHeatmapModule() != module)
-                {
-                    player.SetVisibleHeatmapModule(module);
-                }
+                if (player.GetVisibleHeatmapModule() != module) player.SetVisibleHeatmapModule(module);
 
                 ui.RefreshResults();
             });
@@ -107,18 +103,13 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             ui.GeneratingPanel.style.display = module.IsGenerating ? DisplayStyle.Flex : DisplayStyle.None;
             ui.CancelButton.SetEnabled(module.IsGenerating);
 
-            if (module.IsGenerating)
-            {
-                ui.GenerationProgressBar.value = module.GenerationProgress;
-            }
+            if (module.IsGenerating) ui.GenerationProgressBar.value = module.GenerationProgress;
         }
 
         private void OnClickDeleteResult(EyeGazeAnalysisResult result)
         {
             if (module.GetVisibleResult() == result && player.GetVisibleHeatmapModule() == module)
-            {
                 player.SetVisibleHeatmapModule(null);
-            }
 
             module.RemoveResult(result);
             ui.RefreshResults();
@@ -138,19 +129,13 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 {
                     module.SetVisibleResult(result);
 
-                    if (player.GetVisibleHeatmapModule() != module)
-                    {
-                        player.SetVisibleHeatmapModule(module);
-                    }
+                    if (player.GetVisibleHeatmapModule() != module) player.SetVisibleHeatmapModule(module);
                 }
                 else if (module.GetVisibleResult() == result)
                 {
                     module.SetVisibleResult(null);
 
-                    if (player.GetVisibleHeatmapModule() == module)
-                    {
-                        player.SetVisibleHeatmapModule(null);
-                    }
+                    if (player.GetVisibleHeatmapModule() == module) player.SetVisibleHeatmapModule(null);
                 }
             }
 

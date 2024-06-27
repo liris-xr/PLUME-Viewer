@@ -15,32 +15,9 @@ namespace PLUME.UI.Element
             ReversedHorizontal
         }
 
-        [Preserve]
-        public new class UxmlFactory : UxmlFactory<CollapseBarElement, UxmlTraits>
-        {
-        }
-
-        [Preserve]
-        public new class UxmlTraits : VisualElement.UxmlTraits
-        {
-            private readonly UxmlEnumAttributeDescription<CollapseBarElementOrientation> _orientation = new()
-                { name = "orientation", defaultValue = CollapseBarElementOrientation.Vertical };
-
-            public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
-            {
-                base.Init(ve, bag, cc);
-                var ele = ve as CollapseBarElement;
-                ele.Orientation = _orientation.GetValueFromBag(bag, cc);
-                ele.UpdateToggleButton();
-                ele.UpdateDirectionClass();
-            }
-        }
-
-        public CollapseBarElementOrientation Orientation { get; set; }
+        private static readonly StyleSheet StyleSheet;
 
         private readonly Button _toggleBtn;
-
-        private static readonly StyleSheet StyleSheet;
 
         private bool _isCollapsed;
 
@@ -65,6 +42,8 @@ namespace PLUME.UI.Element
             UpdateToggleButton();
             UpdateDirectionClass();
         }
+
+        public CollapseBarElementOrientation Orientation { get; set; }
 
         private void UpdateDirectionClass()
         {
@@ -135,6 +114,27 @@ namespace PLUME.UI.Element
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        [Preserve]
+        public new class UxmlFactory : UxmlFactory<CollapseBarElement, UxmlTraits>
+        {
+        }
+
+        [Preserve]
+        public new class UxmlTraits : VisualElement.UxmlTraits
+        {
+            private readonly UxmlEnumAttributeDescription<CollapseBarElementOrientation> _orientation = new()
+                { name = "orientation", defaultValue = CollapseBarElementOrientation.Vertical };
+
+            public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
+            {
+                base.Init(ve, bag, cc);
+                var ele = ve as CollapseBarElement;
+                ele.Orientation = _orientation.GetValueFromBag(bag, cc);
+                ele.UpdateToggleButton();
+                ele.UpdateDirectionClass();
             }
         }
     }

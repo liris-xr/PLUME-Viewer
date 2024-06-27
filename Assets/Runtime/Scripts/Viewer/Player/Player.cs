@@ -1,5 +1,4 @@
 ﻿#if UNITY_STANDALONE_WIN
-using System.Windows.Forms;
 #endif
 using System;
 using System.Globalization;
@@ -18,43 +17,47 @@ namespace PLUME.Viewer.Player
     [DisallowMultipleComponent]
     public class Player : SingletonMonoBehaviour<Player>, IDisposable
     {
-        public TypeRegistryProvider typeRegistryProvider;
+        private BundleLoader _bundleLoader;
 
-        public bool loop;
+        private PreviewCamera _currentCamera;
+        private ulong _currentTimeNanoseconds;
+
+        private AnalysisModule _generatingModule;
+        private bool _isPlaying;
+
+        private PlayerContext _mainPlayerContext;
 
         private float _playSpeed = 1;
 
-        public PlayerModule[] PlayerModules { get; private set; }
-
         private RecordLoader _recordLoader;
-        public Record Record { get; private set; }
-        public bool IsRecordLoaded => Record != null;
-
-        private BundleLoader _bundleLoader;
-        public RecordAssetBundle RecordAssetBundle { get; private set; }
-        public bool IsRecordAssetBundleLoaded => RecordAssetBundle != null;
-
-        private PlayerContext _mainPlayerContext;
-        private bool _isPlaying;
-        private ulong _currentTimeNanoseconds;
-
-        public RenderTexture PreviewRenderTexture { get; private set; }
-
-        public event Action OnFinishLoading = delegate { };
+        private AnalysisModule _visibleHeatmapModule;
 
         public FreeCamera freeCamera;
-        public TopViewCamera topViewCamera;
+
+        public bool loop;
         public MainCamera mainCamera;
 
-        private PreviewCamera _currentCamera;
-        
         public Action<IHierarchyUpdateEvent> mainContextUpdatedHierarchy;
-
-        private AnalysisModule _generatingModule;
-        private AnalysisModule _visibleHeatmapModule;
 
         public Action<AnalysisModule> onGeneratingModuleChanged;
         public Action<AnalysisModule> onVisibleHeatmapModuleChanged;
+        public TopViewCamera topViewCamera;
+        public TypeRegistryProvider typeRegistryProvider;
+
+        public PlayerModule[] PlayerModules { get; private set; }
+        public Record Record { get; private set; }
+        public bool IsRecordLoaded => Record != null;
+        public RecordAssetBundle RecordAssetBundle { get; private set; }
+        public bool IsRecordAssetBundleLoaded => RecordAssetBundle != null;
+
+        public RenderTexture PreviewRenderTexture { get; private set; }
+
+        public void Dispose()
+        {
+            _recordLoader.Dispose();
+        }
+
+        public event Action OnFinishLoading = delegate { };
 
         [RuntimeInitializeOnLoadMethod]
         public static void OnInitialize()
@@ -102,10 +105,7 @@ namespace PLUME.Viewer.Player
                         .DefaultRenderPipelineAssetId);
             };
 
-            UniTask.WhenAll(recordLoadTask, assetBundleLoadTask).ContinueWith(() =>
-            {
-                OnFinishLoading();
-            }).Forget();
+            UniTask.WhenAll(recordLoadTask, assetBundleLoadTask).ContinueWith(() => { OnFinishLoading(); }).Forget();
         }
 
         private static string GetRecordPath()
@@ -117,19 +117,13 @@ namespace PLUME.Viewer.Player
             {
                 var lastArgument = arguments[^1];
 
-                if (lastArgument.EndsWith(".plm") && File.Exists(lastArgument))
-                {
-                    return lastArgument;
-                }
+                if (lastArgument.EndsWith(".plm") && File.Exists(lastArgument)) return lastArgument;
             }
 
 #if UNITY_EDITOR
             var filePath = EditorUtility.OpenFilePanel("Open record file", Application.dataPath, "plm");
 
-            if (!string.IsNullOrEmpty(filePath))
-            {
-                return filePath;
-            }
+            if (!string.IsNullOrEmpty(filePath)) return filePath;
 #elif UNITY_STANDALONE_WIN
             using (var fd = new OpenFileDialog())
             {
@@ -164,19 +158,13 @@ namespace PLUME.Viewer.Player
 
                 var path = Path.Combine(recordDirectory, "plume_bundle.zip");
 
-                if (File.Exists(path))
-                {
-                    return path;
-                }
+                if (File.Exists(path)) return path;
             }
 
 #if UNITY_EDITOR
             var bundlePath = EditorUtility.OpenFilePanel("Open bundle", Environment.CurrentDirectory, "");
 
-            if (!string.IsNullOrEmpty(bundlePath))
-            {
-                return bundlePath;
-            }
+            if (!string.IsNullOrEmpty(bundlePath)) return bundlePath;
 #elif UNITY_STANDALONE_WIN
             using (var fd = new OpenFileDialog())
             {
@@ -217,15 +205,9 @@ namespace PLUME.Viewer.Player
 
         private void FixedUpdate()
         {
-            if (_isPlaying)
-            {
-                PlayForward((ulong)(Time.fixedDeltaTime * _playSpeed * 1_000_000_000));
-            }
+            if (_isPlaying) PlayForward((ulong)(Time.fixedDeltaTime * _playSpeed * 1_000_000_000));
 
-            if (GetModuleGenerating() != null && _isPlaying)
-            {
-                PausePlaying();
-            }
+            if (GetModuleGenerating() != null && _isPlaying) PausePlaying();
         }
 
         public void OnDestroy()
@@ -272,10 +254,7 @@ namespace PLUME.Viewer.Player
 
         public void JumpToTime(ulong time)
         {
-            if (time == _currentTimeNanoseconds)
-            {
-                return;
-            }
+            if (time == _currentTimeNanoseconds) return;
 
             if (time > _currentTimeNanoseconds)
             {
@@ -304,13 +283,9 @@ namespace PLUME.Viewer.Player
             if (endTime > Record.Duration)
             {
                 if (loop)
-                {
                     JumpToTime(0);
-                }
                 else
-                {
                     _isPlaying = false;
-                }
             }
         }
 
@@ -327,13 +302,9 @@ namespace PLUME.Viewer.Player
         public void SetPlaySpeed(float playSpeed)
         {
             if (playSpeed < 0)
-            {
                 _playSpeed = 0;
-            }
             else
-            {
                 _playSpeed = playSpeed;
-            }
         }
 
         public float GetPlaySpeed()
@@ -391,11 +362,6 @@ namespace PLUME.Viewer.Player
         public AnalysisModule GetVisibleHeatmapModule()
         {
             return _visibleHeatmapModule;
-        }
-
-        public void Dispose()
-        {
-            _recordLoader.Dispose();
         }
     }
 }

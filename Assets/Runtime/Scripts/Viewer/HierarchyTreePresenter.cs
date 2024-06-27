@@ -8,19 +8,19 @@ namespace PLUME.Viewer
 {
     public class HierarchyTreePresenter : MonoBehaviour
     {
-        public Player.Player player;
-        public double refreshInterval = 1; // seconds
-
-        private HierarchyTreeUI _hierarchyTreeUI;
-        private TreeView _hierarchyTree;
-
-        private readonly Dictionary<string, HierarchyTreeItem> _items = new();
         private readonly HashSet<HierarchyTreeItem> _createdItems = new(HierarchyTreeItemComparer.Instance);
         private readonly HashSet<HierarchyTreeItem> _deletedItems = new(HierarchyTreeItemComparer.Instance);
+
+        private readonly Dictionary<string, HierarchyTreeItem> _items = new();
         private readonly HashSet<HierarchyTreeItem> _updatedItems = new(HierarchyTreeItemComparer.Instance);
+        private bool _forceRebuild;
+        private TreeView _hierarchyTree;
+
+        private HierarchyTreeUI _hierarchyTreeUI;
 
         private double _lastUpdate;
-        private bool _forceRebuild;
+        public Player.Player player;
+        public double refreshInterval = 1; // seconds
 
         private void Awake()
         {
@@ -172,7 +172,6 @@ namespace PLUME.Viewer
             var requiresRebuild = false;
 
             foreach (var createdItem in _createdItems)
-            {
                 try
                 {
                     _hierarchyTree.AddItem(new TreeViewItemData<HierarchyTreeItem>(createdItem.ItemId, createdItem),
@@ -183,11 +182,10 @@ namespace PLUME.Viewer
                 {
                     // ignored, couldn't add item (duplicate)
                 }
-            }
 
             foreach (var deletedItem in _deletedItems)
             {
-                controller.TryRemoveItem(deletedItem.ItemId, rebuildTree: false);
+                controller.TryRemoveItem(deletedItem.ItemId, false);
                 requiresRebuild = true;
             }
 
@@ -196,18 +194,16 @@ namespace PLUME.Viewer
                 HierarchyTreeUI.TryUpdateItemVisualElement(updatedItem);
 
                 if (updatedItem.IsParentDirty || updatedItem.IsSiblingIndexDirty)
-                {
                     try
                     {
                         controller.Move(updatedItem.ItemId, updatedItem.ParentId, updatedItem.SiblingIndex,
-                            rebuildTree: false);
+                            false);
                         requiresRebuild = true;
                     }
                     catch (Exception)
                     {
                         // ignored, item not found
                     }
-                }
 
                 updatedItem.MarkClean();
             }

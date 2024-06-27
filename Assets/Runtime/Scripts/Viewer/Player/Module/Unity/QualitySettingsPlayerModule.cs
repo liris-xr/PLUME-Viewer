@@ -10,10 +10,8 @@ namespace PLUME.Viewer.Player.Module.Unity
         public override void PlaySample(PlayerContext ctx, RawSample rawSample)
         {
             if (rawSample.Payload is QualitySettingsUpdate qualitySettingsUpdate)
-            {
                 QualitySettings.renderPipeline =
                     ctx.GetOrDefaultAssetByIdentifier<RenderPipelineAsset>(qualitySettingsUpdate.RenderPipelineAssetId);
-            }
         }
     }
 }

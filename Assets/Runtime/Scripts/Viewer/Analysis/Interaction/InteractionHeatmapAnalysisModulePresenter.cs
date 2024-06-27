@@ -6,13 +6,13 @@ namespace PLUME.Viewer.Analysis.Interaction
 {
     public class InteractionHeatmapAnalysisModulePresenter : MonoBehaviour
     {
-        public Player.Player player;
-        
-        public string defaultInteractorsIds = "";
         public string defaultInteractablesIds = "";
         public InteractionType defaultInteractionType = InteractionType.Hover;
 
+        public string defaultInteractorsIds = "";
+
         public InteractionHeatmapAnalysisModule module;
+        public Player.Player player;
         public InteractionHeatmapAnalysisModuleUI ui;
 
         public void Start()
@@ -80,10 +80,7 @@ namespace PLUME.Viewer.Analysis.Interaction
                 module.AddResult(result);
                 module.SetVisibleResult(result);
 
-                if (player.GetVisibleHeatmapModule() != module)
-                {
-                    player.SetVisibleHeatmapModule(module);
-                }
+                if (player.GetVisibleHeatmapModule() != module) player.SetVisibleHeatmapModule(module);
 
                 ui.RefreshResults();
             });
@@ -101,9 +98,7 @@ namespace PLUME.Viewer.Analysis.Interaction
         private void OnClickDeleteResult(InteractionHeatmapAnalysisResult result)
         {
             if (module.GetVisibleResult() == result && player.GetVisibleHeatmapModule() == module)
-            {
                 player.SetVisibleHeatmapModule(null);
-            }
 
             module.RemoveResult(result);
             ui.RefreshResults();
@@ -118,19 +113,13 @@ namespace PLUME.Viewer.Analysis.Interaction
                 {
                     module.SetVisibleResult(result);
 
-                    if (player.GetVisibleHeatmapModule() != module)
-                    {
-                        player.SetVisibleHeatmapModule(module);
-                    }
+                    if (player.GetVisibleHeatmapModule() != module) player.SetVisibleHeatmapModule(module);
                 }
                 else if (module.GetVisibleResult() == result)
                 {
                     module.SetVisibleResult(null);
 
-                    if (player.GetVisibleHeatmapModule() == module)
-                    {
-                        player.SetVisibleHeatmapModule(null);
-                    }
+                    if (player.GetVisibleHeatmapModule() == module) player.SetVisibleHeatmapModule(null);
                 }
             }
 

@@ -9,11 +9,11 @@ namespace PLUME
 {
     public class TypeRegistryProviderAssembliesLookup : TypeRegistryProvider
     {
+        private TypeRegistry _registry;
+
         [Tooltip("Assemblies where the module will look for MessageDescriptors, includes Assembly-CSharp by default.")]
         public string[] assembliesNames =
             { "Assembly-CSharp", typeof(TypeRegistryProviderAssembliesLookup).Assembly.GetName().Name };
-
-        private TypeRegistry _registry;
 
         public override TypeRegistry GetTypeRegistry()
         {

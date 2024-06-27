@@ -16,15 +16,13 @@ namespace PLUME.Viewer.Analysis.Position
 
     public class PositionHeatmapAnalysisResult : AnalysisModuleResult, IDisposable
     {
-        public PositionHeatmapAnalysisModuleParameters Parameters;
-        public ComputeBuffer MinValueBuffer { get; }
-        public ComputeBuffer MaxValueBuffer { get; }
-
         /// <summary>
-        /// List of generated samples for the projection receivers. The key is the hash between the GameObject
-        /// identifier and mesh identifier in the record.
+        ///     List of generated samples for the projection receivers. The key is the hash between the GameObject
+        ///     identifier and mesh identifier in the record.
         /// </summary>
         public readonly Dictionary<int, MeshSamplerResult> SamplerResults = new();
+
+        public PositionHeatmapAnalysisModuleParameters Parameters;
 
         public PositionHeatmapAnalysisResult()
         {
@@ -40,6 +38,9 @@ namespace PLUME.Viewer.Analysis.Position
             MaxValueBuffer = maxValueBuffer;
             SamplerResults = samplerResults;
         }
+
+        public ComputeBuffer MinValueBuffer { get; }
+        public ComputeBuffer MaxValueBuffer { get; }
 
         public float MinValue
         {
@@ -63,10 +64,7 @@ namespace PLUME.Viewer.Analysis.Position
 
         public void Dispose()
         {
-            foreach (var samplerResult in SamplerResults.Values)
-            {
-                samplerResult.Dispose();
-            }
+            foreach (var samplerResult in SamplerResults.Values) samplerResult.Dispose();
 
             MinValueBuffer.Release();
             MaxValueBuffer.Release();

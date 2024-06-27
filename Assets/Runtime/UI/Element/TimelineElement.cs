@@ -13,59 +13,28 @@ namespace PLUME.UI.Element
         private const float TimeDivisionWidthDefault = 100;
         private const int TicksPerDivisionDefault = 10;
 
-        [Preserve]
-        public new class UxmlFactory : UxmlFactory<TimelineElement, UxmlTraits>
-        {
-        }
+        private const ulong MinimumVisibleDuration = 1_000_000_000u; // in ns
+        private readonly List<TimelineMarkerElement> _markers = new();
 
-        [Preserve]
-        public new class UxmlTraits : VisualElement.UxmlTraits
-        {
-            private readonly UxmlUnsignedLongAttributeDescription _duration = new()
-                { name = "duration", defaultValue = DurationDefault };
-
-            private readonly UxmlUnsignedLongAttributeDescription _timeDivisionDuration = new()
-                { name = "time-division-duration", defaultValue = TimeDivisionDurationDefault };
-
-            private readonly UxmlIntAttributeDescription _ticksPerDivision = new()
-                { name = "ticks-per-division", defaultValue = TicksPerDivisionDefault };
-
-            private readonly UxmlFloatAttributeDescription _timeDivisionWidth = new()
-                { name = "time-division-width", defaultValue = TimeDivisionWidthDefault };
-
-            public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
-            {
-                base.Init(ve, bag, cc);
-                var ele = ve as TimelineElement;
-                ele.Duration = _duration.GetValueFromBag(bag, cc);
-                ele.TimeDivisionDuration = _timeDivisionDuration.GetValueFromBag(bag, cc);
-                ele.TicksPerDivision = _ticksPerDivision.GetValueFromBag(bag, cc);
-                ele.TimeDivisionWidth = _timeDivisionWidth.GetValueFromBag(bag, cc);
-            }
-        }
-
-        private readonly TimeScaleElement _timeScale;
+        private readonly VisualElement _markersContainer;
 
         private readonly VisualElement _timeCursor;
 
-        private readonly VisualElement _markersContainer;
-        private readonly List<TimelineMarkerElement> _markers = new();
-
         private readonly MinMaxSlider _timelineScroller;
+
+        private readonly TimeScaleElement _timeScale;
         private readonly ScrollView _timeScaleScrollView;
+        private readonly List<TimelinePhysiologicalSignalTrackElement> _tracks = new();
+        private readonly VisualElement _tracksContainer;
 
         private readonly VisualElement _tracksPlaceholder;
-        private readonly VisualElement _tracksContainer;
-        private readonly List<TimelinePhysiologicalSignalTrackElement> _tracks = new();
-
-        private ulong _time;
 
         private ulong _duration;
-        private ulong _timeDivisionDuration;
         private int _ticksPerDivision;
-        private float _timeDivisionWidth;
 
-        private const ulong MinimumVisibleDuration = 1_000_000_000u; // in ns
+        private ulong _time;
+        private ulong _timeDivisionDuration;
+        private float _timeDivisionWidth;
 
         public TimelineElement()
         {
@@ -95,6 +64,62 @@ namespace PLUME.UI.Element
 
             UpdateTimelineScroller();
             RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
+        }
+
+        public ulong Duration
+        {
+            get => _duration;
+            set
+            {
+                _duration = value;
+                _timeScale.Duration = value;
+
+                foreach (var track in _tracks) track.Duration = value;
+
+                UpdateTimescaleScrollerLimits();
+            }
+        }
+
+        public ulong TimeDivisionDuration
+        {
+            get => _timeDivisionDuration;
+            set
+            {
+                _timeDivisionDuration = value;
+                _timeScale.TimeDivisionDuration = value;
+
+                foreach (var track in _tracks) track.TimeDivisionDuration = value;
+
+                foreach (var marker in _markers) marker.TimeDivisionDuration = value;
+
+                UpdateTimescaleScrollerLimits();
+            }
+        }
+
+        public float TimeDivisionWidth
+        {
+            get => _timeDivisionWidth;
+            set
+            {
+                _timeDivisionWidth = value;
+                _timeScale.TimeDivisionWidth = value;
+
+                foreach (var track in _tracks) track.TimeDivisionWidth = value;
+
+                foreach (var marker in _markers) marker.TimeDivisionWidth = value;
+
+                UpdateTimescaleScrollerLimits();
+            }
+        }
+
+        public int TicksPerDivision
+        {
+            get => _ticksPerDivision;
+            set
+            {
+                _ticksPerDivision = value;
+                _timeScale.TicksPerDivision = value;
+            }
         }
 
         public void ShowTimePeriod(ulong from, ulong to)
@@ -225,15 +250,9 @@ namespace PLUME.UI.Element
             _timeScaleScrollView.horizontalScroller.value = scrollOffset;
             _timeCursor.Q("scroll-offset").style.left = -scrollOffset;
 
-            foreach (var marker in _markers)
-            {
-                marker.SetScrollOffset(scrollOffset);
-            }
+            foreach (var marker in _markers) marker.SetScrollOffset(scrollOffset);
 
-            foreach (var track in _tracks)
-            {
-                track.SetScrollOffset(scrollOffset);
-            }
+            foreach (var track in _tracks) track.SetScrollOffset(scrollOffset);
 
             UpdateTimescaleTicksClippingRect();
         }
@@ -243,10 +262,7 @@ namespace PLUME.UI.Element
             _time = time;
             _timeCursor.Q("time-offset").style.left = time / (float)TimeDivisionDuration * TimeDivisionWidth;
 
-            foreach (var track in _tracks)
-            {
-                track.SetCurrentTime(time);
-            }
+            foreach (var track in _tracks) track.SetCurrentTime(time);
         }
 
         private void OnGeometryChanged(GeometryChangedEvent evt)
@@ -269,74 +285,34 @@ namespace PLUME.UI.Element
             _timeScale.TicksClippingRect = clippingRect;
         }
 
-        public ulong Duration
+        [Preserve]
+        public new class UxmlFactory : UxmlFactory<TimelineElement, UxmlTraits>
         {
-            get => _duration;
-            set
-            {
-                _duration = value;
-                _timeScale.Duration = value;
-
-                foreach (var track in _tracks)
-                {
-                    track.Duration = value;
-                }
-
-                UpdateTimescaleScrollerLimits();
-            }
         }
 
-        public ulong TimeDivisionDuration
+        [Preserve]
+        public new class UxmlTraits : VisualElement.UxmlTraits
         {
-            get => _timeDivisionDuration;
-            set
+            private readonly UxmlUnsignedLongAttributeDescription _duration = new()
+                { name = "duration", defaultValue = DurationDefault };
+
+            private readonly UxmlIntAttributeDescription _ticksPerDivision = new()
+                { name = "ticks-per-division", defaultValue = TicksPerDivisionDefault };
+
+            private readonly UxmlUnsignedLongAttributeDescription _timeDivisionDuration = new()
+                { name = "time-division-duration", defaultValue = TimeDivisionDurationDefault };
+
+            private readonly UxmlFloatAttributeDescription _timeDivisionWidth = new()
+                { name = "time-division-width", defaultValue = TimeDivisionWidthDefault };
+
+            public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
             {
-                _timeDivisionDuration = value;
-                _timeScale.TimeDivisionDuration = value;
-
-                foreach (var track in _tracks)
-                {
-                    track.TimeDivisionDuration = value;
-                }
-
-                foreach (var marker in _markers)
-                {
-                    marker.TimeDivisionDuration = value;
-                }
-
-                UpdateTimescaleScrollerLimits();
-            }
-        }
-
-        public float TimeDivisionWidth
-        {
-            get => _timeDivisionWidth;
-            set
-            {
-                _timeDivisionWidth = value;
-                _timeScale.TimeDivisionWidth = value;
-
-                foreach (var track in _tracks)
-                {
-                    track.TimeDivisionWidth = value;
-                }
-
-                foreach (var marker in _markers)
-                {
-                    marker.TimeDivisionWidth = value;
-                }
-
-                UpdateTimescaleScrollerLimits();
-            }
-        }
-
-        public int TicksPerDivision
-        {
-            get => _ticksPerDivision;
-            set
-            {
-                _ticksPerDivision = value;
-                _timeScale.TicksPerDivision = value;
+                base.Init(ve, bag, cc);
+                var ele = ve as TimelineElement;
+                ele.Duration = _duration.GetValueFromBag(bag, cc);
+                ele.TimeDivisionDuration = _timeDivisionDuration.GetValueFromBag(bag, cc);
+                ele.TicksPerDivision = _ticksPerDivision.GetValueFromBag(bag, cc);
+                ele.TimeDivisionWidth = _timeDivisionWidth.GetValueFromBag(bag, cc);
             }
         }
     }

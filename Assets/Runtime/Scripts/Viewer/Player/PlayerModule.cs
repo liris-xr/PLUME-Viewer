@@ -1,5 +1,4 @@
 ﻿using Google.Protobuf;
-using PLUME.Sample;
 using UnityEngine;
 
 namespace PLUME.Viewer.Player
@@ -8,10 +7,7 @@ namespace PLUME.Viewer.Player
     {
         public override void PlaySample(PlayerContext ctx, RawSample rawSample)
         {
-            if (rawSample.Payload is T)
-            {
-                PlaySample(ctx, rawSample as RawSample<T>);
-            }
+            if (rawSample.Payload is T) PlaySample(ctx, rawSample as RawSample<T>);
         }
 
         public abstract void PlaySample(PlayerContext ctx, RawSample<T> rawSample);

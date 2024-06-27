@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using PLUME.Sample.Unity;
@@ -12,25 +11,24 @@ namespace PLUME.Viewer.Analysis.Interaction
 {
     public class InteractionHeatmapAnalysisModule : AnalysisModuleWithResults<InteractionHeatmapAnalysisResult>
     {
-        public Player.Player player;
-
-        public Shader interactionHeatmapShader;
-        public Shader defaultHeatmapShader;
-
-        public Color startColor = Color.white;
-        public Color endColor = Color.red;
-
-        private Material _interactionHeatmapMaterial;
-        private Material _defaultHeatmapMaterial;
-
-        private InteractionHeatmapAnalysisResult _visibleResult;
-
         private static readonly int StartColor = Shader.PropertyToID("_StartColor");
         private static readonly int EndColor = Shader.PropertyToID("_EndColor");
         private static readonly int InteractionCount = Shader.PropertyToID("_InteractionCount");
         private static readonly int MaxInteractionCount = Shader.PropertyToID("_MaxInteractionCount");
 
         private readonly Dictionary<int, MaterialPropertyBlock> _cachedInteractionsPropertyBlocks = new();
+        private Material _defaultHeatmapMaterial;
+
+        private Material _interactionHeatmapMaterial;
+
+        private InteractionHeatmapAnalysisResult _visibleResult;
+        public Shader defaultHeatmapShader;
+        public Color endColor = Color.red;
+
+        public Shader interactionHeatmapShader;
+        public Player.Player player;
+
+        public Color startColor = Color.white;
 
         private void Awake()
         {
@@ -52,10 +50,8 @@ namespace PLUME.Viewer.Analysis.Interaction
             var maxInteractionsCount = 0;
 
             if (parameters.EndTime < parameters.StartTime)
-            {
                 throw new Exception(
                     $"{nameof(parameters.EndTime)} should be less or equal {nameof(parameters.StartTime)}.");
-            }
 
             var samples = record.OtherSamples.GetInTimeRange(parameters.StartTime, parameters.EndTime);
 
@@ -116,10 +112,7 @@ namespace PLUME.Viewer.Analysis.Interaction
             if (activeContext == null)
                 return;
 
-            if (_visibleResult != null)
-            {
-                ApplyHeatmapMaterials(activeContext);
-            }
+            if (_visibleResult != null) ApplyHeatmapMaterials(activeContext);
         }
 
         private void RestoreRecordMaterials(PlayerContext ctx)
@@ -128,11 +121,8 @@ namespace PLUME.Viewer.Analysis.Interaction
 
             foreach (var go in gameObjects)
             {
-                if (go.TryGetComponent<Graphic>(out var graphic))
-                {
-                    graphic.enabled = true;
-                }
-                
+                if (go.TryGetComponent<Graphic>(out var graphic)) graphic.enabled = true;
+
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                     continue;
                 goRenderer.SetSharedMaterials(new List<Material>());
@@ -140,25 +130,15 @@ namespace PLUME.Viewer.Analysis.Interaction
 
             var frames = player.Record.Frames.GetInTimeRange(0, player.GetCurrentPlayTimeInNanoseconds());
             foreach (var frame in frames)
+            foreach (var sample in frame.Data)
             {
-                foreach (var sample in frame.Data)
-                {
-                    if (sample.Payload is TerrainUpdate)
-                    {
-                        foreach (var playerModule in player.PlayerModules)
-                        {
-                            playerModule.PlaySample(ctx, sample);
-                        }
-                    }
-                    
-                    if (sample.Payload is RendererUpdate)
-                    {
-                        foreach (var playerModule in player.PlayerModules)
-                        {
-                            playerModule.PlaySample(ctx, sample);
-                        }
-                    }
-                }
+                if (sample.Payload is TerrainUpdate)
+                    foreach (var playerModule in player.PlayerModules)
+                        playerModule.PlaySample(ctx, sample);
+
+                if (sample.Payload is RendererUpdate)
+                    foreach (var playerModule in player.PlayerModules)
+                        playerModule.PlaySample(ctx, sample);
             }
         }
 
@@ -176,12 +156,9 @@ namespace PLUME.Viewer.Analysis.Interaction
                     terrain.detailObjectDensity = 0;
                     terrain.materialTemplate = _defaultHeatmapMaterial;
                 }
-                
-                if (go.TryGetComponent<Graphic>(out var graphic))
-                {
-                    graphic.enabled = false;
-                }
-                
+
+                if (go.TryGetComponent<Graphic>(out var graphic)) graphic.enabled = false;
+
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                     continue;
 
@@ -220,9 +197,7 @@ namespace PLUME.Viewer.Analysis.Interaction
         private MaterialPropertyBlock GetOrCreateInteractionsPropertyBlock(Renderer r)
         {
             if (_cachedInteractionsPropertyBlocks.TryGetValue(r.GetInstanceID(), out var propertyBlock))
-            {
                 return propertyBlock;
-            }
 
             var newPropertyBlock = new MaterialPropertyBlock();
             _cachedInteractionsPropertyBlocks.Add(r.GetInstanceID(), newPropertyBlock);
@@ -246,10 +221,7 @@ namespace PLUME.Viewer.Analysis.Interaction
 
             _visibleResult = result;
 
-            if (result == null && prevVisibleResult != null)
-            {
-                RestoreRecordMaterials(player.GetMainPlayerContext());
-            }
+            if (result == null && prevVisibleResult != null) RestoreRecordMaterials(player.GetMainPlayerContext());
         }
 
         public InteractionHeatmapAnalysisResult GetVisibleResult()

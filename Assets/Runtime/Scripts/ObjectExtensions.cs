@@ -19,13 +19,9 @@ namespace PLUME
             if (found)
             {
                 if (obj == null)
-                {
                     CachedObjectFromInstanceId.Remove(instanceId);
-                }
                 else
-                {
                     return obj;
-                }
             }
 
             obj = (Object)FindObjectFromInstanceIDMethod.Invoke(null, new object[] { instanceId });
@@ -43,10 +39,7 @@ namespace PLUME
             {
                 var isIncludedInLayerMask = layerMask.value == (layerMask.value | (1 << t.gameObject.layer));
 
-                if (isIncludedInLayerMask)
-                {
-                    ret.Add(t.gameObject);
-                }
+                if (isIncludedInLayerMask) ret.Add(t.gameObject);
             }
 
             return ret;

@@ -21,6 +21,10 @@ namespace PLUME.Viewer.Analysis
     {
         private readonly List<T> _results = new();
 
+        public virtual void Dispose()
+        {
+        }
+
         public void SaveResults()
         {
             throw new NotImplementedException();
@@ -70,10 +74,6 @@ namespace PLUME.Viewer.Analysis
         public override Type GetResultType()
         {
             return typeof(T);
-        }
-
-        public virtual void Dispose()
-        {
         }
     }
 }

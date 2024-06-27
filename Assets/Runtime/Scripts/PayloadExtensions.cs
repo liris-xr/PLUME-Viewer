@@ -68,7 +68,7 @@ namespace PLUME
             return new Vector2
             {
                 x = vec.X,
-                y = vec.Y,
+                y = vec.Y
             };
         }
 
@@ -253,10 +253,7 @@ namespace PLUME
         public static T[] ToEngineType<T>(this RepeatedField<T> repeatedField)
         {
             var arr = new T[repeatedField.Count];
-            for (var i = 0; i < repeatedField.Count; ++i)
-            {
-                arr[i] = repeatedField[i];
-            }
+            for (var i = 0; i < repeatedField.Count; ++i) arr[i] = repeatedField[i];
 
             return arr;
         }
@@ -629,7 +626,7 @@ namespace PLUME
                 _ => throw new ArgumentOutOfRangeException(nameof(lineAlignment), lineAlignment, null)
             };
         }
-        
+
         public static LineTextureMode ToEngineType(this TextureMode lineTextureMode)
         {
             return lineTextureMode switch
@@ -642,7 +639,7 @@ namespace PLUME
                 _ => throw new ArgumentOutOfRangeException(nameof(lineTextureMode), lineTextureMode, null)
             };
         }
-        
+
         public static SpriteMaskInteraction ToEngineType(this MaskInteraction spriteMaskInteraction)
         {
             return spriteMaskInteraction switch
@@ -663,7 +660,7 @@ namespace PLUME
                 _ => throw new ArgumentOutOfRangeException(nameof(gradientMode), gradientMode, null)
             };
         }
-        
+
         public static ColorSpace ToEngineType(this Sample.Common.ColorSpace colorSpace)
         {
             return colorSpace switch
@@ -674,7 +671,7 @@ namespace PLUME
                 _ => throw new ArgumentOutOfRangeException(nameof(colorSpace), colorSpace, null)
             };
         }
-        
+
         public static WeightedMode ToEngineType(this Sample.Common.WeightedMode weightedMode)
         {
             return weightedMode switch
@@ -686,13 +683,12 @@ namespace PLUME
                 _ => throw new ArgumentOutOfRangeException(nameof(weightedMode), weightedMode, null)
             };
         }
-        
+
         public static AnimationCurve ToEngineType(this Sample.Common.AnimationCurve curve)
         {
             var animationCurve = new AnimationCurve();
 
             foreach (var keyframe in curve.Keyframes)
-            {
                 animationCurve.AddKey(new Keyframe
                 {
                     time = keyframe.Time,
@@ -703,32 +699,27 @@ namespace PLUME
                     outWeight = keyframe.OutWeight,
                     weightedMode = keyframe.WeightedMode.ToEngineType()
                 });
-            }
-            
+
             return animationCurve;
         }
-        
+
         public static Gradient ToEngineType(this ColorGradient gradient)
         {
             var colorKeys = new GradientColorKey[gradient.ColorKeys.Count];
             for (var i = 0; i < gradient.ColorKeys.Count; ++i)
-            {
                 colorKeys[i] = new GradientColorKey
                 {
                     color = gradient.ColorKeys[i].Color.ToEngineType(),
                     time = gradient.ColorKeys[i].Time
                 };
-            }
 
             var alphaKeys = new GradientAlphaKey[gradient.AlphaKeys.Count];
             for (var i = 0; i < gradient.AlphaKeys.Count; ++i)
-            {
                 alphaKeys[i] = new GradientAlphaKey
                 {
                     alpha = gradient.AlphaKeys[i].Alpha,
                     time = gradient.AlphaKeys[i].Time
                 };
-            }
 
             return new Gradient
             {

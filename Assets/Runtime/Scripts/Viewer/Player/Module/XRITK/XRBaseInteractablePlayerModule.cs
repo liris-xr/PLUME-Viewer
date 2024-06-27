@@ -1,5 +1,4 @@
-﻿using PLUME.Sample;
-using PLUME.Sample.Unity.XRITK;
+﻿using PLUME.Sample.Unity.XRITK;
 using UnityEngine;
 
 namespace PLUME.Viewer.Player.Module.XRITK

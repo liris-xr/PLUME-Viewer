@@ -5,19 +5,19 @@ namespace PLUME.Viewer.Analysis
 {
     public abstract class AnalysisModuleUI<T> : MonoBehaviour where T : AnalysisModule
     {
-        public T module;
-
-        public AnalysisModulesListUI modulesListUI;
+        protected VisualElement Container;
 
         /// <summary>
-        /// Visual element that will wrap a module inside inside a foldout element with a title.
+        ///     Visual element that will wrap a module inside inside a foldout element with a title.
         /// </summary>
         public VisualTreeAsset containerTemplate;
 
-        public VisualTreeAsset optionsTemplate;
+        public T module;
 
-        protected VisualElement Container;
+        public AnalysisModulesListUI modulesListUI;
         protected VisualElement Options;
+
+        public VisualTreeAsset optionsTemplate;
 
         protected void Awake()
         {

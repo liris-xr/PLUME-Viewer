@@ -7,13 +7,32 @@ namespace PLUME.Viewer
     {
         public readonly string GameObjectGuid;
         public readonly int ItemId;
+
+        private string _parentGuid;
+
+        private int _siblingIndex;
+
+        public VisualElement VisualElement;
+
+        public HierarchyTreeItem(string gameObjectGuid)
+        {
+            GameObjectGuid = gameObjectGuid;
+            ItemId = gameObjectGuid.GetHashCode();
+            GameObjectName = "New Game Object";
+            _parentGuid = "00000000000000000000000000000000"; // null guid by default (item is at root level)
+            ParentId = -1;
+            _siblingIndex = -1;
+            Enabled = true;
+            IsParentDirty = false;
+            IsSiblingIndexDirty = false;
+            VisualElement = null;
+        }
+
         public bool Enabled { get; set; }
         public string GameObjectName { get; set; }
         public int ParentId { get; private set; }
         public bool IsParentDirty { get; private set; }
         public bool IsSiblingIndexDirty { get; private set; }
-
-        private int _siblingIndex;
 
         public int SiblingIndex
         {
@@ -22,14 +41,9 @@ namespace PLUME.Viewer
             {
                 var oldValue = _siblingIndex;
                 _siblingIndex = value;
-                if (oldValue != value)
-                {
-                    IsSiblingIndexDirty = true;
-                }
+                if (oldValue != value) IsSiblingIndexDirty = true;
             }
         }
-
-        private string _parentGuid;
 
         public string ParentGuid
         {
@@ -47,27 +61,8 @@ namespace PLUME.Viewer
 
                 ParentId = value.GetHashCode();
 
-                if (oldValue != value)
-                {
-                    IsParentDirty = true;
-                }
+                if (oldValue != value) IsParentDirty = true;
             }
-        }
-
-        public VisualElement VisualElement;
-
-        public HierarchyTreeItem(string gameObjectGuid)
-        {
-            GameObjectGuid = gameObjectGuid;
-            ItemId = gameObjectGuid.GetHashCode();
-            GameObjectName = "New Game Object";
-            _parentGuid = "00000000000000000000000000000000"; // null guid by default (item is at root level)
-            ParentId = -1;
-            _siblingIndex = -1;
-            Enabled = true;
-            IsParentDirty = false;
-            IsSiblingIndexDirty = false;
-            VisualElement = null;
         }
 
         public void MarkClean()

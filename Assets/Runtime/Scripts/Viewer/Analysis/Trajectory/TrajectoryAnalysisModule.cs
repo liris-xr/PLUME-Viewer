@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using PLUME.Sample.Common;
 using PLUME.Viewer.Player;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -14,19 +13,19 @@ namespace PLUME.Viewer.Analysis.Trajectory
 {
     public class TrajectoryAnalysisModule : AnalysisModuleWithResults<TrajectoryAnalysisModuleResult>
     {
-        public Player.Player player;
-
-        public Material fullLineMaterial;
-        public Material dottedLineMaterial;
-        public GameObject rotationAxesPrefab;
-        public GameObject markerLabelPrefab;
-
-        private readonly List<TrajectoryAnalysisModuleResult> _visibleTrajectories = new();
         private readonly List<Trajectory> _trajectories = new();
 
-        private Camera _lastPlayerCamera;
+        private readonly List<TrajectoryAnalysisModuleResult> _visibleTrajectories = new();
 
         public PlayerContext _generationContext;
+
+        private Camera _lastPlayerCamera;
+        public Material dottedLineMaterial;
+
+        public Material fullLineMaterial;
+        public GameObject markerLabelPrefab;
+        public Player.Player player;
+        public GameObject rotationAxesPrefab;
         public bool IsGenerating { get; private set; }
         public float GenerationProgress { get; private set; }
 
@@ -34,10 +33,8 @@ namespace PLUME.Viewer.Analysis.Trajectory
             TrajectoryAnalysisModuleParameters parameters, Action<TrajectoryAnalysisModuleResult> finishCallback)
         {
             if (parameters.EndTime < parameters.StartTime)
-            {
                 throw new Exception(
                     $"{nameof(parameters.StartTime)} should be less or equal to {nameof(parameters.EndTime)}.");
-            }
 
             if (player.GetModuleGenerating() != null)
             {
@@ -49,7 +46,8 @@ namespace PLUME.Viewer.Analysis.Trajectory
             IsGenerating = true;
             player.SetModuleGenerating(this);
 
-            _generationContext = PlayerContext.NewTemporaryContext("GenerateTrajectoryContext_" + Guid.NewGuid(), recordAssetBundle);
+            _generationContext =
+                PlayerContext.NewTemporaryContext("GenerateTrajectoryContext_" + Guid.NewGuid(), recordAssetBundle);
 
             // Skip frames before the start time
             if (parameters.StartTime > 0)
@@ -69,20 +67,20 @@ namespace PLUME.Viewer.Analysis.Trajectory
 
             var stopwatch = Stopwatch.StartNew();
             var lastYieldTime = stopwatch.ElapsedMilliseconds;
-            
-            for(var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
+
+            for (var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
             {
                 var frame = frames[frameIdx];
-                
+
                 var time = stopwatch.ElapsedMilliseconds;
-                
+
                 // Yield every 100ms (~10fps) to avoid freezing the game
                 if (time - lastYieldTime > 100)
                 {
                     lastYieldTime = time;
                     yield return null;
                 }
-                
+
                 _generationContext.PlayFrame(player.PlayerModules, frame);
 
                 var replayId = _generationContext.GetReplayInstanceId(parameters.ObjectIdentifier);
@@ -104,7 +102,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
 
                 points.Add(point);
 
-                GenerationProgress = (float) frameIdx / nFrames;
+                GenerationProgress = (float)frameIdx / nFrames;
             }
 
             GenerationProgress = 1;
@@ -158,10 +156,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
             {
                 pointsToKeep.Add(teleportationIndex);
 
-                if (teleportationIndex > 0)
-                {
-                    pointsToKeep.Add(teleportationIndex - 1);
-                }
+                if (teleportationIndex > 0) pointsToKeep.Add(teleportationIndex - 1);
             }
 
             pointsToKeep.AddRange(markersIndices);
@@ -231,29 +226,17 @@ namespace PLUME.Viewer.Analysis.Trajectory
         public void SetResultVisibility(TrajectoryAnalysisModuleResult result, bool visible)
         {
             foreach (var trajectory in _trajectories)
-            {
                 if (trajectory.result == result)
-                {
                     trajectory.gameObject.SetActive(visible);
-                }
-            }
 
             if (_visibleTrajectories.Contains(result) && !visible)
-            {
                 _visibleTrajectories.Remove(result);
-            }
-            else if (!_visibleTrajectories.Contains(result) && visible)
-            {
-                _visibleTrajectories.Add(result);
-            }
+            else if (!_visibleTrajectories.Contains(result) && visible) _visibleTrajectories.Add(result);
         }
 
         public void HideAllResults()
         {
-            foreach (var result in GetResults())
-            {
-                SetResultVisibility(result, false);
-            }
+            foreach (var result in GetResults()) SetResultVisibility(result, false);
         }
 
         public List<TrajectoryAnalysisModuleResult> GetVisibleResults()
@@ -264,9 +247,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
         public void FixedUpdate()
         {
             foreach (var trajectory in _trajectories)
-            {
                 trajectory.UpdateMarkersCamera(player.GetCurrentPreviewCamera().GetCamera());
-            }
         }
 
         public override void AddResult(TrajectoryAnalysisModuleResult result)
@@ -289,17 +270,10 @@ namespace PLUME.Viewer.Analysis.Trajectory
             base.RemoveResult(result);
 
             foreach (var trajectory in _trajectories)
-            {
                 if (trajectory.result == result)
-                {
                     Destroy(trajectory.gameObject);
-                }
-            }
 
-            if (_visibleTrajectories.Contains(result))
-            {
-                _visibleTrajectories.Remove(result);
-            }
+            if (_visibleTrajectories.Contains(result)) _visibleTrajectories.Remove(result);
         }
     }
 }

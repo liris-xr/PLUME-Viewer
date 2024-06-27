@@ -1,6 +1,4 @@
 ﻿#define USE_INPUT_SYSTEM
-using System;
-using System.Linq;
 using PLUME.Viewer.Player;
 using UnityEngine;
 
@@ -23,22 +21,22 @@ namespace PLUME.Viewer
         {
             if (_camera == null)
                 _camera = GetComponent<Camera>();
-            
+
             return _camera;
         }
 
         private Camera GetMainCamera()
         {
             var ctx = PlayerContext.GetActiveContext();
-            
-            if(ctx == null)
+
+            if (ctx == null)
                 return null;
 
             foreach (var component in ctx.GetAllComponents())
             {
-                if(component == null)
+                if (component == null)
                     continue;
-                
+
                 if (component is Camera c && ctx.GetGameObjectTag(c.gameObject.GetInstanceID()) == "MainCamera")
                     return c;
             }

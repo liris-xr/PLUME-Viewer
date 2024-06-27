@@ -7,6 +7,7 @@ namespace PLUME
 {
     public interface IReadOnlySamplesSortedList<T> : IReadOnlyCollection<T> where T : ISample
     {
+        public T this[int index] { get; }
         public int IndexOf(T item);
 
         public int FirstIndexAfterTimestamp(ulong time);
@@ -16,16 +17,13 @@ namespace PLUME
         public IReadOnlySamplesSortedList<T> GetInTimeRange(ulong startTime, ulong endTime);
 
         public IReadOnlySamplesSortedList<T> Where(Predicate<T> predicate);
-
-        public T this[int index] { get; }
     }
 
     public class SamplesSortedListSlice<T> : IReadOnlySamplesSortedList<T> where T : ISample
     {
         private readonly SamplesSortedList<T> _samples;
-        public readonly int start;
         public readonly int count;
-        public int Count => count;
+        public readonly int start;
 
         internal SamplesSortedListSlice(SamplesSortedList<T> samples, int start, int count)
         {
@@ -43,12 +41,11 @@ namespace PLUME
             this.count = count;
         }
 
+        public int Count => count;
+
         public IEnumerator<T> GetEnumerator()
         {
-            for (var i = start; i < start + count; i++)
-            {
-                yield return _samples[i];
-            }
+            for (var i = start; i < start + count; i++) yield return _samples[i];
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -94,12 +91,8 @@ namespace PLUME
         {
             var newSamples = new SamplesSortedList<T>();
             for (var i = start; i < start + count; i++)
-            {
                 if (predicate(_samples[i]))
-                {
                     newSamples.Add(_samples[i]);
-                }
-            }
 
             return new ReadOnlySamplesSortedList<T>(newSamples);
         }
@@ -116,12 +109,12 @@ namespace PLUME
     {
         private readonly SamplesSortedList<T> _samples;
 
-        public int Count => _samples.Count;
-
         internal ReadOnlySamplesSortedList(SamplesSortedList<T> samples)
         {
             _samples = samples;
         }
+
+        public int Count => _samples.Count;
 
         public IEnumerator<T> GetEnumerator()
         {
@@ -202,13 +195,9 @@ namespace PLUME
             // Find where to insert the item
             var idx = FirstIndexAfterTimestamp(item.Timestamp);
             if (idx < 0)
-            {
                 _samples.Add(item);
-            }
             else
-            {
                 _samples.Insert(idx, item);
-            }
         }
 
         public void Clear()
@@ -231,22 +220,23 @@ namespace PLUME
             return _samples.Remove(item);
         }
 
+        public int Count => _samples.Count;
+        public bool IsReadOnly => false;
+
         public int IndexOf(T item)
         {
             return _samples.IndexOf(item);
         }
 
         /// <summary>
-        /// Return the first sample index in the set where its time is superior or equal to <paramref name="time"/>.
-        ///
-        /// For instance if we have the following set of samples S with their associated times T:
-        /// S : s0  s1  s2  s3  s4
-        /// T : 1   1   1   3   4
-        /// If we call IndexByTimestamp(S, 2) the returned index will be 3 (s3).
-        /// If we call IndexByTimestamp(S, 0) the returned index will be 0 (s0)
-        /// If we call IndexByTimestamp(S, 5) the returned index will be -1 (not found)
-        ///
-        /// Uses binary search internally.
+        ///     Return the first sample index in the set where its time is superior or equal to <paramref name="time" />.
+        ///     For instance if we have the following set of samples S with their associated times T:
+        ///     S : s0  s1  s2  s3  s4
+        ///     T : 1   1   1   3   4
+        ///     If we call IndexByTimestamp(S, 2) the returned index will be 3 (s3).
+        ///     If we call IndexByTimestamp(S, 0) the returned index will be 0 (s0)
+        ///     If we call IndexByTimestamp(S, 5) the returned index will be -1 (not found)
+        ///     Uses binary search internally.
         /// </summary>
         /// <param name="time">The time</param>
         /// <returns></returns>
@@ -265,27 +255,17 @@ namespace PLUME
 
                 if (s.Timestamp == time)
                 {
-                    while (mid > 0 && this[mid - 1].Timestamp == time)
-                    {
-                        mid--;
-                    }
+                    while (mid > 0 && this[mid - 1].Timestamp == time) mid--;
 
                     return mid;
                 }
 
-                if ((mid == 0 || this[mid - 1].Timestamp < time) && this[mid].Timestamp > time)
-                {
-                    return mid;
-                }
+                if ((mid == 0 || this[mid - 1].Timestamp < time) && this[mid].Timestamp > time) return mid;
 
                 if (s.Timestamp < time)
-                {
                     left = mid + 1;
-                }
                 else
-                {
                     right = mid - 1;
-                }
             } while (left <= right);
 
             return -1;
@@ -302,11 +282,8 @@ namespace PLUME
             if (idx < 0)
                 return -1;
 
-            while(idx > 0 && this[idx].Timestamp >= time)
-            {
-                idx--;
-            }
-            
+            while (idx > 0 && this[idx].Timestamp >= time) idx--;
+
             return idx;
         }
 
@@ -332,10 +309,7 @@ namespace PLUME
         public IReadOnlySamplesSortedList<T> Where(Predicate<T> predicate)
         {
             var newSamples = new SamplesSortedList<T>();
-            foreach (var sample in _samples.Where(t => predicate(t)))
-            {
-                newSamples.Add(sample);
-            }
+            foreach (var sample in _samples.Where(t => predicate(t))) newSamples.Add(sample);
 
             return new ReadOnlySamplesSortedList<T>(newSamples);
         }
@@ -346,8 +320,5 @@ namespace PLUME
         {
             return new ReadOnlySamplesSortedList<T>(this);
         }
-
-        public int Count => _samples.Count;
-        public bool IsReadOnly => false;
     }
 }

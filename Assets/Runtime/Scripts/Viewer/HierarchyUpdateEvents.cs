@@ -21,7 +21,7 @@ namespace PLUME.Viewer
             this.name = name;
         }
     }
-    
+
     public class HierarchyUpdateGameObjectSiblingIndexEvent : IHierarchyUpdateEvent
     {
         public readonly GameObjectIdentifier gameObjectIdentifier;
@@ -51,8 +51,8 @@ namespace PLUME.Viewer
 
     public class HierarchyUpdateGameObjectEnabledEvent : IHierarchyUpdateEvent
     {
-        public readonly GameObjectIdentifier gameObjectIdentifier;
         public readonly bool enabled;
+        public readonly GameObjectIdentifier gameObjectIdentifier;
 
         public HierarchyUpdateGameObjectEnabledEvent(GameObjectIdentifier gameObjectIdentifier, bool enabled)
         {

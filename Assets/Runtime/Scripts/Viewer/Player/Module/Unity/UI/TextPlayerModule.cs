@@ -1,5 +1,4 @@
-﻿using PLUME.Sample;
-using PLUME.Sample.Unity.UI;
+﻿using PLUME.Sample.Unity.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -25,15 +24,9 @@ namespace PLUME.Viewer.Player.Module.Unity.UI
                 {
                     var text = ctx.GetOrCreateComponentByIdentifier<Text>(textUpdate.Id);
 
-                    if (textUpdate.Color != null)
-                    {
-                        text.color = textUpdate.Color.ToEngineType();
-                    }
+                    if (textUpdate.Color != null) text.color = textUpdate.Color.ToEngineType();
 
-                    if (textUpdate.HasText)
-                    {
-                        text.text = textUpdate.Text;
-                    }
+                    if (textUpdate.HasText) text.text = textUpdate.Text;
 
                     if (textUpdate.FontId != null)
                     {
@@ -41,60 +34,29 @@ namespace PLUME.Viewer.Player.Module.Unity.UI
                         ctx.TryAddAssetIdentifierCorrespondence(textUpdate.FontId, text.font);
                     }
 
-                    if (textUpdate.HasFontStyle)
-                    {
-                        text.fontStyle = textUpdate.FontStyle.ToEngineType();
-                    }
+                    if (textUpdate.HasFontStyle) text.fontStyle = textUpdate.FontStyle.ToEngineType();
 
-                    if (textUpdate.HasFontSize)
-                    {
-                        text.fontSize = textUpdate.FontSize;
-                    }
+                    if (textUpdate.HasFontSize) text.fontSize = textUpdate.FontSize;
 
-                    if (textUpdate.HasLineSpacing)
-                    {
-                        text.lineSpacing = textUpdate.LineSpacing;
-                    }
+                    if (textUpdate.HasLineSpacing) text.lineSpacing = textUpdate.LineSpacing;
 
-                    if (textUpdate.HasSupportRichText)
-                    {
-                        text.supportRichText = textUpdate.SupportRichText;
-                    }
+                    if (textUpdate.HasSupportRichText) text.supportRichText = textUpdate.SupportRichText;
 
-                    if (textUpdate.HasAlignment)
-                    {
-                        text.alignment = textUpdate.Alignment.ToEngineType();
-                    }
+                    if (textUpdate.HasAlignment) text.alignment = textUpdate.Alignment.ToEngineType();
 
-                    if (textUpdate.HasAlignByGeometry)
-                    {
-                        text.alignByGeometry = textUpdate.AlignByGeometry;
-                    }
+                    if (textUpdate.HasAlignByGeometry) text.alignByGeometry = textUpdate.AlignByGeometry;
 
                     if (textUpdate.HasHorizontalOverflow)
-                    {
                         text.horizontalOverflow = textUpdate.HorizontalOverflow.ToEngineType();
-                    }
 
                     if (textUpdate.HasVerticalOverflow)
-                    {
                         text.verticalOverflow = textUpdate.VerticalOverflow.ToEngineType();
-                    }
 
-                    if (textUpdate.HasResizeTextForBestFit)
-                    {
-                        text.resizeTextForBestFit = textUpdate.ResizeTextForBestFit;
-                    }
+                    if (textUpdate.HasResizeTextForBestFit) text.resizeTextForBestFit = textUpdate.ResizeTextForBestFit;
 
-                    if (textUpdate.HasResizeTextMinSize)
-                    {
-                        text.resizeTextMinSize = textUpdate.ResizeTextMinSize;
-                    }
+                    if (textUpdate.HasResizeTextMinSize) text.resizeTextMinSize = textUpdate.ResizeTextMinSize;
 
-                    if (textUpdate.HasResizeTextMaxSize)
-                    {
-                        text.resizeTextMaxSize = textUpdate.ResizeTextMaxSize;
-                    }
+                    if (textUpdate.HasResizeTextMaxSize) text.resizeTextMaxSize = textUpdate.ResizeTextMaxSize;
 
                     break;
                 }

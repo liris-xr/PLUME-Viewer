@@ -36,25 +36,25 @@ namespace PLUME
 
     public abstract class RawSample : ISample<IMessage>
     {
-        public ulong Timestamp { get; }
-        public bool HasTimestamp { get; }
-
-        public IMessage Payload { get; }
-
         protected RawSample(ulong? timestamp, IMessage payload)
         {
             Timestamp = timestamp ?? default;
             HasTimestamp = timestamp.HasValue;
             Payload = payload;
         }
+
+        public ulong Timestamp { get; }
+        public bool HasTimestamp { get; }
+
+        public IMessage Payload { get; }
     }
 
     public class RawSample<TP> : RawSample, ISample<TP> where TP : IMessage
     {
-        public new TP Payload => (TP)base.Payload;
-
         public RawSample(ulong? timestamp, TP payload) : base(timestamp, payload)
         {
         }
+
+        public new TP Payload => (TP)base.Payload;
     }
 }

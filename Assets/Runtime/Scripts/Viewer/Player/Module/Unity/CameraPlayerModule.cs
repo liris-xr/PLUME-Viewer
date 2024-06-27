@@ -1,5 +1,4 @@
-﻿using PLUME.Sample;
-using PLUME.Sample.Unity;
+﻿using PLUME.Sample.Unity;
 using UnityEngine;
 
 namespace PLUME.Viewer.Player.Module.Unity
@@ -48,7 +47,7 @@ namespace PLUME.Viewer.Player.Module.Unity
 
                     if (cameraUpdate.HasOrthographic)
                         cam.orthographic = cameraUpdate.Orthographic;
-                    
+
                     if (cameraUpdate.HasCullingMask)
                         cam.cullingMask = cameraUpdate.CullingMask;
 

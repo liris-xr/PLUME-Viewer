@@ -7,12 +7,11 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 {
     public class EyeGazeAnalysisModuleUI : AnalysisModuleWithResultsUI<EyeGazeAnalysisModule, EyeGazeAnalysisResult>
     {
+        public Action<EyeGazeAnalysisResult> clickedDeleteResult;
+        public Action<EyeGazeAnalysisResult> clickedExportResult;
         public Player.Player player;
 
         public VisualTreeAsset resultEntryTemplate;
-
-        public Action<EyeGazeAnalysisResult> clickedDeleteResult;
-        public Action<EyeGazeAnalysisResult> clickedExportResult;
         public Action<EyeGazeAnalysisResult, bool> toggledResultVisibility;
 
         public Button GenerateButton { get; private set; }

@@ -8,14 +8,13 @@ namespace PLUME.Viewer
     [RequireComponent(typeof(MainWindowUI))]
     public class MainWindowPresenter : MonoBehaviour
     {
-        public Player.Player player;
-
-        public GameObject analysisModulesUI;
-        public GameObject analysisModules;
+        private bool _loading = true;
 
         private MainWindowUI _mainWindowUI;
+        public GameObject analysisModules;
 
-        private bool _loading = true;
+        public GameObject analysisModulesUI;
+        public Player.Player player;
 
         private void Awake()
         {
@@ -30,7 +29,7 @@ namespace PLUME.Viewer
         private void Start()
         {
             _mainWindowUI.CloseButton.clicked += Application.Quit;
-            
+
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<FocusInEvent>(OnPreviewRenderFocused);
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<FocusOutEvent>(OnPreviewRenderUnfocused);
 
@@ -65,10 +64,7 @@ namespace PLUME.Viewer
         {
             var cam = player.GetCurrentPreviewCamera();
 
-            if (cam != null)
-            {
-                cam.ResetView();
-            }
+            if (cam != null) cam.ResetView();
         }
 
         private void RefreshResetViewButton()
@@ -140,39 +136,24 @@ namespace PLUME.Viewer
 
         private void OnPreviewRenderMouseEnter(MouseEnterEvent evt)
         {
-            if (player.GetTopViewCamera() != null)
-            {
-                player.GetTopViewCamera().ZoomDisabled = false;
-            }
+            if (player.GetTopViewCamera() != null) player.GetTopViewCamera().ZoomDisabled = false;
         }
 
         private void OnPreviewRenderMouseLeave(MouseLeaveEvent evt)
         {
-            if (player.GetTopViewCamera() != null)
-            {
-                player.GetTopViewCamera().ZoomDisabled = true;
-            }
+            if (player.GetTopViewCamera() != null) player.GetTopViewCamera().ZoomDisabled = true;
         }
 
         private void OnPreviewRenderFocused(FocusInEvent evt)
         {
-            if (player.GetFreeCamera() != null)
-            {
-                player.GetFreeCamera().InputDisabled = false;
-            }
+            if (player.GetFreeCamera() != null) player.GetFreeCamera().InputDisabled = false;
 
-            if (player.GetTopViewCamera() != null)
-            {
-                player.GetTopViewCamera().InputDisabled = false;
-            }
+            if (player.GetTopViewCamera() != null) player.GetTopViewCamera().InputDisabled = false;
         }
 
         private void OnPreviewRenderUnfocused(FocusOutEvent evt)
         {
-            if (player.GetFreeCamera() != null)
-            {
-                player.GetFreeCamera().InputDisabled = true;
-            }
+            if (player.GetFreeCamera() != null) player.GetFreeCamera().InputDisabled = true;
 
             if (player.GetTopViewCamera() != null)
             {
@@ -283,15 +264,9 @@ namespace PLUME.Viewer
             _mainWindowUI.PreviewRender.Q<Label>("top-view-camera-instructions").style.display =
                 player.GetCurrentPreviewCamera() is TopViewCamera ? DisplayStyle.Flex : DisplayStyle.None;
 
-            if (!_mainWindowUI.IsTimeIndicatorFocused())
-            {
-                _mainWindowUI.RefreshTimelineTimeIndicator();
-            }
+            if (!_mainWindowUI.IsTimeIndicatorFocused()) _mainWindowUI.RefreshTimelineTimeIndicator();
 
-            if (player.IsPlaying() != _mainWindowUI.PlayPauseButton.GetState())
-            {
-                _mainWindowUI.RefreshPlayPauseButton();
-            }
+            if (player.IsPlaying() != _mainWindowUI.PlayPauseButton.GetState()) _mainWindowUI.RefreshPlayPauseButton();
 
             _mainWindowUI.RefreshTimelineCursor();
         }

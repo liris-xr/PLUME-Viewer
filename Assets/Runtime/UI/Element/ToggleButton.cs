@@ -6,11 +6,6 @@ namespace PLUME.UI.Element
 {
     public class ToggleButton : Button
     {
-        [Preserve]
-        public new class UxmlFactory : UxmlFactory<ToggleButton, UxmlTraits>
-        {
-        }
-
         private bool _state;
         public Action<bool> toggled;
 
@@ -50,6 +45,11 @@ namespace PLUME.UI.Element
         {
             _state = state;
             UpdateClass();
+        }
+
+        [Preserve]
+        public new class UxmlFactory : UxmlFactory<ToggleButton, UxmlTraits>
+        {
         }
     }
 }

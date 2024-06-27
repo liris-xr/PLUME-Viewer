@@ -8,12 +8,11 @@ namespace PLUME.Viewer.Analysis.Position
     public class PositionHeatmapAnalysisModuleUI : AnalysisModuleWithResultsUI<PositionHeatmapAnalysisModule,
         PositionHeatmapAnalysisResult>
     {
+        public Action<PositionHeatmapAnalysisResult> clickedDeleteResult;
+        public Action<PositionHeatmapAnalysisResult> clickedExportResult;
         public Player.Player player;
 
         public VisualTreeAsset resultEntryTemplate;
-
-        public Action<PositionHeatmapAnalysisResult> clickedDeleteResult;
-        public Action<PositionHeatmapAnalysisResult> clickedExportResult;
         public Action<PositionHeatmapAnalysisResult, bool> toggledResultVisibility;
 
         public Button GenerateButton { get; private set; }
@@ -66,7 +65,7 @@ namespace PLUME.Viewer.Analysis.Position
                 var projectionReceiversIds = string.Join(",", result.Parameters.ReceiversIdentifiers);
 
                 resultEntry.Q("projection-caster").Q<Label>("value").text =
-                    result.Parameters.CasterIdentifier.ToString();
+                    result.Parameters.CasterIdentifier;
                 resultEntry.Q("projection-receivers").Q<Label>("value").text = projectionReceiversIds;
                 resultEntry.Q("start-time").Q<Label>("value").text = startTimeStr;
                 resultEntry.Q("end-time").Q<Label>("value").text = endTimeStr;

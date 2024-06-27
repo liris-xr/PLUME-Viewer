@@ -1,35 +1,33 @@
 using UnityEngine;
-using UnityEngine.Serialization;
 
 // Script used to force including assets into a build
 namespace PLUME.Viewer.Player
 {
     public class BuiltinAssets : MonoBehaviour
     {
-        public static BuiltinAssets Instance { get; private set; }
-        
-        public Mesh cube;
-        public Mesh sphere;
-        public Mesh cylinder;
-        public Mesh quad;
-        public Mesh plane;
+        public Sprite background;
         public Mesh capsule;
+        public Sprite checkmark;
+
+        public Mesh cube;
+        public Mesh cylinder;
+        public Material defaultDiffuse;
+        public Material defaultLine;
+        public Material defaultMaterial;
 
         public Material defaultSkybox;
-        public Material defaultMaterial;
-        public Material defaultDiffuse;
         public Material defaultTerrainStandard;
-        public Material defaultLine;
-        
-        public Sprite background;
-        public Sprite checkmark;
         public Sprite dropdownArrow;
         public Sprite inputFieldBackground;
         public Sprite knob;
-        public Sprite uiSprite;
-        public Sprite uiMask;
 
         public Font legacyRuntime;
+        public Mesh plane;
+        public Mesh quad;
+        public Mesh sphere;
+        public Sprite uiMask;
+        public Sprite uiSprite;
+        public static BuiltinAssets Instance { get; private set; }
 
         private void Awake()
         {

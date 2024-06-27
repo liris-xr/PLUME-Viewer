@@ -1,4 +1,3 @@
-using PLUME.Sample;
 using PLUME.Sample.Unity;
 using UnityEngine;
 
@@ -25,10 +24,7 @@ namespace PLUME.Viewer.Player.Module.Unity
                     var terrainCollider =
                         ctx.GetOrCreateComponentByIdentifier<TerrainCollider>(terrainColliderUpdate.Id);
 
-                    if (terrainColliderUpdate.HasEnabled)
-                    {
-                        terrainCollider.enabled = terrainColliderUpdate.Enabled;
-                    }
+                    if (terrainColliderUpdate.HasEnabled) terrainCollider.enabled = terrainColliderUpdate.Enabled;
 
                     if (terrainColliderUpdate.TerrainDataId != null)
                     {

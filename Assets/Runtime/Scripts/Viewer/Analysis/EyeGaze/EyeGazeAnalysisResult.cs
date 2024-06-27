@@ -25,16 +25,13 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
     public class EyeGazeAnalysisResult : AnalysisModuleResult
     {
-        public EyeGazeAnalysisModuleParameters Parameters;
-
-        public ComputeBuffer MinValueBuffer { get; }
-        public ComputeBuffer MaxValueBuffer { get; }
-
         /// <summary>
-        /// List of generated samples for the projection receivers. The key is the hash between the GameObject
-        /// identifier and mesh identifier in the record.
+        ///     List of generated samples for the projection receivers. The key is the hash between the GameObject
+        ///     identifier and mesh identifier in the record.
         /// </summary>
         public readonly Dictionary<int, MeshSamplerResult> SamplerResults = new();
+
+        public EyeGazeAnalysisModuleParameters Parameters;
 
         public EyeGazeAnalysisResult()
         {
@@ -50,6 +47,9 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             MaxValueBuffer = maxValueBuffer;
             SamplerResults = samplerResults;
         }
+
+        public ComputeBuffer MinValueBuffer { get; }
+        public ComputeBuffer MaxValueBuffer { get; }
 
         public float MinValue
         {
@@ -73,10 +73,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
         public void Dispose()
         {
-            foreach (var samplerResult in SamplerResults.Values)
-            {
-                samplerResult.Dispose();
-            }
+            foreach (var samplerResult in SamplerResults.Values) samplerResult.Dispose();
 
             MinValueBuffer.Release();
             MaxValueBuffer.Release();

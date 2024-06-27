@@ -7,42 +7,14 @@ namespace PLUME.UI.Element
 {
     public class AspectRatioContainerElement : VisualElement
     {
-        [Preserve]
-        public new class UxmlFactory : UxmlFactory<AspectRatioContainerElement, UxmlTraits>
-        {
-        }
-
-        [Preserve]
-        public new class UxmlTraits : VisualElement.UxmlTraits
-        {
-            private readonly UxmlIntAttributeDescription _aspectRatioWidth = new()
-                { name = "aspect-ratio-width", defaultValue = 16 };
-
-            private readonly UxmlIntAttributeDescription _aspectRatioHeight =
-                new() { name = "aspect-ratio-height", defaultValue = 9 };
-
-            public override IEnumerable<UxmlChildElementDescription> uxmlChildElementsDescription
-            {
-                get { yield break; }
-            }
-
-            public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
-            {
-                base.Init(ve, bag, cc);
-                var ele = ve as AspectRatioContainerElement;
-                ele.AspectRatioWidth = _aspectRatioWidth.GetValueFromBag(bag, cc);
-                ele.AspectRatioHeight = _aspectRatioHeight.GetValueFromBag(bag, cc);
-            }
-        }
-
-        public int AspectRatioWidth { get; set; }
-        public int AspectRatioHeight { get; set; }
-
         public AspectRatioContainerElement()
         {
             RegisterCallback<GeometryChangedEvent>(OnGeometryChangedEvent);
             RegisterCallback<AttachToPanelEvent>(OnAttachToPanelEvent);
         }
+
+        public int AspectRatioWidth { get; set; }
+        public int AspectRatioHeight { get; set; }
 
         private void OnGeometryChangedEvent(GeometryChangedEvent e)
         {
@@ -68,10 +40,7 @@ namespace PLUME.UI.Element
                 return;
             }
 
-            if (float.IsNaN(resolvedStyle.width) || float.IsNaN(resolvedStyle.height))
-            {
-                return;
-            }
+            if (float.IsNaN(resolvedStyle.width) || float.IsNaN(resolvedStyle.height)) return;
 
             var currRatio = resolvedStyle.width / resolvedStyle.height;
 
@@ -90,6 +59,34 @@ namespace PLUME.UI.Element
                 style.paddingRight = 0;
                 style.paddingTop = (resolvedStyle.height - targetHeight) / 2;
                 style.paddingBottom = (resolvedStyle.height - targetHeight) / 2;
+            }
+        }
+
+        [Preserve]
+        public new class UxmlFactory : UxmlFactory<AspectRatioContainerElement, UxmlTraits>
+        {
+        }
+
+        [Preserve]
+        public new class UxmlTraits : VisualElement.UxmlTraits
+        {
+            private readonly UxmlIntAttributeDescription _aspectRatioHeight =
+                new() { name = "aspect-ratio-height", defaultValue = 9 };
+
+            private readonly UxmlIntAttributeDescription _aspectRatioWidth = new()
+                { name = "aspect-ratio-width", defaultValue = 16 };
+
+            public override IEnumerable<UxmlChildElementDescription> uxmlChildElementsDescription
+            {
+                get { yield break; }
+            }
+
+            public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
+            {
+                base.Init(ve, bag, cc);
+                var ele = ve as AspectRatioContainerElement;
+                ele.AspectRatioWidth = _aspectRatioWidth.GetValueFromBag(bag, cc);
+                ele.AspectRatioHeight = _aspectRatioHeight.GetValueFromBag(bag, cc);
             }
         }
     }

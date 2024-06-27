@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using PLUME.Sample;
 using PLUME.Sample.Unity;
 using UnityEngine;
 
@@ -27,17 +26,13 @@ namespace PLUME.Viewer.Player.Module.Unity
                         ctx.GetOrCreateComponentByIdentifier<SkinnedMeshRenderer>(skinnedMeshRendererUpdate.Id);
 
                     if (skinnedMeshRendererUpdate.RootBoneId != null)
-                    {
                         skinnedMeshRenderer.rootBone =
                             ctx.GetOrCreateTransformByIdentifier(skinnedMeshRendererUpdate.RootBoneId);
-                    }
 
                     if (skinnedMeshRendererUpdate.Bones != null)
-                    {
                         skinnedMeshRenderer.bones = skinnedMeshRendererUpdate.Bones.Ids
                             .Select(ctx.GetOrCreateTransformByIdentifier)
                             .ToArray();
-                    }
 
                     if (skinnedMeshRendererUpdate.MeshId != null)
                     {

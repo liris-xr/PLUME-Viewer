@@ -62,7 +62,6 @@ namespace PLUME
             // TODO: embed resources in the asset bundle
 
             if (assetType == typeof(Material))
-            {
                 return assetName switch
                 {
                     "Default-Skybox" => builtinAssets.defaultSkybox,
@@ -72,10 +71,8 @@ namespace PLUME
                     "Default-Line" => builtinAssets.defaultLine,
                     _ => null
                 };
-            }
 
             if (assetType == typeof(Mesh))
-            {
                 return assetName switch
                 {
                     "Cube" => builtinAssets.cube,
@@ -86,10 +83,8 @@ namespace PLUME
                     "Quad" => builtinAssets.quad,
                     _ => null
                 };
-            }
 
             if (assetType == typeof(Sprite))
-            {
                 return assetName switch
                 {
                     "Background" => builtinAssets.background,
@@ -101,16 +96,13 @@ namespace PLUME
                     "UIMask" => builtinAssets.uiSprite,
                     _ => null
                 };
-            }
 
             if (assetType == typeof(Font))
-            {
                 return assetName switch
                 {
                     "LegacyRuntime" => builtinAssets.legacyRuntime,
                     _ => null
                 };
-            }
 
             return null;
         }

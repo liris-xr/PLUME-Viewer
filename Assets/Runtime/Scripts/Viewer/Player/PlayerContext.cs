@@ -4,9 +4,7 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using PLUME.Sample;
 using PLUME.Sample.Unity;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 using LoadSceneMode = UnityEngine.SceneManagement.LoadSceneMode;
 using Object = UnityEngine.Object;
@@ -15,15 +13,11 @@ namespace PLUME.Viewer.Player
 {
     public class PlayerContext
     {
-        public Action<IHierarchyUpdateEvent> updatedHierarchy;
-
         private static readonly List<PlayerContext> Contexts = new();
+        private readonly Dictionary<int, Component> _componentByInstanceId = new();
 
-        private readonly RecordAssetBundle _recordAssetBundle;
-        private readonly string _name;
-        private Scene _scene;
-        private readonly Dictionary<int, bool> _sceneRootObjectsActive = new();
-        private bool _active;
+        private readonly Dictionary<int, GameObject> _gameObjectsByInstanceId = new();
+        private readonly Dictionary<int, string> _gameObjectsTagByInstanceId = new();
 
         /**
          * Correspondence between record and replay object instance ids
@@ -35,10 +29,14 @@ namespace PLUME.Viewer.Player
          */
         private readonly Dictionary<int, string> _invertIdMap = new();
 
-        private readonly Dictionary<int, GameObject> _gameObjectsByInstanceId = new();
-        private readonly Dictionary<int, string> _gameObjectsTagByInstanceId = new();
+        private readonly string _name;
+
+        private readonly RecordAssetBundle _recordAssetBundle;
+        private readonly Dictionary<int, bool> _sceneRootObjectsActive = new();
         private readonly Dictionary<int, Transform> _transformsByInstanceId = new();
-        private readonly Dictionary<int, Component> _componentByInstanceId = new();
+        private bool _active;
+        private Scene _scene;
+        public Action<IHierarchyUpdateEvent> updatedHierarchy;
 
         private PlayerContext(string name, RecordAssetBundle recordAssetBundle, Scene scene)
         {
@@ -46,25 +44,23 @@ namespace PLUME.Viewer.Player
             _recordAssetBundle = recordAssetBundle;
             _scene = scene;
         }
-        
+
         internal static async UniTask<PlayerContext> CreateMainPlayerContext(RecordAssetBundle assets)
         {
             const string mainPlayerContextName = "MainPlayerContext";
-            
+
             if (Contexts.Select(ctx => ctx._name).Contains(mainPlayerContextName))
-            {
                 throw new Exception("MainPlayerContext already exists");
-            }
-            
+
             var loadSceneParameters = new LoadSceneParameters(LoadSceneMode.Additive);
             await SceneManager.LoadSceneAsync(mainPlayerContextName, loadSceneParameters);
             var scene = SceneManager.GetSceneByName(mainPlayerContextName);
 
             if (!scene.IsValid())
                 throw new Exception("Failed to load MainPlayerContext scene");
-            
+
             SceneManager.SetActiveScene(scene);
-            
+
             var ctx = new PlayerContext(mainPlayerContextName, assets, scene);
             Contexts.Add(ctx);
             return ctx;
@@ -72,19 +68,14 @@ namespace PLUME.Viewer.Player
 
         public static PlayerContext NewTemporaryContext(string name, RecordAssetBundle assets)
         {
-            if (name == "MainPlayerContext")
-            {
-                throw new Exception("The name MainPlayerContext is reserved");
-            }
-            
+            if (name == "MainPlayerContext") throw new Exception("The name MainPlayerContext is reserved");
+
             if (Contexts.Select(ctx => ctx._name).Contains(name))
-            {
                 throw new Exception($"A context with this name already exists: {name}");
-            }
-            
+
             var scene = SceneManager.CreateScene(name);
             SceneManager.SetActiveScene(scene);
-            
+
             // Apply default lighting settings
             // RenderSettings.skybox = BuiltinAssets.Instance.defaultSkybox;
             // Lightmapping.lightingSettings = Resources.Load<LightingSettings>("Default Lighting Settings");
@@ -143,30 +134,19 @@ namespace PLUME.Viewer.Player
         public static PlayerContext GetActiveContext()
         {
             foreach (var ctx in Contexts)
-            {
                 if (ctx.IsActive())
                     return ctx;
-            }
 
             return null;
         }
 
         public Object FindObjectByInstanceId(int instanceId)
         {
-            if (_gameObjectsByInstanceId.TryGetValue(instanceId, out var gameObject))
-            {
-                return gameObject;
-            }
+            if (_gameObjectsByInstanceId.TryGetValue(instanceId, out var gameObject)) return gameObject;
 
-            if (_transformsByInstanceId.TryGetValue(instanceId, out var transform))
-            {
-                return transform;
-            }
+            if (_transformsByInstanceId.TryGetValue(instanceId, out var transform)) return transform;
 
-            if (_componentByInstanceId.TryGetValue(instanceId, out var component))
-            {
-                return component;
-            }
+            if (_componentByInstanceId.TryGetValue(instanceId, out var component)) return component;
 
             return ObjectExtensions.FindObjectFromInstanceID(instanceId);
         }
@@ -183,10 +163,7 @@ namespace PLUME.Viewer.Player
 
         public void Reset()
         {
-            foreach (var rootGameObject in _scene.GetRootGameObjects())
-            {
-                Object.DestroyImmediate(rootGameObject);
-            }
+            foreach (var rootGameObject in _scene.GetRootGameObjects()) Object.DestroyImmediate(rootGameObject);
 
             updatedHierarchy?.Invoke(new HierarchyForceRebuild());
 
@@ -200,31 +177,18 @@ namespace PLUME.Viewer.Player
 
         public void PlayFrames(PlayerModule[] playerModules, IEnumerable<FrameSample> frames)
         {
-            if (!IsActive())
-            {
-                Activate(this);
-            }
+            if (!IsActive()) Activate(this);
 
-            foreach (var frame in frames)
-            {
-                PlayFrame(playerModules, frame);
-            }
+            foreach (var frame in frames) PlayFrame(playerModules, frame);
         }
 
         public void PlayFrame(PlayerModule[] playerModules, FrameSample frame)
         {
-            if (!IsActive())
-            {
-                Activate(this);
-            }
+            if (!IsActive()) Activate(this);
 
             foreach (var sample in frame.Data)
-            {
-                foreach (var playerModule in playerModules)
-                {
-                    playerModule.PlaySample(this, sample);
-                }
-            }
+            foreach (var playerModule in playerModules)
+                playerModule.PlaySample(this, sample);
         }
 
         public void SetGameObjectTag(GameObjectIdentifier id, string tag)
@@ -254,7 +218,7 @@ namespace PLUME.Viewer.Player
             go.name = name;
             updatedHierarchy?.Invoke(new HierarchyUpdateGameObjectNameEvent(id, name));
         }
-        
+
         public void SetSiblingIndex(ComponentIdentifier transformIdentifier, int siblingIndex)
         {
             var t = GetOrCreateTransformByIdentifier(transformIdentifier);
@@ -273,12 +237,8 @@ namespace PLUME.Viewer.Player
         private void EnableRootGameObjects()
         {
             foreach (var go in _scene.GetRootGameObjects())
-            {
                 if (_sceneRootObjectsActive.TryGetValue(go.GetInstanceID(), out var active))
-                {
                     go.SetActive(active);
-                }
-            }
         }
 
         private void DisableRootGameObjects()
@@ -450,7 +410,7 @@ namespace PLUME.Viewer.Player
                     return rectTransform;
                 }
             }
-            
+
             var newGameObject = new GameObject();
             var newTransform = newGameObject.AddComponent<RectTransform>();
             _gameObjectsByInstanceId[newGameObject.GetInstanceID()] = newGameObject;
@@ -476,10 +436,8 @@ namespace PLUME.Viewer.Player
             if (replayComponentInstanceId.HasValue)
             {
                 if (!_componentByInstanceId.ContainsKey(replayComponentInstanceId.Value))
-                {
                     _componentByInstanceId[replayComponentInstanceId.Value] =
                         ObjectExtensions.FindObjectFromInstanceID(replayComponentInstanceId.Value) as T;
-                }
 
                 return _componentByInstanceId.GetValueOrDefault(replayComponentInstanceId.Value) as T;
             }
@@ -489,10 +447,7 @@ namespace PLUME.Viewer.Player
             var component = go.AddComponent<T>();
 
             // Component is null when DisallowedMultipleComponent is enabled on the type T
-            if (component == null)
-            {
-                component = go.GetComponent<T>();
-            }
+            if (component == null) component = go.GetComponent<T>();
 
             if (component == null)
                 return null;
@@ -523,7 +478,7 @@ namespace PLUME.Viewer.Player
             if (go != null)
             {
                 updatedHierarchy?.Invoke(new HierarchyDestroyGameObjectEvent(id));
-                
+
                 _gameObjectsByInstanceId.Remove(go.GetInstanceID());
                 _gameObjectsTagByInstanceId.Remove(go.GetInstanceID());
                 _transformsByInstanceId.Remove(go.transform.GetInstanceID());
@@ -531,7 +486,6 @@ namespace PLUME.Viewer.Player
                 var children = go.GetComponentsInChildren<Component>();
 
                 foreach (var child in children)
-                {
                     if (child is Transform childTransform)
                     {
                         var childTransformInstanceId = childTransform.GetInstanceID();
@@ -548,8 +502,7 @@ namespace PLUME.Viewer.Player
                         _componentByInstanceId.Remove(childComponentInstanceId);
                         RemoveIdentifierCorrespondence(GetRecordIdentifier(childComponentInstanceId));
                     }
-                }
-                
+
                 Object.DestroyImmediate(go);
             }
 
@@ -578,10 +531,7 @@ namespace PLUME.Viewer.Player
 
             var componentsEntriesToRemove = _componentByInstanceId.Where(pair => pair.Value == null);
 
-            foreach (var entry in componentsEntriesToRemove)
-            {
-                _componentByInstanceId.Remove(entry.Key);
-            }
+            foreach (var entry in componentsEntriesToRemove) _componentByInstanceId.Remove(entry.Key);
 
             return false;
         }
@@ -603,10 +553,7 @@ namespace PLUME.Viewer.Player
 
             var result = true;
 
-            if (_idMap.TryGetValue(recordIdentifier, out var instanceId))
-            {
-                result = _invertIdMap.Remove(instanceId);
-            }
+            if (_idMap.TryGetValue(recordIdentifier, out var instanceId)) result = _invertIdMap.Remove(instanceId);
 
             result = result && _idMap.Remove(recordIdentifier);
 

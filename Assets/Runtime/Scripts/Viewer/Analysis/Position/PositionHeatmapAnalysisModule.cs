@@ -16,25 +16,31 @@ namespace PLUME.Viewer.Analysis.Position
 {
     public class PositionHeatmapAnalysisModule : AnalysisModuleWithResults<PositionHeatmapAnalysisResult>, IDisposable
     {
-        /**
-         * Radius that will match the nSigmas.
-         * For nSigmas=4 this means that approximately 99.99% of the projected values will land in the radius around the position.
-         */
-        public float radius = 0.5f;
+        private readonly Dictionary<MeshSamplerResult, MaterialPropertyBlock> _cachedMeshSamplerResultPropertyBlocks =
+            new();
+
+        private readonly Dictionary<int, MaterialPropertyBlock> _cachedSegmentedObjectsDepthPropertyBlocks = new();
+        private Material _defaultHeatmapMaterial;
+
+        public PlayerContext _generationContext;
+
+        private Camera _projectionCamera;
+
+        private Material _sampleHeatmapMaterial;
+        private Material _segmentedObjectDepthMaterial;
+
+        private PositionHeatmapAnalysisResult _visibleResult;
+
+        public Shader defaultHeatmapShader;
+
+        public MeshSampler meshSampler;
 
         /**
          * Number of sigmas included in the projection. We take nSigma=4 to cover 99.99% of values.
          */
         public float nSigmas = 4;
 
-        public float samplesPerSquareMeter = 1000;
-        
-        /**
-         * Shader used to encode the object's depth and instance id into a RenderTexture.
-         */
-        public Shader segmentedObjectDepthShader;
-
-        public int segmentedObjectDepthTextureResolution = 512;
+        public Player.Player player;
 
         /**
          * The standard normal distribution projection shader
@@ -42,32 +48,31 @@ namespace PLUME.Viewer.Analysis.Position
         public ComputeShader projectionShader;
 
         /**
+         * Radius that will match the nSigmas.
+         * For nSigmas=4 this means that approximately 99.99% of the projected values will land in the radius around the position.
+         */
+        public float radius = 0.5f;
+
+        /**
          * Shader used to display the samples values as an heatmap (from blue to red).
          */
         public Shader samplesHeatmapShader;
 
-        public Shader defaultHeatmapShader;
+        public float samplesPerSquareMeter = 1000;
 
-        public Player.Player player;
+        /**
+         * Shader used to encode the object's depth and instance id into a RenderTexture.
+         */
+        public Shader segmentedObjectDepthShader;
 
-        public MeshSampler meshSampler;
-
-        public PlayerContext _generationContext;
+        public int segmentedObjectDepthTextureResolution = 512;
         public bool IsGenerating { get; private set; }
         public float GenerationProgress { get; private set; }
 
-        private Camera _projectionCamera;
-
-        private Material _sampleHeatmapMaterial;
-        private Material _defaultHeatmapMaterial;
-        private Material _segmentedObjectDepthMaterial;
-
-        private PositionHeatmapAnalysisResult _visibleResult;
-
-        private readonly Dictionary<MeshSamplerResult, MaterialPropertyBlock> _cachedMeshSamplerResultPropertyBlocks =
-            new();
-
-        private readonly Dictionary<int, MaterialPropertyBlock> _cachedSegmentedObjectsDepthPropertyBlocks = new();
+        public override void Dispose()
+        {
+            foreach (var result in GetResults()) result.Dispose();
+        }
 
         private void Awake()
         {
@@ -102,10 +107,8 @@ namespace PLUME.Viewer.Analysis.Position
             Action<PositionHeatmapAnalysisResult> finishCallback)
         {
             if (parameters.EndTime < parameters.StartTime)
-            {
                 throw new Exception(
                     $"{nameof(parameters.StartTime)} should be less or equal to {nameof(parameters.EndTime)}.");
-            }
 
             if (player.GetModuleGenerating() != null)
             {
@@ -133,9 +136,9 @@ namespace PLUME.Viewer.Analysis.Position
                 meshSamplerResults);
 
             SetVisibleResult(result);
-            
+
             PrepareProjectionShader(samplesMinValueBuffer, samplesMaxValueBuffer, projectionKernel);
-            
+
             if (parameters.StartTime > 0)
             {
                 var skippedFrames = record.Frames.GetInTimeRange(0, parameters.StartTime - 1u);
@@ -144,23 +147,23 @@ namespace PLUME.Viewer.Analysis.Position
 
             var stopwatch = Stopwatch.StartNew();
             var lastYieldTime = stopwatch.ElapsedMilliseconds;
-            
+
             var frames = record.Frames.GetInTimeRange(parameters.StartTime, parameters.EndTime);
             var nFrames = frames.Count;
-            
-            for(var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
+
+            for (var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
             {
                 var frame = frames[frameIdx];
-                
+
                 var time = stopwatch.ElapsedMilliseconds;
-                
+
                 // Yield every 33ms (~30fps) to avoid freezing the game
                 if (time - lastYieldTime > 33)
                 {
                     lastYieldTime = time;
                     yield return null;
                 }
-                
+
                 _generationContext.PlayFrame(player.PlayerModules, frame);
 
                 var replayProjectionCasterId = _generationContext.GetReplayInstanceId(parameters.CasterIdentifier);
@@ -180,10 +183,8 @@ namespace PLUME.Viewer.Analysis.Position
 
                     foreach (var goInstanceId in go.GetComponentsInChildren<Renderer>()
                                  .Select(r => r.gameObject.GetInstanceID()))
-                    {
                         if (!replayProjectionReceiversIds.Contains(goInstanceId))
                             replayProjectionReceiversIds.Add(goInstanceId);
-                    }
                 }
 
                 if (replayProjectionCasterId.HasValue && replayProjectionReceiversIds.Count > 0)
@@ -200,14 +201,12 @@ namespace PLUME.Viewer.Analysis.Position
                             .ToArray();
 
                         if (projectionReceiversGameObjects.Length > 0)
-                        {
                             ProjectCurrentPosition(_generationContext, projectionCaster,
                                 projectionReceiversGameObjects,
                                 meshSamplerResults, projectionKernel);
-                        }
                     }
                 }
-                
+
                 GenerationProgress = (float)frameIdx / nFrames;
             }
 
@@ -368,10 +367,7 @@ namespace PLUME.Viewer.Analysis.Position
             if (activeContext == null)
                 return;
 
-            if (_visibleResult != null)
-            {
-                ApplyHeatmapMaterials(activeContext);
-            }
+            if (_visibleResult != null) ApplyHeatmapMaterials(activeContext);
         }
 
         private void RestoreRecordMaterials(PlayerContext ctx)
@@ -380,11 +376,8 @@ namespace PLUME.Viewer.Analysis.Position
 
             foreach (var go in gameObjects)
             {
-                if (go.TryGetComponent<Graphic>(out var graphic))
-                {
-                    graphic.enabled = true;
-                }
-                
+                if (go.TryGetComponent<Graphic>(out var graphic)) graphic.enabled = true;
+
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                     continue;
                 goRenderer.SetSharedMaterials(new List<Material>());
@@ -392,25 +385,15 @@ namespace PLUME.Viewer.Analysis.Position
 
             var frames = player.Record.Frames.GetInTimeRange(0, player.GetCurrentPlayTimeInNanoseconds());
             foreach (var frame in frames)
+            foreach (var sample in frame.Data)
             {
-                foreach (var sample in frame.Data)
-                {
-                    if (sample.Payload is TerrainUpdate)
-                    {
-                        foreach (var playerModule in player.PlayerModules)
-                        {
-                            playerModule.PlaySample(ctx, sample);
-                        }
-                    }
-                    
-                    if (sample.Payload is RendererUpdate)
-                    {
-                        foreach (var playerModule in player.PlayerModules)
-                        {
-                            playerModule.PlaySample(ctx, sample);
-                        }
-                    }
-                }
+                if (sample.Payload is TerrainUpdate)
+                    foreach (var playerModule in player.PlayerModules)
+                        playerModule.PlaySample(ctx, sample);
+
+                if (sample.Payload is RendererUpdate)
+                    foreach (var playerModule in player.PlayerModules)
+                        playerModule.PlaySample(ctx, sample);
             }
         }
 
@@ -418,10 +401,7 @@ namespace PLUME.Viewer.Analysis.Position
         {
             foreach (var go in projectionReceivers)
             {
-                if (!go.TryGetComponent<Renderer>(out var goRenderer))
-                {
-                    continue;
-                }
+                if (!go.TryGetComponent<Renderer>(out var goRenderer)) continue;
 
                 var nSharedMaterials = goRenderer.sharedMaterials.Length;
                 goRenderer.sharedMaterials =
@@ -434,9 +414,7 @@ namespace PLUME.Viewer.Analysis.Position
         private MaterialPropertyBlock GetOrCreateSegmentedObjectsDepthPropertyBlock(GameObject go)
         {
             if (_cachedSegmentedObjectsDepthPropertyBlocks.TryGetValue(go.GetInstanceID(), out var propertyBlock))
-            {
                 return propertyBlock;
-            }
 
             var objectInstanceID = Shader.PropertyToID("object_instance_id");
             var newPropertyBlock = new MaterialPropertyBlock();
@@ -458,16 +436,10 @@ namespace PLUME.Viewer.Analysis.Position
                     terrain.detailObjectDensity = 0;
                     terrain.materialTemplate = _defaultHeatmapMaterial;
                 }
-                
-                if (go.TryGetComponent<Graphic>(out var graphic))
-                {
-                    graphic.enabled = false;
-                }
-                
-                if (!go.TryGetComponent<Renderer>(out var goRenderer))
-                {
-                    continue;
-                }
+
+                if (go.TryGetComponent<Graphic>(out var graphic)) graphic.enabled = false;
+
+                if (!go.TryGetComponent<Renderer>(out var goRenderer)) continue;
 
                 var nSharedMaterials = goRenderer.sharedMaterials.Length;
                 goRenderer.sharedMaterials = Enumerable.Repeat(_defaultHeatmapMaterial, nSharedMaterials).ToArray();
@@ -476,13 +448,9 @@ namespace PLUME.Viewer.Analysis.Position
                 Mesh mesh = null;
 
                 if (go.TryGetComponent<MeshFilter>(out var meshFilter))
-                {
                     mesh = meshFilter.sharedMesh;
-                }
                 else if (go.TryGetComponent<SkinnedMeshRenderer>(out var skinnedMeshRenderer))
-                {
                     mesh = skinnedMeshRenderer.sharedMesh;
-                }
 
                 if (mesh == null || mesh.vertexCount == 0)
                     continue;
@@ -512,9 +480,7 @@ namespace PLUME.Viewer.Analysis.Position
         private MaterialPropertyBlock GetOrCreateMeshSamplerResultPropertyBlock(MeshSamplerResult meshSamplerResult)
         {
             if (_cachedMeshSamplerResultPropertyBlocks.TryGetValue(meshSamplerResult, out var propertyBlock))
-            {
                 return propertyBlock;
-            }
 
             var trianglesResolutionBuffer = Shader.PropertyToID("triangles_resolution_buffer");
             var trianglesSamplesIndexOffsetBuffer = Shader.PropertyToID("triangles_samples_index_offset_buffer");
@@ -540,9 +506,7 @@ namespace PLUME.Viewer.Analysis.Position
             if (result == _visibleResult)
             {
                 foreach (var meshSamplerResult in result.SamplerResults.Values)
-                {
                     _cachedMeshSamplerResultPropertyBlocks.Remove(meshSamplerResult);
-                }
 
                 SetVisibleResult(null);
             }
@@ -565,23 +529,16 @@ namespace PLUME.Viewer.Analysis.Position
             var resultIdx = GetResultIndex(result);
             var outputDir = $"Outputs/{player.Record.ToSafeString()}/Analysis/PositionHeatmaps/{resultIdx}";
 
-            if (!Directory.Exists(outputDir))
-            {
-                Directory.CreateDirectory(outputDir);
-            }
+            if (!Directory.Exists(outputDir)) Directory.CreateDirectory(outputDir);
 
             foreach (var (hash, samplerResult) in result.SamplerResults)
             {
                 string filePath;
 
                 if (samplerResult.Name != null)
-                {
                     filePath = $"{outputDir}/heatmap_{samplerResult.Name}.ply";
-                }
                 else
-                {
                     filePath = $"{outputDir}/heatmap_{(uint)hash}.ply";
-                }
 
                 var w = File.CreateText(filePath);
 
@@ -668,10 +625,7 @@ namespace PLUME.Viewer.Analysis.Position
 
             _visibleResult = result;
 
-            if (result == null && prevVisibleResult != null)
-            {
-                RestoreRecordMaterials(player.GetMainPlayerContext());
-            }
+            if (result == null && prevVisibleResult != null) RestoreRecordMaterials(player.GetMainPlayerContext());
         }
 
         public PositionHeatmapAnalysisResult GetVisibleResult()
@@ -681,21 +635,10 @@ namespace PLUME.Viewer.Analysis.Position
 
         private void OnDestroy()
         {
-            foreach (var result in GetResults())
-            {
-                result.Dispose();
-            }
+            foreach (var result in GetResults()) result.Dispose();
 
             _projectionCamera.targetTexture.Release();
             _projectionCamera.targetTexture = null;
-        }
-
-        public override void Dispose()
-        {
-            foreach (var result in GetResults())
-            {
-                result.Dispose();
-            }
         }
     }
 }

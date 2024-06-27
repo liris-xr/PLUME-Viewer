@@ -6,22 +6,21 @@ namespace PLUME
 {
     public class MeshSamplerResult : IDisposable
     {
-        public readonly uint NTriangles;
-        public readonly uint NVertices;
+        public readonly GraphicsBuffer IndexBuffer;
+        public readonly int IndexBufferStride;
         public readonly uint NSamples;
         public readonly uint NSamplesMaxPerTriangle;
+        public readonly uint NTriangles;
+        public readonly uint NVertices;
+
+        public readonly ComputeBuffer SampleValuesBuffer;
 
         public readonly ComputeBuffer TrianglesResolutionBuffer;
         public readonly ComputeBuffer TrianglesSamplesIndexOffsetBuffer;
 
-        public readonly GraphicsBuffer IndexBuffer;
-        public readonly int IndexBufferStride;
-
         public readonly GraphicsBuffer VertexBuffer;
-        public readonly int VertexBufferStride;
         public readonly int VertexBufferPositionOffset;
-
-        public readonly ComputeBuffer SampleValuesBuffer;
+        public readonly int VertexBufferStride;
 
         [CanBeNull] public string Name;
 

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -13,23 +12,25 @@ using PLUME.Sample.LSL;
 using PLUME.Sample.Unity;
 using PLUME.Sample.Unity.Settings;
 using PLUME.Sample.Unity.XRITK;
-using UnityEngine;
 using UnityEngine.Profiling;
 
 namespace PLUME
 {
     public class RecordLoader : IDisposable
     {
+        public enum LoadingStatus
+        {
+            NotLoading,
+            Loading,
+            Done
+        }
+
         private const uint LZ4MagicNumber = 0x184D2204;
 
-        private Stream _baseStream;
-        private Stream _stream;
-
-        public float Progress { get; private set; }
-
-        public LoadingStatus Status { get; private set; }
+        private readonly Stream _baseStream;
 
         private readonly TypeRegistry _sampleTypeRegistry;
+        private Stream _stream;
 
         public RecordLoader(string recordPath, TypeRegistry sampleTypeRegistry)
         {
@@ -46,6 +47,15 @@ namespace PLUME
                 _stream = _baseStream;
         }
 
+        public float Progress { get; private set; }
+
+        public LoadingStatus Status { get; private set; }
+
+        public void Dispose()
+        {
+            _stream?.Dispose();
+        }
+
         public async UniTask<Record> LoadAsync()
         {
             Status = LoadingStatus.Loading;
@@ -53,16 +63,16 @@ namespace PLUME
 
             var packedMetadata = PackedSample.Parser.ParseDelimitedFrom(_stream);
             var metadata = packedMetadata.Payload.Unpack<RecordMetadata>();
-            
-            if(metadata == null)
+
+            if (metadata == null)
                 throw new Exception("Failed to load metadata from record file");
 
             var packedGraphicsSettings = PackedSample.Parser.ParseDelimitedFrom(_stream);
             var graphicsSettings = packedGraphicsSettings.Payload.Unpack<GraphicsSettings>();
-            
-            if(graphicsSettings == null)
+
+            if (graphicsSettings == null)
                 throw new Exception("Failed to load graphics settings from record file");
-            
+
             var record = new Record(metadata, graphicsSettings);
 
             var loadingThread = new Thread(() =>
@@ -70,7 +80,6 @@ namespace PLUME
                 Profiler.BeginThreadProfiling("PLUME", "RecordLoader.LoadAsync");
 
                 while (_baseStream.Position < _baseStream.Length)
-                {
                     try
                     {
                         var packedSample = PackedSample.Parser.ParseDelimitedFrom(_stream);
@@ -113,7 +122,6 @@ namespace PLUME
                     {
                         break;
                     }
-                }
 
                 Profiler.EndThreadProfiling();
             })
@@ -125,7 +133,7 @@ namespace PLUME
 
             // Wait until thread finishes loading the record.
             await UniTask.WaitUntil(() => !loadingThread.IsAlive);
-            
+
             Status = LoadingStatus.Done;
             Progress = 1;
 
@@ -150,18 +158,6 @@ namespace PLUME
             fileStream.Seek(0, SeekOrigin.Begin);
             var compressed = BitConverter.ToUInt32(magicNumber, 0) == LZ4MagicNumber;
             return compressed;
-        }
-
-        public void Dispose()
-        {
-            _stream?.Dispose();
-        }
-
-        public enum LoadingStatus
-        {
-            NotLoading,
-            Loading,
-            Done
         }
     }
 }

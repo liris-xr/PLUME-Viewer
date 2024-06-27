@@ -1,5 +1,4 @@
-﻿using PLUME.Sample;
-using PLUME.Sample.Unity.UI;
+﻿using PLUME.Sample.Unity.UI;
 using UnityEngine;
 
 namespace PLUME.Viewer.Player.Module.Unity.UI
@@ -59,7 +58,8 @@ namespace PLUME.Viewer.Player.Module.Unity.UI
                         c.sortingLayerID = canvasUpdate.SortingLayerId;
 
                     if (canvasUpdate.HasAdditionalShaderChannels)
-                        c.additionalShaderChannels = (AdditionalCanvasShaderChannels) canvasUpdate.AdditionalShaderChannels;
+                        c.additionalShaderChannels =
+                            (AdditionalCanvasShaderChannels)canvasUpdate.AdditionalShaderChannels;
 
                     if (canvasUpdate.HasSortingLayerName)
                         c.sortingLayerName = canvasUpdate.SortingLayerName;

@@ -1,5 +1,4 @@
-﻿using PLUME.Sample;
-using PLUME.Sample.Unity.UI;
+﻿using PLUME.Sample.Unity.UI;
 using UnityEngine.UI;
 
 namespace PLUME.Viewer.Player.Module.Unity.UI

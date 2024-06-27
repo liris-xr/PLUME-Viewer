@@ -1,8 +1,4 @@
-﻿using PLUME.Sample;
-using PLUME.Sample.Unity;
-using PLUME.Sample.Unity.UI;
-using UnityEngine;
-using Vector2 = PLUME.Sample.Common.Vector2;
+﻿using PLUME.Sample.Unity.UI;
 
 namespace PLUME.Viewer.Player.Module.Unity
 {
@@ -26,32 +22,21 @@ namespace PLUME.Viewer.Player.Module.Unity
                 case RectTransformUpdate rectTransformUpdate:
                 {
                     var t = ctx.GetOrCreateRectTransformByIdentifier(rectTransformUpdate.Id);
-                    
+
                     if (rectTransformUpdate.AnchorMin != null)
-                    {
                         t.anchorMin = rectTransformUpdate.AnchorMin.ToEngineType();
-                    }
-                    
+
                     if (rectTransformUpdate.AnchorMax != null)
-                    {
                         t.anchorMax = rectTransformUpdate.AnchorMax.ToEngineType();
-                    }
-                    
-                    if (rectTransformUpdate.Pivot != null)
-                    {
-                        t.pivot = rectTransformUpdate.Pivot.ToEngineType();
-                    }
-                    
-                    if(rectTransformUpdate.AnchoredPosition != null)
-                    {
+
+                    if (rectTransformUpdate.Pivot != null) t.pivot = rectTransformUpdate.Pivot.ToEngineType();
+
+                    if (rectTransformUpdate.AnchoredPosition != null)
                         t.anchoredPosition = rectTransformUpdate.AnchoredPosition.ToEngineType();
-                    }
-                    
+
                     if (rectTransformUpdate.SizeDelta != null)
-                    {
                         t.sizeDelta = rectTransformUpdate.SizeDelta.ToEngineType();
-                    }
-                
+
                     break;
                 }
             }

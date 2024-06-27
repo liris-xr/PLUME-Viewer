@@ -1,5 +1,4 @@
-﻿using PLUME.Sample;
-using PLUME.Sample.Unity.URP;
+﻿using PLUME.Sample.Unity.URP;
 using UnityEngine.Rendering.Universal;
 
 namespace PLUME.Viewer.Player.Module.Unity.URP

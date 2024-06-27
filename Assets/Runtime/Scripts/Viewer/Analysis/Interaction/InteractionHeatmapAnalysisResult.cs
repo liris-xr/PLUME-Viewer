@@ -22,14 +22,12 @@ namespace PLUME.Viewer.Analysis.Interaction
 
     public class InteractionHeatmapAnalysisResult : AnalysisModuleResult
     {
-        public InteractionAnalysisModuleParameters GenerationParameters { get; }
-
         // Mapping between interactors record identifier and number of interactions
         public readonly Dictionary<string, int> Interactions = new();
 
-        public readonly int TotalInteractionCount;
-
         public readonly int MaxInteractionCount;
+
+        public readonly int TotalInteractionCount;
 
         public InteractionHeatmapAnalysisResult()
         {
@@ -43,6 +41,8 @@ namespace PLUME.Viewer.Analysis.Interaction
             TotalInteractionCount = totalInteractionCount;
             MaxInteractionCount = maxInteractionCount;
         }
+
+        public InteractionAnalysisModuleParameters GenerationParameters { get; }
 
         public override void Save(Stream outputStream)
         {

@@ -11,11 +11,10 @@ namespace PLUME.Viewer.Analysis.Trajectory
         TrajectoryAnalysisModuleUI : AnalysisModuleWithResultsUI<TrajectoryAnalysisModule,
         TrajectoryAnalysisModuleResult>
     {
+        public Action<TrajectoryAnalysisModuleResult> clickedDeleteResult;
         public Player.Player player;
 
         public VisualTreeAsset resultEntryTemplate;
-
-        public Action<TrajectoryAnalysisModuleResult> clickedDeleteResult;
         public Action<TrajectoryAnalysisModuleResult, bool> toggledResultVisibility;
 
         public Button GenerateButton { get; private set; }

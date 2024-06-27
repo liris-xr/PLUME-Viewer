@@ -1,6 +1,4 @@
-﻿using PLUME.Sample;
-using PLUME.Sample.Unity;
-using UnityEngine;
+﻿using PLUME.Sample.Unity;
 
 namespace PLUME.Viewer.Player.Module.Unity
 {
@@ -24,25 +22,13 @@ namespace PLUME.Viewer.Player.Module.Unity
                 {
                     var go = ctx.GetOrCreateGameObjectByIdentifier(gameObjectUpdate.Id);
 
-                    if (gameObjectUpdate.HasName)
-                    {
-                        ctx.SetName(gameObjectUpdate.Id, gameObjectUpdate.Name);
-                    }
+                    if (gameObjectUpdate.HasName) ctx.SetName(gameObjectUpdate.Id, gameObjectUpdate.Name);
 
-                    if (gameObjectUpdate.HasActive)
-                    {
-                        ctx.SetActive(gameObjectUpdate.Id, gameObjectUpdate.Active);
-                    }
+                    if (gameObjectUpdate.HasActive) ctx.SetActive(gameObjectUpdate.Id, gameObjectUpdate.Active);
 
-                    if (gameObjectUpdate.HasLayer)
-                    {
-                        go.layer = gameObjectUpdate.Layer;
-                    }
+                    if (gameObjectUpdate.HasLayer) go.layer = gameObjectUpdate.Layer;
 
-                    if (gameObjectUpdate.HasTag)
-                    {
-                        ctx.SetGameObjectTag(gameObjectUpdate.Id, gameObjectUpdate.Tag);
-                    }
+                    if (gameObjectUpdate.HasTag) ctx.SetGameObjectTag(gameObjectUpdate.Id, gameObjectUpdate.Tag);
 
                     if (gameObjectUpdate.HasSceneId)
                     {

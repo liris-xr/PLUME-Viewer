@@ -8,16 +8,15 @@ namespace PLUME.Viewer.Analysis.Trajectory
     public class TrajectoryAnalysisModulePresenter : AnalysisModuleWithResultsPresenter<
         TrajectoryAnalysisModule, TrajectoryAnalysisModuleResult, TrajectoryAnalysisModuleUI>
     {
-        public Player.Player player;
-
-        public string defaultObjectId = "";
-        public string defaultMarkers = "";
-        public float defaultTeleportationTolerance = 0.1f;
-        public bool defaultTeleportationSegments = true;
+        private Coroutine _generationCoroutine;
         public float defaultDecimationTolerance = 0.01f;
         public bool defaultIncludeRotations;
-        
-        private Coroutine _generationCoroutine;
+        public string defaultMarkers = "";
+
+        public string defaultObjectId = "";
+        public bool defaultTeleportationSegments = true;
+        public float defaultTeleportationTolerance = 0.1f;
+        public Player.Player player;
 
         public void Start()
         {
@@ -25,7 +24,8 @@ namespace PLUME.Viewer.Analysis.Trajectory
             ui.CancelButton.clicked += OnClickCancel;
             ui.ObjectIdTextField.value = defaultObjectId;
             ui.MarkersTextField.value = defaultMarkers;
-            ui.TeleportationToleranceTextField.value = defaultTeleportationTolerance.ToString(CultureInfo.InvariantCulture);
+            ui.TeleportationToleranceTextField.value =
+                defaultTeleportationTolerance.ToString(CultureInfo.InvariantCulture);
             ui.TeleportationSegments.value = defaultTeleportationSegments;
             ui.DecimationToleranceTextField.value = defaultDecimationTolerance.ToString(CultureInfo.InvariantCulture);
             ui.IncludeRotations.value = defaultIncludeRotations;
@@ -43,10 +43,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
                 {
                     var visibleResults = new List<TrajectoryAnalysisModuleResult>(module.GetVisibleResults());
 
-                    foreach (var result in visibleResults)
-                    {
-                        module.SetResultVisibility(result, false);
-                    }
+                    foreach (var result in visibleResults) module.SetResultVisibility(result, false);
 
                     ui.RefreshResults();
                 }
@@ -96,10 +93,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
             var otherModuleGenerating = player.GetModuleGenerating() != null && player.GetModuleGenerating() != module;
             ui.GenerateButton.SetEnabled(!otherModuleGenerating);
 
-            if (module.IsGenerating)
-            {
-                ui.GenerationProgressBar.value = module.GenerationProgress;
-            }
+            if (module.IsGenerating) ui.GenerationProgressBar.value = module.GenerationProgress;
         }
 
         private void OnClickCancel()
@@ -120,10 +114,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
         private void OnToggleResultVisibility(TrajectoryAnalysisModuleResult result, bool visible)
         {
             // Disable show/hide when generating
-            if (player.GetModuleGenerating() == null)
-            {
-                module.SetResultVisibility(result, visible);
-            }
+            if (player.GetModuleGenerating() == null) module.SetResultVisibility(result, visible);
 
             ui.RefreshResults();
         }

@@ -8,41 +8,40 @@ namespace PLUME.Viewer
     [RequireComponent(typeof(Camera))]
     public class FreeCamera : PreviewCamera
     {
-        [NonSerialized] public bool InputDisabled = true;
-
-        private Camera _camera;
-
         private const float MouseSensitivityMultiplier = 0.01f;
 
-        /// <summary>
-        /// Rotation speed when using the mouse.
-        /// </summary>
-        public float lookSpeedMouse = 4.0f;
+        private Camera _camera;
+        private float _inputChangeSpeed;
 
-        /// <summary>
-        /// Movement speed.
-        /// </summary>
-        public float moveSpeed = 10.0f;
-
-        /// <summary>
-        /// Value added to the speed when incrementing.
-        /// </summary>
-        public float moveSpeedIncrement = 2.5f;
-
-        /// <summary>
-        /// Scale factor of the turbo mode.
-        /// </summary>
-        public float turbo = 10.0f;
+        private float _inputRotateAxisX, _inputRotateAxisY;
+        private float _inputVertical, _inputHorizontal, _inputYAxis;
+        private bool _leftShiftBoost, _leftShift, _fire1;
 
         private InputAction _lookAction;
         private InputAction _moveAction;
         private InputAction _speedAction;
         private InputAction _yMoveAction;
+        [NonSerialized] public bool InputDisabled = true;
 
-        private float _inputRotateAxisX, _inputRotateAxisY;
-        private float _inputChangeSpeed;
-        private float _inputVertical, _inputHorizontal, _inputYAxis;
-        private bool _leftShiftBoost, _leftShift, _fire1;
+        /// <summary>
+        ///     Rotation speed when using the mouse.
+        /// </summary>
+        public float lookSpeedMouse = 4.0f;
+
+        /// <summary>
+        ///     Movement speed.
+        /// </summary>
+        public float moveSpeed = 10.0f;
+
+        /// <summary>
+        ///     Value added to the speed when incrementing.
+        /// </summary>
+        public float moveSpeedIncrement = 2.5f;
+
+        /// <summary>
+        ///     Scale factor of the turbo mode.
+        /// </summary>
+        public float turbo = 10.0f;
 
         private void Awake()
         {
@@ -135,7 +134,7 @@ namespace PLUME.Viewer
                 var newRotationY = localEulerAngles.y + _inputRotateAxisX;
 
                 // Weird clamping code due to weird Euler angle mapping...
-                var newRotationX = (rotationX - _inputRotateAxisY);
+                var newRotationX = rotationX - _inputRotateAxisY;
                 if (rotationX <= 90.0f && newRotationX >= 0.0f)
                     newRotationX = Mathf.Clamp(newRotationX, 0.0f, 90.0f);
                 if (rotationX >= 270.0f)
@@ -144,7 +143,7 @@ namespace PLUME.Viewer
                 var t = transform;
                 t.localRotation = Quaternion.Euler(newRotationX, newRotationY, t.localEulerAngles.z);
 
-                var speed = Time.deltaTime * this.moveSpeed;
+                var speed = Time.deltaTime * moveSpeed;
                 if (_leftShiftBoost && _leftShift)
                     speed *= turbo;
 
@@ -160,7 +159,7 @@ namespace PLUME.Viewer
         {
             if (_camera == null)
                 _camera = GetComponent<Camera>();
-            
+
             return _camera;
         }
 

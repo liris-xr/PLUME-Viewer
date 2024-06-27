@@ -14,11 +14,15 @@ namespace PLUME.UI.Element
 
         public override string defaultValueAsString => defaultValue.ToString(CultureInfo.InvariantCulture.NumberFormat);
 
-        public override ulong GetValueFromBag(IUxmlAttributes bag, CreationContext cc) =>
-            GetValueFromBag(bag, cc, ConvertValueToUnsignedLong, defaultValue);
+        public override ulong GetValueFromBag(IUxmlAttributes bag, CreationContext cc)
+        {
+            return GetValueFromBag(bag, cc, ConvertValueToUnsignedLong, defaultValue);
+        }
 
-        public bool TryGetValueFromBag(IUxmlAttributes bag, CreationContext cc, ref ulong value) =>
-            TryGetValueFromBag(bag, cc, ConvertValueToUnsignedLong, defaultValue, ref value);
+        public bool TryGetValueFromBag(IUxmlAttributes bag, CreationContext cc, ref ulong value)
+        {
+            return TryGetValueFromBag(bag, cc, ConvertValueToUnsignedLong, defaultValue, ref value);
+        }
 
         private static ulong ConvertValueToUnsignedLong(string v, ulong defaultValue)
         {

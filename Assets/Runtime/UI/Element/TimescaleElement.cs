@@ -19,82 +19,26 @@ namespace PLUME.UI.Element
         private const int MajorTickHeightDefault = 20;
         private static readonly Color MajorTickColorDefault = new(0.6f, 0.6f, 0.6f, 1);
         private static readonly Color MinorTickColorDefault = new(0.4f, 0.4f, 0.4f, 1);
-
-        private readonly VisualElement _timeScaleTicks;
         private readonly VisualElement _timeLabelsContainer;
 
+        private readonly VisualElement _timeScaleTicks;
+
+        private ulong _duration;
+        private Color _majorTickColor;
+        private int _majorTickHeight;
+        private int _majorTickWidth;
+        private Color _minorTickColor;
+        private int _minorTickHeight;
+
+        private int _minorTickWidth;
+
         private Rect? _ticksClippingRect;
+        private int _ticksPerDivision;
+        private ulong _timeDivisionDuration;
+        private float _timeDivisionWidth;
 
         public Action<ulong> clicked;
         public Action<ulong> dragged;
-
-        [Preserve]
-        public new class UxmlFactory : UxmlFactory<TimeScaleElement, UxmlTraits>
-        {
-        }
-
-        [Preserve]
-        public new class UxmlTraits : VisualElement.UxmlTraits
-        {
-            private readonly UxmlUnsignedLongAttributeDescription Duration = new()
-                { name = "duration", defaultValue = DurationDefault };
-
-            private readonly UxmlUnsignedLongAttributeDescription TimeDivisionDuration = new()
-                { name = "time-division-duration", defaultValue = TimeDivisionDurationDefault };
-
-            private readonly UxmlIntAttributeDescription TicksPerDivision = new()
-                { name = "ticks-per-division", defaultValue = TicksPerDivisionDefault };
-
-            private readonly UxmlFloatAttributeDescription TimeDivisionWidth = new()
-                { name = "time-division-width", defaultValue = TimeDivisionWidthDefault };
-
-            private readonly UxmlIntAttributeDescription MinorTickWidth = new()
-                { name = "minor-tick-width", defaultValue = MinorTickWidthDefault };
-
-            private readonly UxmlIntAttributeDescription MinorTickHeight = new()
-                { name = "minor-tick-height", defaultValue = MinorTickHeightDefault };
-
-            private readonly UxmlIntAttributeDescription MajorTickWidth = new()
-                { name = "major-tick-width", defaultValue = MajorTickWidthDefault };
-
-            private readonly UxmlIntAttributeDescription MajorTickHeight = new()
-                { name = "major-tick-height", defaultValue = MajorTickHeightDefault };
-
-            private readonly UxmlColorAttributeDescription MinorTickColor = new()
-                { name = "minor-tick-color", defaultValue = MinorTickColorDefault };
-
-            private readonly UxmlColorAttributeDescription MajorTickColor = new()
-                { name = "major-tick-color", defaultValue = MajorTickColorDefault };
-
-            public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
-            {
-                base.Init(ve, bag, cc);
-                var ele = ve as TimeScaleElement;
-                ele._duration = Duration.GetValueFromBag(bag, cc);
-                ele._timeDivisionDuration = TimeDivisionDuration.GetValueFromBag(bag, cc);
-                ele._ticksPerDivision = TicksPerDivision.GetValueFromBag(bag, cc);
-                ele._timeDivisionWidth = TimeDivisionWidth.GetValueFromBag(bag, cc);
-
-                ele._minorTickWidth = MinorTickWidth.GetValueFromBag(bag, cc);
-                ele._minorTickHeight = MinorTickHeight.GetValueFromBag(bag, cc);
-                ele._majorTickWidth = MajorTickWidth.GetValueFromBag(bag, cc);
-                ele._majorTickHeight = MajorTickHeight.GetValueFromBag(bag, cc);
-                ele._minorTickColor = MinorTickColor.GetValueFromBag(bag, cc);
-                ele._majorTickColor = MajorTickColor.GetValueFromBag(bag, cc);
-            }
-        }
-
-        private ulong _duration;
-        private ulong _timeDivisionDuration;
-        private int _ticksPerDivision;
-        private float _timeDivisionWidth;
-
-        private int _minorTickWidth;
-        private int _minorTickHeight;
-        private int _majorTickWidth;
-        private int _majorTickHeight;
-        private Color _minorTickColor;
-        private Color _majorTickColor;
 
         public TimeScaleElement()
         {
@@ -117,11 +61,58 @@ namespace PLUME.UI.Element
 
             this.AddManipulator(new Clickable(evt =>
             {
-                if (evt is IMouseEvent e)
-                {
-                    OnMouseClick(e);
-                }
+                if (evt is IMouseEvent e) OnMouseClick(e);
             }));
+        }
+
+        public ulong Duration
+        {
+            get => _duration;
+            set
+            {
+                _duration = value;
+                RecalculateSize();
+            }
+        }
+
+        public ulong TimeDivisionDuration
+        {
+            get => _timeDivisionDuration;
+            set
+            {
+                _timeDivisionDuration = value;
+                RecalculateSize();
+            }
+        }
+
+        public float TimeDivisionWidth
+        {
+            get => _timeDivisionWidth;
+            set
+            {
+                _timeDivisionWidth = value;
+                RecalculateSize();
+            }
+        }
+
+        public int TicksPerDivision
+        {
+            get => _ticksPerDivision;
+            set
+            {
+                _ticksPerDivision = value;
+                Repaint();
+            }
+        }
+
+        public Rect? TicksClippingRect
+        {
+            get => _ticksClippingRect;
+            set
+            {
+                _ticksClippingRect = value;
+                Repaint();
+            }
         }
 
         private void OnMouseMove(PointerMoveEvent evt)
@@ -187,10 +178,7 @@ namespace PLUME.UI.Element
                 tickRect.width = _majorTickWidth;
                 tickRect.height = _majorTickHeight;
 
-                if (!IsTickVisible(tickRect))
-                {
-                    continue;
-                }
+                if (!IsTickVisible(tickRect)) continue;
 
                 var time = _timeDivisionDuration * (ulong)divisionIdx; // time in nanoseconds
                 var disabled = time > _duration;
@@ -203,10 +191,7 @@ namespace PLUME.UI.Element
                 timeLabel.AddToClassList("time-label");
                 timeLabel.text = timeStr;
 
-                if (disabled)
-                {
-                    timeLabel.AddToClassList("time-label--disabled");
-                }
+                if (disabled) timeLabel.AddToClassList("time-label--disabled");
 
                 timeLabelContainer.style.position = new StyleEnum<Position>(Position.Absolute);
                 timeLabelContainer.style.left = tickIndex * tickSpacing;
@@ -249,10 +234,7 @@ namespace PLUME.UI.Element
                     tickRect.width = tickWidth;
                     tickRect.height = tickHeight;
 
-                    if (!IsTickVisible(tickRect))
-                    {
-                        continue;
-                    }
+                    if (!IsTickVisible(tickRect)) continue;
 
                     var vertexIndexOffset = verticesList.Count;
                     var v0 = new Vertex();
@@ -292,53 +274,59 @@ namespace PLUME.UI.Element
             }
         }
 
-        public ulong Duration
+        [Preserve]
+        public new class UxmlFactory : UxmlFactory<TimeScaleElement, UxmlTraits>
         {
-            get => _duration;
-            set
-            {
-                _duration = value;
-                RecalculateSize();
-            }
         }
 
-        public ulong TimeDivisionDuration
+        [Preserve]
+        public new class UxmlTraits : VisualElement.UxmlTraits
         {
-            get => _timeDivisionDuration;
-            set
-            {
-                _timeDivisionDuration = value;
-                RecalculateSize();
-            }
-        }
+            private readonly UxmlUnsignedLongAttributeDescription Duration = new()
+                { name = "duration", defaultValue = DurationDefault };
 
-        public float TimeDivisionWidth
-        {
-            get => _timeDivisionWidth;
-            set
-            {
-                _timeDivisionWidth = value;
-                RecalculateSize();
-            }
-        }
+            private readonly UxmlColorAttributeDescription MajorTickColor = new()
+                { name = "major-tick-color", defaultValue = MajorTickColorDefault };
 
-        public int TicksPerDivision
-        {
-            get => _ticksPerDivision;
-            set
-            {
-                _ticksPerDivision = value;
-                Repaint();
-            }
-        }
+            private readonly UxmlIntAttributeDescription MajorTickHeight = new()
+                { name = "major-tick-height", defaultValue = MajorTickHeightDefault };
 
-        public Rect? TicksClippingRect
-        {
-            get => _ticksClippingRect;
-            set
+            private readonly UxmlIntAttributeDescription MajorTickWidth = new()
+                { name = "major-tick-width", defaultValue = MajorTickWidthDefault };
+
+            private readonly UxmlColorAttributeDescription MinorTickColor = new()
+                { name = "minor-tick-color", defaultValue = MinorTickColorDefault };
+
+            private readonly UxmlIntAttributeDescription MinorTickHeight = new()
+                { name = "minor-tick-height", defaultValue = MinorTickHeightDefault };
+
+            private readonly UxmlIntAttributeDescription MinorTickWidth = new()
+                { name = "minor-tick-width", defaultValue = MinorTickWidthDefault };
+
+            private readonly UxmlIntAttributeDescription TicksPerDivision = new()
+                { name = "ticks-per-division", defaultValue = TicksPerDivisionDefault };
+
+            private readonly UxmlUnsignedLongAttributeDescription TimeDivisionDuration = new()
+                { name = "time-division-duration", defaultValue = TimeDivisionDurationDefault };
+
+            private readonly UxmlFloatAttributeDescription TimeDivisionWidth = new()
+                { name = "time-division-width", defaultValue = TimeDivisionWidthDefault };
+
+            public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
             {
-                _ticksClippingRect = value;
-                Repaint();
+                base.Init(ve, bag, cc);
+                var ele = ve as TimeScaleElement;
+                ele._duration = Duration.GetValueFromBag(bag, cc);
+                ele._timeDivisionDuration = TimeDivisionDuration.GetValueFromBag(bag, cc);
+                ele._ticksPerDivision = TicksPerDivision.GetValueFromBag(bag, cc);
+                ele._timeDivisionWidth = TimeDivisionWidth.GetValueFromBag(bag, cc);
+
+                ele._minorTickWidth = MinorTickWidth.GetValueFromBag(bag, cc);
+                ele._minorTickHeight = MinorTickHeight.GetValueFromBag(bag, cc);
+                ele._majorTickWidth = MajorTickWidth.GetValueFromBag(bag, cc);
+                ele._majorTickHeight = MajorTickHeight.GetValueFromBag(bag, cc);
+                ele._minorTickColor = MinorTickColor.GetValueFromBag(bag, cc);
+                ele._majorTickColor = MajorTickColor.GetValueFromBag(bag, cc);
             }
         }
     }

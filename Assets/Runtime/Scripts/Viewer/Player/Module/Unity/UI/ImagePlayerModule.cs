@@ -1,5 +1,4 @@
-﻿using PLUME.Sample;
-using PLUME.Sample.Unity.UI;
+﻿using PLUME.Sample.Unity.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -25,10 +24,7 @@ namespace PLUME.Viewer.Player.Module.Unity.UI
                 {
                     var img = ctx.GetOrCreateComponentByIdentifier<Image>(imageUpdate.Id);
 
-                    if (imageUpdate.HasType)
-                    {
-                        img.type = imageUpdate.Type.ToEngineType();
-                    }
+                    if (imageUpdate.HasType) img.type = imageUpdate.Type.ToEngineType();
 
                     if (imageUpdate.SpriteId != null)
                     {

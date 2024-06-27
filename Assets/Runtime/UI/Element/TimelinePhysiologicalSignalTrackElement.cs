@@ -11,56 +11,29 @@ namespace PLUME.UI.Element
         private const ulong DurationDefault = 1_000_000_000u;
         private const ulong TimeDivisionDurationDefault = 100_000_000u;
         private const float TimeDivisionWidthDefault = 100;
-
-        [Preserve]
-        public new class UxmlFactory : UxmlFactory<TimelinePhysiologicalSignalTrackElement, UxmlTraits>
-        {
-        }
-
-        [Preserve]
-        public new class UxmlTraits : VisualElement.UxmlTraits
-        {
-            private readonly UxmlUnsignedLongAttributeDescription _duration = new()
-                { name = "duration", defaultValue = DurationDefault };
-
-            private readonly UxmlUnsignedLongAttributeDescription _timeDivisionDuration = new()
-                { name = "time-division-duration", defaultValue = TimeDivisionDurationDefault };
-
-            private readonly UxmlFloatAttributeDescription _timeDivisionWidth = new()
-                { name = "time-division-width", defaultValue = TimeDivisionWidthDefault };
-
-            public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
-            {
-                base.Init(ve, bag, cc);
-                var ele = ve as TimelinePhysiologicalSignalTrackElement;
-                ele._duration = _duration.GetValueFromBag(bag, cc);
-                ele._timeDivisionDuration = _timeDivisionDuration.GetValueFromBag(bag, cc);
-                ele._timeDivisionWidth = _timeDivisionWidth.GetValueFromBag(bag, cc);
-            }
-        }
+        private readonly VisualElement _canvas;
+        private readonly Label _channelLabel;
+        private readonly VisualElement _colorPane;
+        private readonly Label _currentValueLabel;
+        private readonly Label _frequencyLabel;
 
         private readonly Scroller _horizontalScroller;
-        private readonly VisualElement _canvas;
+        private readonly Label _maxValueLabel;
+
+        private readonly Label _minValueLabel;
+
+        private readonly Label _nameLabel;
         private readonly VisualElement _trackContent;
-        private readonly VisualElement _colorPane;
 
         private Color _channelColor = Color.red;
 
-        private readonly Label _nameLabel;
-        private readonly Label _frequencyLabel;
-        private readonly Label _channelLabel;
-
-        private readonly Label _minValueLabel;
-        private readonly Label _maxValueLabel;
-        private readonly Label _currentValueLabel;
+        private Rect? _clippingRect;
 
         private ulong _duration;
-        private ulong _timeDivisionDuration;
-        private float _timeDivisionWidth;
 
         private List<Vector2> _points = new();
-
-        private Rect? _clippingRect;
+        private ulong _timeDivisionDuration;
+        private float _timeDivisionWidth;
 
         public TimelinePhysiologicalSignalTrackElement()
         {
@@ -83,6 +56,36 @@ namespace PLUME.UI.Element
 
             _canvas = track.Q("canvas");
             _canvas.generateVisualContent += DrawCanvas;
+        }
+
+        public ulong Duration
+        {
+            get => _duration;
+            set
+            {
+                _duration = value;
+                RecalculateSize();
+            }
+        }
+
+        public ulong TimeDivisionDuration
+        {
+            get => _timeDivisionDuration;
+            set
+            {
+                _timeDivisionDuration = value;
+                RecalculateSize();
+            }
+        }
+
+        public float TimeDivisionWidth
+        {
+            get => _timeDivisionWidth;
+            set
+            {
+                _timeDivisionWidth = value;
+                RecalculateSize();
+            }
         }
 
         public void SetMinValue(float value)
@@ -191,33 +194,30 @@ namespace PLUME.UI.Element
             _horizontalScroller.value = scrollOffset;
         }
 
-        public ulong Duration
+        [Preserve]
+        public new class UxmlFactory : UxmlFactory<TimelinePhysiologicalSignalTrackElement, UxmlTraits>
         {
-            get => _duration;
-            set
-            {
-                _duration = value;
-                RecalculateSize();
-            }
         }
 
-        public ulong TimeDivisionDuration
+        [Preserve]
+        public new class UxmlTraits : VisualElement.UxmlTraits
         {
-            get => _timeDivisionDuration;
-            set
-            {
-                _timeDivisionDuration = value;
-                RecalculateSize();
-            }
-        }
+            private readonly UxmlUnsignedLongAttributeDescription _duration = new()
+                { name = "duration", defaultValue = DurationDefault };
 
-        public float TimeDivisionWidth
-        {
-            get => _timeDivisionWidth;
-            set
+            private readonly UxmlUnsignedLongAttributeDescription _timeDivisionDuration = new()
+                { name = "time-division-duration", defaultValue = TimeDivisionDurationDefault };
+
+            private readonly UxmlFloatAttributeDescription _timeDivisionWidth = new()
+                { name = "time-division-width", defaultValue = TimeDivisionWidthDefault };
+
+            public override void Init(VisualElement ve, IUxmlAttributes bag, CreationContext cc)
             {
-                _timeDivisionWidth = value;
-                RecalculateSize();
+                base.Init(ve, bag, cc);
+                var ele = ve as TimelinePhysiologicalSignalTrackElement;
+                ele._duration = _duration.GetValueFromBag(bag, cc);
+                ele._timeDivisionDuration = _timeDivisionDuration.GetValueFromBag(bag, cc);
+                ele._timeDivisionWidth = _timeDivisionWidth.GetValueFromBag(bag, cc);
             }
         }
     }

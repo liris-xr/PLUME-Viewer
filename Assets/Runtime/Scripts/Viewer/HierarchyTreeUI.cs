@@ -10,8 +10,8 @@ namespace PLUME.Viewer
     // TODO: decouple from the UI document
     public class HierarchyTreeUI : MonoBehaviour
     {
-        public Player.Player player;
         public UIDocument document;
+        public Player.Player player;
 
         public TreeView HierarchyTree { get; private set; }
 
@@ -64,18 +64,14 @@ namespace PLUME.Viewer
 
             return true;
         }
-        
+
         private void OnMouseDownEvent(MouseDownEvent evt, int index)
         {
             if (evt.ctrlKey)
-            {
                 // Add to existing selection
                 HierarchyTree.AddToSelection(index);
-            }
             else
-            {
                 HierarchyTree.SetSelection(index);
-            }
         }
 
         private void OnKeyDownEvent(KeyDownEvent evt)

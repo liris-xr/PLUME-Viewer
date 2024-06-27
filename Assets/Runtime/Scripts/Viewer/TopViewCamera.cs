@@ -9,35 +9,35 @@ namespace PLUME.Viewer
     [RequireComponent(typeof(OrthoCameraController))]
     public class TopViewCamera : PreviewCamera
     {
-        [NonSerialized] public bool InputDisabled = true;
-        [NonSerialized] public bool ZoomDisabled = true;
-
         private Camera _camera;
-        private OrthoCameraController _orthoCameraController;
-
-        /// <summary>
-        /// Movement speed.
-        /// </summary>
-        public float moveSpeed = 10.0f;
-
-        /// <summary>
-        /// Value added to the speed when incrementing.
-        /// </summary>
-        public float moveSpeedIncrement = 2.5f;
-
-        /// <summary>
-        /// Scale factor of the turbo mode.
-        /// </summary>
-        public float turbo = 10.0f;
-
-        private InputAction _moveAction;
-        private InputAction _speedAction;
-        private InputAction _yMoveAction;
-        private InputAction _zoomAction;
 
         private float _inputChangeSpeed;
         private float _inputVertical, _inputHorizontal, _inputYAxis, _scrollYAxis;
         private bool _leftShiftBoost, _leftShift;
+
+        private InputAction _moveAction;
+        private OrthoCameraController _orthoCameraController;
+        private InputAction _speedAction;
+        private InputAction _yMoveAction;
+        private InputAction _zoomAction;
+        [NonSerialized] public bool InputDisabled = true;
+
+        /// <summary>
+        ///     Movement speed.
+        /// </summary>
+        public float moveSpeed = 10.0f;
+
+        /// <summary>
+        ///     Value added to the speed when incrementing.
+        /// </summary>
+        public float moveSpeedIncrement = 2.5f;
+
+        /// <summary>
+        ///     Scale factor of the turbo mode.
+        /// </summary>
+        public float turbo = 10.0f;
+
+        [NonSerialized] public bool ZoomDisabled = true;
 
         private void Awake()
         {
@@ -111,7 +111,7 @@ namespace PLUME.Viewer
                 _orthoCameraController.enabled = false;
                 return;
             }
-            
+
             _orthoCameraController.enabled = true;
 
             UpdateInputs();
@@ -148,9 +148,9 @@ namespace PLUME.Viewer
 
         public override Camera GetCamera()
         {
-            if(_camera == null)
+            if (_camera == null)
                 _camera = GetComponent<Camera>();
-            
+
             return _camera;
         }
 

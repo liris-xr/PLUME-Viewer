@@ -10,10 +10,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
             if (transform.hasChanged)
             {
                 var lineRenderers = GetComponentsInChildren<LineRenderer>();
-                foreach (var lineRenderer in lineRenderers)
-                {
-                    lineRenderer.startWidth = transform.localScale.x;
-                }
+                foreach (var lineRenderer in lineRenderers) lineRenderer.startWidth = transform.localScale.x;
 
                 transform.hasChanged = false;
             }

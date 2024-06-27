@@ -10,30 +10,26 @@ namespace PLUME
 {
     public class Record
     {
-        public readonly RecordMetadata metadata;
-        public readonly GraphicsSettings graphicsSettings;
-
-        /// Duration in nanoseconds
-        public ulong Duration { get; private set; }
-
-        public readonly IReadOnlySamplesSortedList<FrameSample> Frames;
-        public readonly IReadOnlySamplesSortedList<RawSample<Marker>> Markers;
-        public readonly IReadOnlySamplesSortedList<RawSample<InputAction>> InputActions;
-        public readonly IReadOnlySamplesSortedList<RawSample<StreamSample>> LslStreamSamples;
-        public readonly IReadOnlySamplesSortedList<RawSample<StreamOpen>> LslStreamOpenSamples;
-        public readonly IReadOnlySamplesSortedList<RawSample<StreamClose>> LslStreamCloseSamples;
-        public readonly IReadOnlySamplesSortedList<RawSample> OtherSamples;
-
         private readonly SamplesSortedList<FrameSample> _frames;
-        private readonly SamplesSortedList<RawSample<Marker>> _markers;
         private readonly SamplesSortedList<RawSample<InputAction>> _inputActions;
+        private readonly SamplesSortedList<RawSample<StreamClose>> _lslStreamCloseSamples;
+        private readonly SamplesSortedList<RawSample<StreamOpen>> _lslStreamOpenSamples;
 
         // LSL samples
         private readonly SamplesSortedList<RawSample<StreamSample>> _lslStreamSamples;
-        private readonly SamplesSortedList<RawSample<StreamOpen>> _lslStreamOpenSamples;
-        private readonly SamplesSortedList<RawSample<StreamClose>> _lslStreamCloseSamples;
+        private readonly SamplesSortedList<RawSample<Marker>> _markers;
 
         private readonly SamplesSortedList<RawSample> _otherSamples;
+
+        public readonly IReadOnlySamplesSortedList<FrameSample> Frames;
+        public readonly GraphicsSettings graphicsSettings;
+        public readonly IReadOnlySamplesSortedList<RawSample<InputAction>> InputActions;
+        public readonly IReadOnlySamplesSortedList<RawSample<StreamClose>> LslStreamCloseSamples;
+        public readonly IReadOnlySamplesSortedList<RawSample<StreamOpen>> LslStreamOpenSamples;
+        public readonly IReadOnlySamplesSortedList<RawSample<StreamSample>> LslStreamSamples;
+        public readonly IReadOnlySamplesSortedList<RawSample<Marker>> Markers;
+        public readonly RecordMetadata metadata;
+        public readonly IReadOnlySamplesSortedList<RawSample> OtherSamples;
 
         internal Record(RecordMetadata metadata, GraphicsSettings graphicsSettings)
         {
@@ -56,6 +52,9 @@ namespace PLUME
             LslStreamCloseSamples = _lslStreamCloseSamples.AsReadOnly();
             OtherSamples = _otherSamples.AsReadOnly();
         }
+
+        /// Duration in nanoseconds
+        public ulong Duration { get; private set; }
 
         internal void AddFrame(FrameSample frame)
         {
@@ -98,13 +97,14 @@ namespace PLUME
             _otherSamples.Add(sample);
             Duration = Math.Max(Duration, sample.Timestamp);
         }
-        
+
         public string ToSafeString()
         {
             var recordName = metadata.Name;
             var recordStartTime = metadata.StartTime.ToDateTime();
             var formattedStartTime = recordStartTime.ToString("yyyy-MM-dd_HH-mm-ss");
-            var recordSafeName = string.Join("_", recordName.Split(Path.GetInvalidFileNameChars())) + "_" + formattedStartTime;
+            var recordSafeName = string.Join("_", recordName.Split(Path.GetInvalidFileNameChars())) + "_" +
+                                 formattedStartTime;
             return recordSafeName;
         }
     }

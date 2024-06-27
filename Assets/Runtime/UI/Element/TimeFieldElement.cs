@@ -7,14 +7,6 @@ namespace PLUME.UI.Element
 {
     public class TimeFieldElement : VisualElement
     {
-        [Preserve]
-        public new class UxmlFactory : UxmlFactory<TimeFieldElement, UxmlTraits>
-        {
-        }
-
-        private readonly TextField _timeTextField;
-        private ulong _time;
-
         private static readonly string[] TimeFormats =
         {
             @"hh\:mm\:ss\.fff",
@@ -25,6 +17,9 @@ namespace PLUME.UI.Element
             @"hh\:mm\:s",
             @"hh\:mm\"
         };
+
+        private readonly TextField _timeTextField;
+        private ulong _time;
 
         public EventCallback<ChangeEvent<ulong>> timeChanged;
 
@@ -84,6 +79,11 @@ namespace PLUME.UI.Element
 
             // Release focus
             _timeTextField.Blur();
+        }
+
+        [Preserve]
+        public new class UxmlFactory : UxmlFactory<TimeFieldElement, UxmlTraits>
+        {
         }
     }
 }

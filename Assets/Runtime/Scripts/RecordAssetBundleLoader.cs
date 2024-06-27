@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using Cysharp.Threading.Tasks;
@@ -8,6 +9,13 @@ namespace PLUME.Viewer.Player
 {
     public class BundleLoader
     {
+        public enum LoadingStatus
+        {
+            NotLoading,
+            Loading,
+            Done
+        }
+
         private readonly string _bundlePath;
         private AssetBundleCreateRequest _assetBundleCreateRequest;
 
@@ -17,9 +25,9 @@ namespace PLUME.Viewer.Player
         {
             _loadingStatus = LoadingStatus.NotLoading;
             _bundlePath = bundlePath;
-            
+
             if (!bundlePath.EndsWith(".zip"))
-                throw new System.Exception("Bundle path should be a zip file");
+                throw new Exception("Bundle path should be a zip file");
         }
 
         public async UniTask<RecordAssetBundle> LoadAsync()
@@ -29,11 +37,11 @@ namespace PLUME.Viewer.Player
             if (Directory.Exists(tempDirectory))
                 Directory.Delete(tempDirectory, true);
             Directory.CreateDirectory(tempDirectory);
-            
+
             await UniTask.RunOnThreadPool(() => ZipFile.ExtractToDirectory(_bundlePath, tempDirectory));
-            
+
             var assetBundlePath = Path.Combine(tempDirectory, "plume_assets");
-            
+
             var assetBundleName = Path.GetFileName(assetBundlePath);
             var assetBundle = AssetBundle.GetAllLoadedAssetBundles()
                 .FirstOrDefault(bundle => bundle.name == assetBundleName);
@@ -64,13 +72,6 @@ namespace PLUME.Viewer.Player
         public bool IsLoaded()
         {
             return _loadingStatus == LoadingStatus.Done;
-        }
-
-        public enum LoadingStatus
-        {
-            NotLoading,
-            Loading,
-            Done
         }
     }
 }

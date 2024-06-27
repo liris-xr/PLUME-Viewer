@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
-using PLUME.Sample;
 using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
 using PLUME.UI.Element;
@@ -19,16 +18,15 @@ namespace PLUME.Viewer
     [RequireComponent(typeof(UIDocument))]
     public class MainWindowUI : MonoBehaviour
     {
-        public Player.Player player;
-
         public UIDocument document;
+        public Player.Player player;
 
         public VisualElement LoadingPanel { get; private set; }
 
         public VisualElement ViewerPanel { get; private set; }
 
         public Button CloseButton { get; private set; }
-        
+
         public TimelineElement Timeline { get; private set; }
         public TimeFieldElement TimeIndicator { get; private set; }
         public TimeScaleElement TimeScale { get; private set; }
@@ -66,7 +64,7 @@ namespace PLUME.Viewer
 
             LoadingPanel = root.Q("loading-panel");
             ViewerPanel = root.Q("viewer");
-            
+
             CloseButton = ViewerPanel.Q<Button>("close-btn");
 
             Timeline = ViewerPanel.Q<TimelineElement>("timeline");
@@ -192,9 +190,7 @@ namespace PLUME.Viewer
                 entry.Q<Toggle>("marker-toggle").RegisterValueChangedCallback(evt =>
                 {
                     foreach (var timelineMarkerElement in groupedMarkerTimelineElements[markerLabel])
-                    {
                         timelineMarkerElement.style.display = evt.newValue ? DisplayStyle.Flex : DisplayStyle.None;
-                    }
 
                     prevBtn.SetEnabled(evt.newValue);
                     nextBtn.SetEnabled(evt.newValue);
@@ -205,19 +201,13 @@ namespace PLUME.Viewer
                     var t = player.GetCurrentPlayTimeInNanoseconds();
 
                     var snapMarker = markerSamples.OrderBy(s => s.Timestamp).LastOrDefault(s => s.Timestamp < t);
-                    if (snapMarker != null)
-                    {
-                        player.JumpToTime(snapMarker.Timestamp);
-                    }
+                    if (snapMarker != null) player.JumpToTime(snapMarker.Timestamp);
                 };
                 nextBtn.clicked += () =>
                 {
                     var t = player.GetCurrentPlayTimeInNanoseconds();
                     var snapMarker = markerSamples.OrderBy(s => s.Timestamp).FirstOrDefault(s => s.Timestamp > t);
-                    if (snapMarker != null)
-                    {
-                        player.JumpToTime(snapMarker.Timestamp);
-                    }
+                    if (snapMarker != null) player.JumpToTime(snapMarker.Timestamp);
                 };
                 MarkersListView.Q<ScrollView>().Add(entry);
             }
@@ -351,10 +341,7 @@ namespace PLUME.Viewer
         {
             Timeline.SetCurrentTime(player.GetCurrentPlayTimeInNanoseconds());
 
-            if (player.IsPlaying())
-            {
-                Timeline.KeepTimeCursorInView();
-            }
+            if (player.IsPlaying()) Timeline.KeepTimeCursorInView();
         }
 
         public void RefreshPlayPauseButton()

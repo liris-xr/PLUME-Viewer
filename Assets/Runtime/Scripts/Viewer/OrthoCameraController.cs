@@ -5,10 +5,10 @@ namespace PLUME.Viewer
     [RequireComponent(typeof(Camera))]
     public class OrthoCameraController : MonoBehaviour
     {
-        public float zoomFactor = 0.1f;
         private Camera _cam;
         private Vector2 _screen;
         private Vector2 _translationFactor = new(1, 1);
+        public float zoomFactor = 0.1f;
 
         private void Start()
         {

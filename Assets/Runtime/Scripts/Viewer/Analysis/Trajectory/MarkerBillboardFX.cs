@@ -4,9 +4,8 @@ namespace PLUME.Viewer.Analysis.Trajectory
 {
     public class MarkerBillboardFX : MonoBehaviour
     {
-        public new Camera camera;
-
         private Quaternion _originalRotation;
+        public new Camera camera;
 
         private void Start()
         {

@@ -8,12 +8,11 @@ namespace PLUME.Viewer.Analysis.Position
     public class PositionHeatmapAnalysisModulePresenter : AnalysisModuleWithResultsPresenter<
         PositionHeatmapAnalysisModule, PositionHeatmapAnalysisResult, PositionHeatmapAnalysisModuleUI>
     {
-        public Player.Player player;
+        private Coroutine _generationCoroutine;
 
         public string defaultProjectionCasterId = "";
         public string defaultProjectionReceiversIds = "";
-        
-        private Coroutine _generationCoroutine;
+        public Player.Player player;
 
         public void Start()
         {
@@ -69,10 +68,7 @@ namespace PLUME.Viewer.Analysis.Position
                 module.AddResult(result);
                 module.SetVisibleResult(result);
 
-                if (player.GetVisibleHeatmapModule() != module)
-                {
-                    player.SetVisibleHeatmapModule(module);
-                }
+                if (player.GetVisibleHeatmapModule() != module) player.SetVisibleHeatmapModule(module);
 
                 ui.RefreshResults();
             });
@@ -101,18 +97,13 @@ namespace PLUME.Viewer.Analysis.Position
             ui.GeneratingPanel.style.display = module.IsGenerating ? DisplayStyle.Flex : DisplayStyle.None;
             ui.CancelButton.SetEnabled(module.IsGenerating);
 
-            if (module.IsGenerating)
-            {
-                ui.GenerationProgressBar.value = module.GenerationProgress;
-            }
+            if (module.IsGenerating) ui.GenerationProgressBar.value = module.GenerationProgress;
         }
 
         private void OnClickDeleteResult(PositionHeatmapAnalysisResult result)
         {
             if (module.GetVisibleResult() == result && player.GetVisibleHeatmapModule() == module)
-            {
                 player.SetVisibleHeatmapModule(null);
-            }
 
             module.RemoveResult(result);
             ui.RefreshResults();
@@ -132,19 +123,13 @@ namespace PLUME.Viewer.Analysis.Position
                 {
                     module.SetVisibleResult(result);
 
-                    if (player.GetVisibleHeatmapModule() != module)
-                    {
-                        player.SetVisibleHeatmapModule(module);
-                    }
+                    if (player.GetVisibleHeatmapModule() != module) player.SetVisibleHeatmapModule(module);
                 }
                 else if (module.GetVisibleResult() == result)
                 {
                     module.SetVisibleResult(null);
 
-                    if (player.GetVisibleHeatmapModule() == module)
-                    {
-                        player.SetVisibleHeatmapModule(null);
-                    }
+                    if (player.GetVisibleHeatmapModule() == module) player.SetVisibleHeatmapModule(null);
                 }
             }
 

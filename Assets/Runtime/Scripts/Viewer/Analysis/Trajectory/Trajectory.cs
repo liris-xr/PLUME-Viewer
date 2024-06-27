@@ -7,16 +7,15 @@ namespace PLUME.Viewer.Analysis.Trajectory
 {
     public class Trajectory : MonoBehaviour
     {
-        public TrajectoryAnalysisModuleResult result;
-        public Material fullLineMaterial;
+        private readonly List<MarkerBillboardFX> _billboards = new();
         public Material dottedLineMaterial;
-        public GameObject rotationAxesPrefab;
+        public Material fullLineMaterial;
+        public float lineWidth = 0.02f;
         public GameObject markerLabelPrefab;
+        public TrajectoryAnalysisModuleResult result;
+        public GameObject rotationAxesPrefab;
 
         public float rotationAxesSize = 0.1f;
-        public float lineWidth = 0.02f;
-
-        private readonly List<MarkerBillboardFX> _billboards = new();
 
         private void Start()
         {
@@ -27,18 +26,13 @@ namespace PLUME.Viewer.Analysis.Trajectory
                 AddContinuousSegment(segmentPoints);
 
                 if (result.GenerationParameters.TeleportationSegments)
-                {
                     if (segmentIdx < result.Segments.Length - 1)
                     {
                         var nextSegment = result.Segments[segmentIdx + 1];
                         AddTeleportationSegment(segmentPoints.Last(), nextSegment.First());
                     }
-                }
 
-                if (result.GenerationParameters.IncludeRotations)
-                {
-                    AddRotationAxes(segmentPoints);
-                }
+                if (result.GenerationParameters.IncludeRotations) AddRotationAxes(segmentPoints);
 
                 AddMarkersLabel(segmentPoints);
             }
@@ -47,7 +41,6 @@ namespace PLUME.Viewer.Analysis.Trajectory
         private void AddMarkersLabel(List<TrajectorySegmentPoint> segmentPoints)
         {
             foreach (var point in segmentPoints)
-            {
                 if (point.Marker != null)
                 {
                     var marker = Instantiate(markerLabelPrefab, transform);
@@ -56,7 +49,6 @@ namespace PLUME.Viewer.Analysis.Trajectory
                     marker.transform.position = point.Position;
                     _billboards.Add(marker.GetComponent<MarkerBillboardFX>());
                 }
-            }
         }
 
         private void AddRotationAxes(List<TrajectorySegmentPoint> segmentPoints)
@@ -69,10 +61,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
                     new Vector3(rotationAxesSize, rotationAxesSize, rotationAxesSize);
                 rotationAxes.transform.position = point.Position;
 
-                if (point.Rotation.HasValue)
-                {
-                    rotationAxes.transform.rotation = point.Rotation.Value;
-                }
+                if (point.Rotation.HasValue) rotationAxes.transform.rotation = point.Rotation.Value;
             }
         }
 
@@ -157,10 +146,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
 
         public void UpdateMarkersCamera(Camera cam)
         {
-            foreach (var billboard in _billboards)
-            {
-                billboard.camera = cam;
-            }
+            foreach (var billboard in _billboards) billboard.camera = cam;
         }
 
         private Color GetColorAtTime(ulong time)

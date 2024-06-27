@@ -8,11 +8,10 @@ namespace PLUME.Viewer.Analysis.Interaction
     public class InteractionHeatmapAnalysisModuleUI : AnalysisModuleWithResultsUI<InteractionHeatmapAnalysisModule,
         InteractionHeatmapAnalysisResult>
     {
+        public Action<InteractionHeatmapAnalysisResult> clickedDeleteResult;
         public Player.Player player;
 
         public VisualTreeAsset resultEntryTemplate;
-
-        public Action<InteractionHeatmapAnalysisResult> clickedDeleteResult;
         public Action<InteractionHeatmapAnalysisResult, bool> toggledResultVisibility;
 
         public Button GenerateButton { get; private set; }

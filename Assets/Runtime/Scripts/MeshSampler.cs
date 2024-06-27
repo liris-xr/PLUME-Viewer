@@ -53,23 +53,20 @@ namespace PLUME
         }
 
         /// <summary>
-        /// Generate quasi-uniform sampling for the given mesh <paramref name="mesh"/>.
+        ///     Generate quasi-uniform sampling for the given mesh <paramref name="mesh" />.
         /// </summary>
-        /// 
         /// <param name="mesh">The mesh to sample</param>
-        /// 
         /// <param name="samplesPerSquareMeter">
-        /// Number of samples per square meter the mesh sampler will try to generate. The reference is defined in object
-        /// local space (based on vertices positions and calculated triangles' area).
+        ///     Number of samples per square meter the mesh sampler will try to generate. The reference is defined in object
+        ///     local space (based on vertices positions and calculated triangles' area).
         /// </param>
-        /// 
-        /// <param name="worldScale"> Lossy world scale of the object. This is used to take into account any stretching
-        /// of meshes that would result in more samples to be generated.
+        /// <param name="worldScale">
+        ///     Lossy world scale of the object. This is used to take into account any stretching
+        ///     of meshes that would result in more samples to be generated.
         /// </param>
-        /// 
         /// <returns>
-        /// Return the generated <see cref="MeshSamplerResult"/>. The responsability for releasing the generating buffer
-        /// is left to the calling method.
+        ///     Return the generated <see cref="MeshSamplerResult" />. The responsability for releasing the generating buffer
+        ///     is left to the calling method.
         /// </returns>
         public MeshSamplerResult Sample(Mesh mesh, float samplesPerSquareMeter, Vector3 worldScale)
         {
@@ -120,10 +117,8 @@ namespace PLUME
             var nSamples = totalSamplesCountArr[0];
 
             if (nSamples > SystemInfo.maxGraphicsBufferSize)
-            {
                 throw new Exception(
                     $"Too many sample for this mesh. The compute buffer can store up to {SystemInfo.maxGraphicsBufferSize / Marshal.SizeOf(typeof(float))} samples. Try decreasing the sample density.");
-            }
 
             var sampleValuesBuffer = new ComputeBuffer((int)nSamples, Marshal.SizeOf(typeof(float)));
 
@@ -204,9 +199,7 @@ namespace PLUME
             exclusivePrefixSum[0] = 0;
 
             for (var i = 1; i < nTriangles; ++i)
-            {
                 exclusivePrefixSum[i] = NthTriangleFormula(trianglesResolutionArr[i - 1]) + exclusivePrefixSum[i - 1];
-            }
 
             trianglesSamplesIndexOffsetBuffer.SetData(exclusivePrefixSum);
 
