@@ -5,10 +5,13 @@ using K4os.Compression.LZ4.Streams;
 
 namespace Runtime
 {
+    /// <summary>
+    ///     Reads record samples from a stream.
+    /// </summary>
     public class RecordReader : IDisposable
     {
-        private readonly Stream _stream;
         private readonly bool _leaveOpen;
+        private readonly Stream _stream;
 
         private RecordReader(Stream stream, bool leaveOpen = false)
         {
@@ -16,12 +19,18 @@ namespace Runtime
             _leaveOpen = leaveOpen;
         }
 
+        public void Dispose()
+        {
+            if (!_leaveOpen)
+                _stream.Dispose();
+        }
+
         /// <summary>
-        /// Create a new <see cref="RecordReader"/> from the given stream.
+        ///     Create a new <see cref="RecordReader" /> from the given stream.
         /// </summary>
         /// <param name="stream">The stream to create the reader from.</param>
         /// <param name="leaveOpen">Whether to leave the stream open when the reader is disposed.</param>
-        /// <returns>A new <see cref="RecordReader"/> instance.</returns>
+        /// <returns>A new <see cref="RecordReader" /> instance.</returns>
         /// <exception cref="ArgumentException">The stream is not readable.</exception>
         /// <exception cref="InvalidDataException">The signature is unknown.</exception>
         public static RecordReader Create(Stream stream, bool leaveOpen = false)
@@ -42,7 +51,7 @@ namespace Runtime
                     throw new ArgumentOutOfRangeException();
             }
         }
-        
+
         public static async Task<RecordReader> CreateAsync(Stream stream, bool leaveOpen = false)
         {
             if (!stream.CanRead)
@@ -63,9 +72,9 @@ namespace Runtime
         }
 
         /// <summary>
-        /// Read and return the signature of the record from the stream.
+        ///     Read and return the signature of the record from the stream.
         /// </summary>
-        /// <returns>The <see cref="RecordSignature"/> of the record.</returns>
+        /// <returns>The <see cref="RecordSignature" /> of the record.</returns>
         /// <exception cref="InvalidDataException">The signature is unknown.</exception>
         private static RecordSignature ReadSignature(Stream stream)
         {
@@ -76,7 +85,7 @@ namespace Runtime
                 throw new InvalidDataException($"Unknown signature 0x{signature:X}");
             return (RecordSignature)signature;
         }
-        
+
         private static async Task<RecordSignature> ReadSignatureAsync(Stream stream)
         {
             Memory<byte> buffer = new byte[4];
@@ -85,12 +94,6 @@ namespace Runtime
             if (!Enum.IsDefined(typeof(RecordSignature), signature))
                 throw new InvalidDataException($"Unknown signature 0x{signature:X}");
             return (RecordSignature)signature;
-        }
-
-        public void Dispose()
-        {
-            if (!_leaveOpen)
-                _stream.Dispose();
         }
     }
 
