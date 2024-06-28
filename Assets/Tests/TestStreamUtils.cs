@@ -4,20 +4,20 @@ using Runtime;
 
 namespace Tests
 {
-    public class TestProtobufUtils
+    public class TestStreamUtils
     {
         [Test]
         public void ReadRawVarInt32_EmptyStream_ThrowsTruncated()
         {
             using var stream = CreateStream();
-            Assert.Throws<InvalidDataException>(() => ProtobufUtils.ReadRawVarInt32(stream));
+            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt32());
         }
 
         [Test]
         public void ReadRawVarInt64_EmptyStream_ThrowsTruncated()
         {
             using var stream = CreateStream();
-            Assert.Throws<InvalidDataException>(() => ProtobufUtils.ReadRawVarInt64(stream));
+            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt64());
         }
 
         [Test]
@@ -25,7 +25,7 @@ namespace Tests
         {
             // Set the continuation bit on the first byte, but don't provide any more bytes.
             using var stream = CreateStream(0x80);
-            Assert.Throws<InvalidDataException>(() => ProtobufUtils.ReadRawVarInt32(stream));
+            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt32());
         }
 
         [Test]
@@ -33,7 +33,7 @@ namespace Tests
         {
             // Set the continuation bit on the first byte, but don't provide any more bytes.
             using var stream = CreateStream(0x80);
-            Assert.Throws<InvalidDataException>(() => ProtobufUtils.ReadRawVarInt64(stream));
+            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt64());
         }
 
         [Test]
@@ -43,7 +43,7 @@ namespace Tests
             //                                         v
             // LSB -> 11111111 [...] 11111111 11111111 10001111 <- MSB
             using var stream = CreateStream(0xFF, 0xFF, 0xFF, 0xFF, 0x9F);
-            Assert.Throws<InvalidDataException>(() => ProtobufUtils.ReadRawVarInt32(stream));
+            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt32());
         }
 
         [Test]
@@ -53,7 +53,7 @@ namespace Tests
             //                                         v
             // LSB -> 11111111 [...] 11111111 11111111 11111111 10000001 <- MSB
             using var stream = CreateStream(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x81);
-            Assert.Throws<InvalidDataException>(() => ProtobufUtils.ReadRawVarInt64(stream));
+            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt64());
         }
 
         [Test]
@@ -63,7 +63,7 @@ namespace Tests
             //                                            v
             // LSB -> 11111111 [...] 11111111 11111111 00011111 <- MSB
             using var stream = CreateStream(0xFF, 0xFF, 0xFF, 0xFF, 0x1F);
-            Assert.Throws<InvalidDataException>(() => ProtobufUtils.ReadRawVarInt32(stream));
+            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt32());
         }
 
         [Test]
@@ -73,7 +73,7 @@ namespace Tests
             //                                               v
             // LSB -> 11111111 [...] 11111111 11111111 00000011 <- MSB
             using var stream = CreateStream(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x03);
-            Assert.Throws<InvalidDataException>(() => ProtobufUtils.ReadRawVarInt64(stream));
+            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt64());
         }
 
         [Test]
@@ -81,7 +81,7 @@ namespace Tests
         {
             // Reads a value that requires more than one byte to be encoded.
             using var stream = CreateStream(0x96, 0x01);
-            var result = ProtobufUtils.ReadRawVarInt32(stream);
+            var result = stream.ReadRawVarInt32();
             Assert.AreEqual(150, result);
         }
 
@@ -90,7 +90,7 @@ namespace Tests
         {
             // Reads a value that requires more than one byte to be encoded.
             using var stream = CreateStream(0x80, 0x01);
-            var result = ProtobufUtils.ReadRawVarInt32(stream);
+            var result = stream.ReadRawVarInt32();
             Assert.AreEqual(128, result);
         }
 
@@ -99,7 +99,7 @@ namespace Tests
         {
             // Reads a value that requires more than one byte to be encoded.
             using var stream = CreateStream(0x96, 0x01);
-            var result = ProtobufUtils.ReadRawVarInt64(stream);
+            var result = stream.ReadRawVarInt64();
             Assert.AreEqual(150, result);
         }
 
@@ -108,7 +108,7 @@ namespace Tests
         {
             // Reads a value that requires more than one byte to be encoded.
             using var stream = CreateStream(0x80, 0x01);
-            var result = ProtobufUtils.ReadRawVarInt64(stream);
+            var result = stream.ReadRawVarInt64();
             Assert.AreEqual(128, result);
         }
 
@@ -117,7 +117,7 @@ namespace Tests
         {
             // Only one byte representing a value smaller than 128.
             using var stream = CreateStream(0x7F);
-            var result = ProtobufUtils.ReadRawVarInt32(stream);
+            var result = stream.ReadRawVarInt32();
             Assert.AreEqual(127, result);
         }
 
@@ -126,7 +126,7 @@ namespace Tests
         {
             // Only one byte representing a value smaller than 128.
             using var stream = CreateStream(0x7F);
-            var result = ProtobufUtils.ReadRawVarInt64(stream);
+            var result = stream.ReadRawVarInt64();
             Assert.AreEqual(127, result);
         }
 
@@ -136,7 +136,7 @@ namespace Tests
             // 5 bytes representing uint.MaxValue as a varint
             // LSB -> 11111111 [...] 11111111 11111111 00001111 <- MSB
             using var stream = CreateStream(0xFF, 0xFF, 0xFF, 0xFF, 0x0F);
-            var result = ProtobufUtils.ReadRawVarInt32(stream);
+            var result = stream.ReadRawVarInt32();
             Assert.AreEqual(uint.MaxValue, result);
         }
 
@@ -146,7 +146,7 @@ namespace Tests
             // 10 bytes representing ulong.MaxValue as a varint
             // LSB -> 11111111 [...] 11111111 11111111 00000001 <- MSB
             using var stream = CreateStream(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01);
-            var result = ProtobufUtils.ReadRawVarInt64(stream);
+            var result = stream.ReadRawVarInt64();
             Assert.AreEqual(ulong.MaxValue, result);
         }
 
