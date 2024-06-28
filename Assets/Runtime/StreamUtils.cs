@@ -119,20 +119,29 @@ namespace Runtime
             // At most, we can fit extract 4*7 data bits from 
             for (var byteCount = 0; byteCount < 5; ++byteCount)
             {
-                var num = input.ReadByte();
+                int b;
+
+                try
+                {
+                    b = input.ReadByte();
+                }
+                catch (EndOfStreamException)
+                {
+                    throw TruncatedData();
+                }
 
                 // We reached the end of the stream.
-                if (num == -1)
+                if (b == -1)
                     throw TruncatedData();
 
                 // If the MSB have more than 4 data bits set, then the total number of data bits exceeds 32. This is invalid.
-                if (byteCount == 4 && num > 0xF)
+                if (byteCount == 4 && b > 0xF)
                     throw MalformedVarInt();
 
-                value |= (uint)(num & dataBitsMask) << (7 * byteCount);
+                value |= (uint)(b & dataBitsMask) << (7 * byteCount);
 
                 // Check the continuation bit to see if we need to read more bytes.
-                var continuationBitSet = (num & continuationBitMask) != 0;
+                var continuationBitSet = (b & continuationBitMask) != 0;
 
                 // If the continuation bit is not set, we're done.
                 if (!continuationBitSet)
@@ -163,7 +172,16 @@ namespace Runtime
 
             for (var byteCount = 0; byteCount < 10; ++byteCount)
             {
-                var b = input.ReadByte();
+                int b;
+
+                try
+                {
+                    b = input.ReadByte();
+                }
+                catch (EndOfStreamException)
+                {
+                    throw TruncatedData();
+                }
 
                 // We reached the end of the stream.
                 if (b == -1)

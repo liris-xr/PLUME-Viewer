@@ -8,13 +8,13 @@ namespace Runtime
     /// <summary>
     ///     Reads record samples from a stream.
     /// </summary>
-    public class RecordReader : IDisposable
+    public class RecordReaderCreate : IDisposable
     {
         private readonly bool _leaveOpen;
         private readonly Stream _stream;
         public readonly RecordSignature RecordSignature;
 
-        private RecordReader(Stream stream, RecordSignature recordSignature, bool leaveOpen = false)
+        private RecordReaderCreate(Stream stream, RecordSignature recordSignature, bool leaveOpen = false)
         {
             RecordSignature = recordSignature;
             _stream = stream;
@@ -28,15 +28,15 @@ namespace Runtime
         }
 
         /// <summary>
-        ///     Create a new <see cref="RecordReader" /> from the given stream.
+        ///     Create a new <see cref="RecordReaderCreate" /> from the given stream.
         /// </summary>
         /// <param name="stream">The stream to create the reader from.</param>
         /// <param name="bufferSize">The size of the buffer for the buffered stream.</param>
         /// <param name="leaveOpen">Whether to leave the stream open when the reader is disposed.</param>
-        /// <returns>A new <see cref="RecordReader" /> instance.</returns>
+        /// <returns>A new <see cref="RecordReaderCreate" /> instance.</returns>
         /// <exception cref="ArgumentException">The stream is not readable.</exception>
         /// <exception cref="InvalidDataException">The signature is unknown.</exception>
-        public static RecordReader Create(Stream stream, int bufferSize = 4096, bool leaveOpen = false)
+        public static RecordReaderCreate Create(Stream stream, int bufferSize = 4096, bool leaveOpen = false)
         {
             if (!stream.CanRead)
                 throw new ArgumentException("Stream must be readable", nameof(stream));
@@ -56,12 +56,12 @@ namespace Runtime
                 {
                     var compressedStream = LZ4Stream.Decode(stream, leaveOpen: leaveOpen);
                     var bufferedStream = new BufferedStream(compressedStream, bufferSize);
-                    return new RecordReader(bufferedStream, signature, leaveOpen);
+                    return new RecordReaderCreate(bufferedStream, signature, leaveOpen);
                 }
                 case RecordSignature.Uncompressed:
                 {
                     var bufferedStream = new BufferedStream(stream, bufferSize);
-                    return new RecordReader(bufferedStream, signature, leaveOpen);
+                    return new RecordReaderCreate(bufferedStream, signature, leaveOpen);
                 }
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -83,8 +83,7 @@ namespace Runtime
             var nBytes = (int)_stream.ReadRawVarInt32();
 
             if (buffer.Length < nBytes)
-                throw new ArgumentException($"Buffer is too small to read sample of size {nBytes} bytes",
-                    nameof(buffer));
+                throw BufferTooSmall(buffer.Length, nBytes);
 
             _stream.ReadExactly(buffer[..nBytes]);
             return nBytes;
@@ -109,8 +108,7 @@ namespace Runtime
             var nBytes = (int)_stream.ReadRawVarInt32();
 
             if (buffer.Length - offset < nBytes)
-                throw new ArgumentException($"Buffer is too small to read sample of size {nBytes} bytes",
-                    nameof(buffer));
+                throw BufferTooSmall(buffer.Length - offset, nBytes);
 
             _stream.ReadExactly(buffer, offset, nBytes);
             return nBytes;
@@ -131,8 +129,7 @@ namespace Runtime
             var nBytes = (int)_stream.ReadRawVarInt32();
 
             if (buffer.Length < nBytes)
-                throw new ArgumentException($"Buffer is too small to read sample of size {nBytes} bytes",
-                    nameof(buffer));
+                throw BufferTooSmall(buffer.Length, nBytes);
 
             await _stream.ReadExactlyAsync(buffer[..nBytes]);
             return nBytes;
@@ -157,11 +154,16 @@ namespace Runtime
             var nBytes = (int)_stream.ReadRawVarInt32();
 
             if (buffer.Length - offset < nBytes)
-                throw new ArgumentException($"Buffer is too small to read sample of size {nBytes} bytes",
-                    nameof(buffer));
+                throw BufferTooSmall(buffer.Length - offset, nBytes);
 
             await _stream.ReadExactlyAsync(buffer, offset, nBytes);
             return nBytes;
+        }
+
+        private static ArgumentException BufferTooSmall(int remainingSize, int requestedSize)
+        {
+            return new ArgumentException(
+                $"Buffer is too small. Remaining size: {remainingSize}, requested size: {requestedSize}");
         }
     }
 }
