@@ -10,14 +10,14 @@ namespace Tests
         public void ReadRawVarInt32_EmptyStream_ThrowsTruncated()
         {
             using var stream = CreateStream();
-            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt32());
+            Assert.Throws<TruncatedStreamException>(() => stream.ReadRawVarInt32());
         }
 
         [Test]
         public void ReadRawVarInt64_EmptyStream_ThrowsTruncated()
         {
             using var stream = CreateStream();
-            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt64());
+            Assert.Throws<TruncatedStreamException>(() => stream.ReadRawVarInt64());
         }
 
         [Test]
@@ -25,7 +25,7 @@ namespace Tests
         {
             // Set the continuation bit on the first byte, but don't provide any more bytes.
             using var stream = CreateStream(0x80);
-            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt32());
+            Assert.Throws<TruncatedStreamException>(() => stream.ReadRawVarInt32());
         }
 
         [Test]
@@ -33,7 +33,7 @@ namespace Tests
         {
             // Set the continuation bit on the first byte, but don't provide any more bytes.
             using var stream = CreateStream(0x80);
-            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt64());
+            Assert.Throws<TruncatedStreamException>(() => stream.ReadRawVarInt64());
         }
 
         [Test]
@@ -43,7 +43,7 @@ namespace Tests
             //                                         v
             // LSB -> 11111111 [...] 11111111 11111111 10001111 <- MSB
             using var stream = CreateStream(0xFF, 0xFF, 0xFF, 0xFF, 0x9F);
-            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt32());
+            Assert.Throws<MalformedStreamException.MalformedVarInt>(() => stream.ReadRawVarInt32());
         }
 
         [Test]
@@ -51,9 +51,9 @@ namespace Tests
         {
             // The continuation bit is set in the most significant byte, but we already read 64 bits of data.
             //                                         v
-            // LSB -> 11111111 [...] 11111111 11111111 11111111 10000001 <- MSB
-            using var stream = CreateStream(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x81);
-            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt64());
+            // LSB -> 11111111 [...] 11111111 11111111 10000001 <- MSB
+            using var stream = CreateStream(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x81);
+            Assert.Throws<MalformedStreamException.MalformedVarInt>(() => stream.ReadRawVarInt64());
         }
 
         [Test]
@@ -63,7 +63,7 @@ namespace Tests
             //                                            v
             // LSB -> 11111111 [...] 11111111 11111111 00011111 <- MSB
             using var stream = CreateStream(0xFF, 0xFF, 0xFF, 0xFF, 0x1F);
-            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt32());
+            Assert.Throws<MalformedStreamException.MalformedVarInt>(() => stream.ReadRawVarInt32());
         }
 
         [Test]
@@ -73,7 +73,7 @@ namespace Tests
             //                                               v
             // LSB -> 11111111 [...] 11111111 11111111 00000011 <- MSB
             using var stream = CreateStream(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x03);
-            Assert.Throws<InvalidDataException>(() => stream.ReadRawVarInt64());
+            Assert.Throws<MalformedStreamException.MalformedVarInt>(() => stream.ReadRawVarInt64());
         }
 
         [Test]

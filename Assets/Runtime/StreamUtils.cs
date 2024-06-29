@@ -15,7 +15,11 @@ namespace Runtime
         /// <param name="buffer">
         ///     A region of memory. When this method returns, the region contains the bytes read from the stream.
         /// </param>
-        /// <exception cref="EndOfStreamException">The end of the stream is reached before filling the <paramref name="buffer" />.</exception>
+        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the VarInt64 is fully read.</exception>
+        /// <exception cref="MalformedStreamException.MalformedVarInt">
+        ///     The VarInt64 is malformed, for example if the continuation bit is set after reading 64 bits of data or if the total
+        ///     number of data bits exceeds 64.
+        /// </exception>
         public static void ReadExactly(this Stream stream, Span<byte> buffer)
         {
             var bytesRead = 0;
@@ -41,7 +45,11 @@ namespace Runtime
         ///     The byte offset in <paramref name="buffer" /> at which to begin storing the data read from the stream.
         /// </param>
         /// <param name="count">The number of bytes to be read from the stream.</param>
-        /// <exception cref="EndOfStreamException">The end of the stream is reached before filling the <paramref name="buffer" />.</exception>
+        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the VarInt64 is fully read.</exception>
+        /// <exception cref="MalformedStreamException.MalformedVarInt">
+        ///     The VarInt64 is malformed, for example if the continuation bit is set after reading 64 bits of data or if the total
+        ///     number of data bits exceeds 64.
+        /// </exception>
         public static void ReadExactly(this Stream stream, byte[] buffer, int offset, int count)
         {
             var bytesRead = 0;
@@ -63,7 +71,11 @@ namespace Runtime
         ///     A region of memory. When this method returns, the region contains the bytes read from the stream.
         /// </param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <exception cref="EndOfStreamException">The end of the stream is reached before filling the <paramref name="buffer" />.</exception>
+        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the VarInt64 is fully read.</exception>
+        /// <exception cref="MalformedStreamException.MalformedVarInt">
+        ///     The VarInt64 is malformed, for example if the continuation bit is set after reading 64 bits of data or if the total
+        ///     number of data bits exceeds 64.
+        /// </exception>
         /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
         public static async Task ReadExactlyAsync(this Stream stream, Memory<byte> buffer,
             CancellationToken cancellationToken = default)
@@ -94,7 +106,11 @@ namespace Runtime
         /// </param>
         /// <param name="count">The number of bytes to be read from the stream.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <exception cref="EndOfStreamException">The end of the stream is reached before filling the <paramref name="buffer" />.</exception>
+        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the VarInt64 is fully read.</exception>
+        /// <exception cref="MalformedStreamException.MalformedVarInt">
+        ///     The VarInt64 is malformed, for example if the continuation bit is set after reading 64 bits of data or if the total
+        ///     number of data bits exceeds 64.
+        /// </exception>
         /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
         public static async Task ReadExactlyAsync(this Stream stream, byte[] buffer, int offset, int count,
             CancellationToken cancellationToken = default)
@@ -109,6 +125,21 @@ namespace Runtime
             }
         }
 
+        /// <summary>
+        ///     Reads a VarInt32 from the stream.
+        /// </summary>
+        /// <param name="input">The stream to read from.</param>
+        /// <returns>The 32-bit unsigned integer decoded from the stream.</returns>
+        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the VarInt32 is fully read.</exception>
+        /// <exception cref="MalformedStreamException.MalformedVarInt">
+        ///     The VarInt32 is malformed, for example if the continuation bit is set after reading 32 bits of data or if the total
+        ///     number of data bits exceeds 32.
+        /// </exception>
+        /// <remarks>
+        ///     A VarInt32 can have at most 36 bits set:
+        ///     - 7*4 bits in the LSBs + 4 bits in the MSB for encoding the 32 bits of actual data
+        ///     - 1*4 continuation bits in the LSBs (the continuation bit in the MSB should not be set)
+        /// </remarks>
         public static uint ReadRawVarInt32(this Stream input)
         {
             uint value = 0;
@@ -127,18 +158,20 @@ namespace Runtime
                 }
                 catch (EndOfStreamException)
                 {
-                    throw TruncatedData();
+                    throw new TruncatedStreamException();
                 }
 
                 // We reached the end of the stream.
                 if (b == -1)
-                    throw TruncatedData();
+                    throw new TruncatedStreamException();
 
-                // If the MSB have more than 4 data bits set, then the total number of data bits exceeds 32. This is invalid.
-                if (byteCount == 4 && b > 0xF)
-                    throw MalformedVarInt();
+                var dataBits = b & dataBitsMask;
 
-                value |= (uint)(b & dataBitsMask) << (7 * byteCount);
+                if (byteCount == 4 && dataBits > 0xF)
+                    throw new MalformedStreamException.MalformedVarInt(
+                        "Expected at most 4 bits of data in the most significant byte but more than 4 bits are set.");
+
+                value |= (uint)dataBits << (7 * byteCount);
 
                 // Check the continuation bit to see if we need to read more bytes.
                 var continuationBitSet = (b & continuationBitMask) != 0;
@@ -148,9 +181,8 @@ namespace Runtime
                     return value;
             }
 
-            // If we reach this point, we have read 32 bits of data but the continuation bit is still set.
-            // This is invalid as it will not fit in a 32-bit integer.
-            throw MalformedVarInt();
+            throw new MalformedStreamException.MalformedVarInt(
+                "Continuation bit is set but 32 bits of data have already been read and the 32-bit integer cannot receive more data bits.");
         }
 
         /// <summary>
@@ -158,10 +190,15 @@ namespace Runtime
         /// </summary>
         /// <param name="input">The stream to read from.</param>
         /// <returns>The 64-bit unsigned integer decoded from the stream.</returns>
+        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the VarInt64 is fully read.</exception>
+        /// <exception cref="MalformedStreamException.MalformedVarInt">
+        ///     The VarInt64 is malformed, for example if the continuation bit is set after reading 64 bits of data or if the total
+        ///     number of data bits exceeds 64.
+        /// </exception>
         /// <remarks>
         ///     A VarInt64 can have at most 73 bits set:
-        ///     - (7*9+1) data bits for encoding the 64bits of actual data
-        ///     - (1*9) continuation bits
+        ///     - 7*9 bits in the LSBs + 1 bit in the MSB for encoding the 64 bits of actual data
+        ///     - 1*9 continuation bits in the LSBs (the continuation bit in the MSB should not be set)
         /// </remarks>
         public static ulong ReadRawVarInt64(this Stream input)
         {
@@ -180,20 +217,20 @@ namespace Runtime
                 }
                 catch (EndOfStreamException)
                 {
-                    throw TruncatedData();
+                    throw new TruncatedStreamException();
                 }
 
                 // We reached the end of the stream.
                 if (b == -1)
-                    throw TruncatedData();
+                    throw new TruncatedStreamException();
 
-                // If the MSB have more than 1 data bit set, then the total number of data bits exceeds 64. This is invalid.
-                if (byteCount == 9 && b > 0x1)
-                    throw MalformedVarInt();
+                var dataBits = (ulong)(b & dataBitsMask);
 
-                var data = (ulong)(b & dataBitsMask);
+                if (byteCount == 9 && dataBits > 0x1)
+                    throw new MalformedStreamException.MalformedVarInt(
+                        "Expected at most 1 bit of data in the most significant byte but more than 1 bit is set.");
 
-                value |= data << (7 * byteCount);
+                value |= dataBits << (7 * byteCount);
 
                 // Check the continuation bit to see if we need to read more bytes.
                 var continuationBitSet = (b & continuationBitMask) != 0;
@@ -203,9 +240,8 @@ namespace Runtime
                     return value;
             }
 
-            // If we reach this point, we have read 64 bits of data but the continuation bit is still set.
-            // This is invalid as it will not fit in a 64-bit integer.
-            throw MalformedVarInt();
+            throw new MalformedStreamException.MalformedVarInt(
+                "Continuation bit is set but 64 bits of data have already been read and the 64-bit integer cannot receive more data bits.");
         }
 
         public static int ReadInt32(this Stream input)
@@ -234,17 +270,6 @@ namespace Runtime
             Span<byte> buffer = stackalloc byte[8];
             input.ReadExactly(buffer);
             return BitConverter.ToUInt64(buffer);
-        }
-
-        private static InvalidDataException TruncatedData()
-        {
-            return new InvalidDataException(
-                "While parsing a protocol message, the input ended unexpectedly in the middle of a field. This could mean either that the input has been truncated or that an embedded message misreported its own length.");
-        }
-
-        private static InvalidDataException MalformedVarInt()
-        {
-            return new InvalidDataException("Stream encountered a malformed varint.");
         }
     }
 }
