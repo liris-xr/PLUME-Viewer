@@ -1,11 +1,15 @@
 using System;
+using System.Buffers;
+using System.Collections;
 using System.IO;
+using Cysharp.Threading.Tasks;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using K4os.Compression.LZ4.Streams;
 using NUnit.Framework;
 using PLUME.Sample;
 using Runtime;
+using UnityEngine.TestTools;
 using Vector3 = PLUME.Sample.Common.Vector3;
 
 namespace Tests
@@ -67,10 +71,10 @@ namespace Tests
         }
 
         [Test]
-        public void Create_WithUnknownSignature_ThrowsInvalidDataException()
+        public void Create_WithUnknownSignature_ThrowsMalformedSignatureException()
         {
             var stream = new MemoryStream(new byte[] { 0x00, 0x00, 0x00, 0x00 });
-            Assert.Throws<InvalidDataException>(() => RecordReaderCreate.Create(stream));
+            Assert.Throws<MalformedStreamException.UnknownSignature>(() => RecordReaderCreate.Create(stream));
         }
 
         [Test]
@@ -131,31 +135,71 @@ namespace Tests
         [Test]
         public void ReadNextSample_ReadFirst()
         {
-            Span<byte> buffer = stackalloc byte[256];
-            var sampleSize = _reader.ReadNextSample(buffer);
+            ArrayBufferWriter<byte> bufferWriter = new(256);
+            var sampleSize = _reader.ReadNextSample(bufferWriter);
             Assert.AreEqual(_packedSample1Bytes.Length, sampleSize);
-            Assert.AreEqual(_packedSample1Bytes, buffer[..sampleSize].ToArray());
+            Assert.AreEqual(_packedSample1Bytes, bufferWriter.WrittenSpan[..sampleSize].ToArray());
         }
 
         [Test]
         public void ReadNextSample_ReadAll()
         {
-            Span<byte> buffer = stackalloc byte[256];
-            var sample1Size = _reader.ReadNextSample(buffer);
-            var sample2Size = _reader.ReadNextSample(buffer[sample1Size..]);
+            ArrayBufferWriter<byte> bufferWriter = new(256);
+            var sample1Size = _reader.ReadNextSample(bufferWriter);
+            var sample2Size = _reader.ReadNextSample(bufferWriter);
             Assert.AreEqual(_packedSample1Bytes.Length, sample1Size);
             Assert.AreEqual(_packedSample2Bytes.Length, sample2Size);
-            Assert.AreEqual(_packedSample1Bytes, buffer[..sample1Size].ToArray());
-            Assert.AreEqual(_packedSample2Bytes, buffer.Slice(sample1Size, sample2Size).ToArray());
+            Assert.AreEqual(_packedSample1Bytes, bufferWriter.WrittenSpan[..sample1Size].ToArray());
+            Assert.AreEqual(_packedSample2Bytes, bufferWriter.WrittenSpan.Slice(sample1Size, sample2Size).ToArray());
         }
 
         [Test]
-        public void ReadNextSample_BufferTooSmall()
+        public void ReadNextSample_ReadTooMany_ThrowsTruncatedStreamException()
         {
-            Assert.Throws<ArgumentException>(() =>
+            ArrayBufferWriter<byte> bufferWriter = new(256);
+            _reader.ReadNextSample(bufferWriter);
+            _reader.ReadNextSample(bufferWriter);
+            Assert.Throws<TruncatedStreamException>(() => _reader.ReadNextSample(bufferWriter));
+        }
+
+        [UnityTest]
+        public IEnumerator ReadNextSampleAsync_ReadFirst()
+        {
+            return UniTask.ToCoroutine(async () =>
             {
-                Span<byte> buffer = stackalloc byte[10];
-                _reader.ReadNextSample(buffer);
+                ArrayBufferWriter<byte> bufferWriter = new(256);
+                var sampleSize = await _reader.ReadNextSampleAsync(bufferWriter);
+                Assert.AreEqual(_packedSample1Bytes.Length, sampleSize);
+                Assert.AreEqual(_packedSample1Bytes, bufferWriter.WrittenSpan[..sampleSize].ToArray());
+            });
+        }
+
+        [UnityTest]
+        public IEnumerator ReadNextSampleAsync_ReadAll()
+        {
+            return UniTask.ToCoroutine(async () =>
+            {
+                ArrayBufferWriter<byte> bufferWriter = new(256);
+                var sample1Size = await _reader.ReadNextSampleAsync(bufferWriter);
+                var sample2Size = await _reader.ReadNextSampleAsync(bufferWriter);
+                Assert.AreEqual(_packedSample1Bytes.Length, sample1Size);
+                Assert.AreEqual(_packedSample2Bytes.Length, sample2Size);
+                Assert.AreEqual(_packedSample1Bytes, bufferWriter.WrittenSpan[..sample1Size].ToArray());
+                Assert.AreEqual(_packedSample2Bytes,
+                    bufferWriter.WrittenSpan.Slice(sample1Size, sample2Size).ToArray());
+            });
+        }
+
+        [UnityTest]
+        public IEnumerator ReadNextSampleAsync_ReadTooMany_ThrowsTruncatedStreamException()
+        {
+            return UniTask.ToCoroutine(async () =>
+            {
+                // The test sample stream only contains two samples. Reading a third sample should throw an exception.
+                ArrayBufferWriter<byte> bufferWriter = new(256);
+                await _reader.ReadNextSampleAsync(bufferWriter);
+                await _reader.ReadNextSampleAsync(bufferWriter);
+                Assert.Throws<TruncatedStreamException>(() => _reader.ReadNextSample(bufferWriter));
             });
         }
     }

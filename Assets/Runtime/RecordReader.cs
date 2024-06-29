@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.IO;
 using System.Threading.Tasks;
 using K4os.Compression.LZ4.Streams;
@@ -44,7 +45,7 @@ namespace Runtime
             var signatureValue = stream.ReadInt32();
 
             if (!Enum.IsDefined(typeof(RecordSignature), signatureValue))
-                throw new InvalidDataException($"Unknown signature 0x{signatureValue:X}");
+                throw new MalformedStreamException.UnknownSignature(signatureValue);
 
             // The signature is a 4-byte integer at the beginning of the stream that indicates the type of record and
             // how it is compressed to determine how to read it.
@@ -64,106 +65,46 @@ namespace Runtime
                     return new RecordReaderCreate(bufferedStream, signature, leaveOpen);
                 }
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new NotSupportedException($"Unsupported signature 0x{signatureValue:X}");
             }
         }
 
         /// <summary>
-        ///     Reads the next sample's bytes from the current stream and advances the position within the stream.
+        ///     Reads the next sample's bytes from the stream and advances the position within the stream.
         /// </summary>
-        /// <param name="buffer">
-        ///     An region of memory. When this method returns, the region contains the sample's bytes read from the stream.
+        /// <param name="bufferWriter">
+        ///     Output sink into which the sample's bytes are written.
         /// </param>
         /// <returns>The number of bytes read into the buffer.</returns>
         /// <exception cref="InvalidDataException">The sample's size is malformed or truncated.</exception>
         /// <exception cref="ArgumentException">The buffer is too small to read the sample's bytes.</exception>
         /// <exception cref="EndOfStreamException">The end of the stream is reached.</exception>
-        public int ReadNextSample(Span<byte> buffer)
+        public int ReadNextSample(IBufferWriter<byte> bufferWriter)
         {
             var nBytes = (int)_stream.ReadRawVarInt32();
-
-            if (buffer.Length < nBytes)
-                throw BufferTooSmall(buffer.Length, nBytes);
-
+            var buffer = bufferWriter.GetSpan(nBytes);
             _stream.ReadExactly(buffer[..nBytes]);
+            bufferWriter.Advance(nBytes);
             return nBytes;
         }
 
         /// <summary>
-        ///     Reads the next sample's bytes from the current stream and advances the position within the stream.
+        ///     Asynchronously reads the next sample's bytes from the stream and advances the position within the stream.
         /// </summary>
-        /// <param name="buffer">
-        ///     An array of bytes. When this method returns, the region contains the sample's bytes read from the stream starting
-        ///     at the specified <paramref name="offset" />.
-        /// </param>
-        /// <param name="offset">
-        ///     The byte offset in <paramref name="buffer" /> at which to begin storing the sample's bytes read from the stream.
+        /// <param name="bufferWriter">
+        ///     Output sink into which the sample's bytes are written.
         /// </param>
         /// <returns>The number of bytes read into the buffer.</returns>
         /// <exception cref="InvalidDataException">The sample's size is malformed or truncated.</exception>
         /// <exception cref="ArgumentException">The buffer is too small to read the sample's bytes.</exception>
         /// <exception cref="EndOfStreamException">The end of the stream is reached.</exception>
-        public int ReadNextSample(byte[] buffer, int offset)
+        public async Task<int> ReadNextSampleAsync(IBufferWriter<byte> bufferWriter)
         {
             var nBytes = (int)_stream.ReadRawVarInt32();
-
-            if (buffer.Length - offset < nBytes)
-                throw BufferTooSmall(buffer.Length - offset, nBytes);
-
-            _stream.ReadExactly(buffer, offset, nBytes);
-            return nBytes;
-        }
-
-        /// <summary>
-        ///     Asynchronously reads the next sample's bytes from the current stream and advances the position within the stream.
-        /// </summary>
-        /// <param name="buffer">
-        ///     An region of memory. When this method returns, the region contains the sample's bytes read from the stream.
-        /// </param>
-        /// <returns>The number of bytes read into the buffer.</returns>
-        /// <exception cref="InvalidDataException">The sample's size is malformed or truncated.</exception>
-        /// <exception cref="ArgumentException">The buffer is too small to read the sample's bytes.</exception>
-        /// <exception cref="EndOfStreamException">The end of the stream is reached.</exception>
-        public async Task<int> ReadNextSampleAsync(Memory<byte> buffer)
-        {
-            var nBytes = (int)_stream.ReadRawVarInt32();
-
-            if (buffer.Length < nBytes)
-                throw BufferTooSmall(buffer.Length, nBytes);
-
+            var buffer = bufferWriter.GetMemory(nBytes);
             await _stream.ReadExactlyAsync(buffer[..nBytes]);
+            bufferWriter.Advance(nBytes);
             return nBytes;
-        }
-
-        /// <summary>
-        ///     Asynchronously reads the next sample's bytes from the current stream and advances the position within the stream.
-        /// </summary>
-        /// <param name="buffer">
-        ///     An array of bytes. When this method returns, the region contains the sample's bytes read from the stream starting
-        ///     at the specified <paramref name="offset" />.
-        /// </param>
-        /// <param name="offset">
-        ///     The byte offset in <paramref name="buffer" /> at which to begin storing the sample's bytes read from the stream.
-        /// </param>
-        /// <returns>The number of bytes read into the buffer.</returns>
-        /// <exception cref="InvalidDataException">The sample's size is malformed or truncated.</exception>
-        /// <exception cref="ArgumentException">The buffer is too small to read the sample's bytes.</exception>
-        /// <exception cref="EndOfStreamException">The end of the stream is reached.</exception>
-        public async Task<int> ReadNextSampleAsync(byte[] buffer, int offset)
-        {
-            var nBytes = (int)_stream.ReadRawVarInt32();
-
-            if (buffer.Length - offset < nBytes)
-                throw BufferTooSmall(buffer.Length - offset, nBytes);
-
-            await _stream.ReadExactlyAsync(buffer, offset, nBytes);
-            return nBytes;
-        }
-
-        private static ArgumentException BufferTooSmall(int remainingSize, int requestedSize)
-        {
-            return new ArgumentException(
-                $"Buffer is too small. Remaining size: {remainingSize}, requested size: {requestedSize}");
         }
     }
 }
