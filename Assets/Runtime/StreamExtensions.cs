@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Runtime
 {
-    public static class StreamUtils
+    public static class StreamExtensions
     {
         /// <summary>
         ///     Reads bytes from the stream and advances the position within the stream until the
