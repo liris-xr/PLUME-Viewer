@@ -8,18 +8,14 @@ namespace Runtime
     public static class StreamExtensions
     {
         /// <summary>
-        ///     Reads bytes from the stream and advances the position within the stream until the
-        ///     <paramref name="buffer" /> is filled.
+        ///     Reads bytes from the stream and advances the position within the stream until the <paramref name="buffer" /> is
+        ///     filled.
         /// </summary>
         /// <param name="stream">The stream to read from.</param>
         /// <param name="buffer">
         ///     A region of memory. When this method returns, the region contains the bytes read from the stream.
         /// </param>
-        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the VarInt64 is fully read.</exception>
-        /// <exception cref="MalformedStreamException.MalformedVarInt">
-        ///     The VarInt64 is malformed, for example if the continuation bit is set after reading 64 bits of data or if the total
-        ///     number of data bits exceeds 64.
-        /// </exception>
+        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the bytes are fully read.</exception>
         public static void ReadExactly(this Stream stream, Span<byte> buffer)
         {
             var bytesRead = 0;
@@ -27,7 +23,7 @@ namespace Runtime
             {
                 var read = stream.Read(buffer[bytesRead..]);
                 if (read == 0)
-                    throw new EndOfStreamException();
+                    throw new TruncatedStreamException();
                 bytesRead += read;
             }
         }
@@ -45,11 +41,7 @@ namespace Runtime
         ///     The byte offset in <paramref name="buffer" /> at which to begin storing the data read from the stream.
         /// </param>
         /// <param name="count">The number of bytes to be read from the stream.</param>
-        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the VarInt64 is fully read.</exception>
-        /// <exception cref="MalformedStreamException.MalformedVarInt">
-        ///     The VarInt64 is malformed, for example if the continuation bit is set after reading 64 bits of data or if the total
-        ///     number of data bits exceeds 64.
-        /// </exception>
+        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the bytes are fully read.</exception>
         public static void ReadExactly(this Stream stream, byte[] buffer, int offset, int count)
         {
             var bytesRead = 0;
@@ -57,7 +49,7 @@ namespace Runtime
             {
                 var read = stream.Read(buffer, offset + bytesRead, count - bytesRead);
                 if (read == 0)
-                    throw new EndOfStreamException();
+                    throw new TruncatedStreamException();
                 bytesRead += read;
             }
         }
@@ -71,11 +63,7 @@ namespace Runtime
         ///     A region of memory. When this method returns, the region contains the bytes read from the stream.
         /// </param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the VarInt64 is fully read.</exception>
-        /// <exception cref="MalformedStreamException.MalformedVarInt">
-        ///     The VarInt64 is malformed, for example if the continuation bit is set after reading 64 bits of data or if the total
-        ///     number of data bits exceeds 64.
-        /// </exception>
+        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the bytes are fully read.</exception>
         /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
         public static async Task ReadExactlyAsync(this Stream stream, Memory<byte> buffer,
             CancellationToken cancellationToken = default)
@@ -85,7 +73,7 @@ namespace Runtime
             {
                 var read = await stream.ReadAsync(buffer[bytesRead..], cancellationToken);
                 if (read == 0)
-                    throw new EndOfStreamException();
+                    throw new TruncatedStreamException();
                 bytesRead += read;
             }
         }
@@ -106,11 +94,7 @@ namespace Runtime
         /// </param>
         /// <param name="count">The number of bytes to be read from the stream.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the VarInt64 is fully read.</exception>
-        /// <exception cref="MalformedStreamException.MalformedVarInt">
-        ///     The VarInt64 is malformed, for example if the continuation bit is set after reading 64 bits of data or if the total
-        ///     number of data bits exceeds 64.
-        /// </exception>
+        /// <exception cref="TruncatedStreamException">The end of the stream is reached before the bytes are fully read.</exception>
         /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
         public static async Task ReadExactlyAsync(this Stream stream, byte[] buffer, int offset, int count,
             CancellationToken cancellationToken = default)
@@ -120,7 +104,7 @@ namespace Runtime
             {
                 var read = await stream.ReadAsync(buffer, offset + bytesRead, count - bytesRead, cancellationToken);
                 if (read == 0)
-                    throw new EndOfStreamException();
+                    throw new TruncatedStreamException();
                 bytesRead += read;
             }
         }

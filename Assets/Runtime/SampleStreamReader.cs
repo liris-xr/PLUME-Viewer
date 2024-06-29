@@ -9,35 +9,32 @@ namespace Runtime
     /// <summary>
     ///     Reads delimited <see cref="Google.Protobuf.IMessage" /> message bytes from a stream.
     /// </summary>
-    public class SampleReader : IDisposable
+    public class SampleStreamReader : IDisposable
     {
-        private readonly bool _leaveOpen;
-        private readonly Stream _stream;
+        private readonly DelimitedMessageReader _delimitedMessageReader;
         public readonly SampleStreamSignature SampleStreamSignature;
 
-        private SampleReader(Stream stream, SampleStreamSignature sampleStreamSignature, bool leaveOpen = false)
+        private SampleStreamReader(Stream stream, SampleStreamSignature sampleStreamSignature, bool leaveOpen = false)
         {
             SampleStreamSignature = sampleStreamSignature;
-            _stream = stream;
-            _leaveOpen = leaveOpen;
+            _delimitedMessageReader = new DelimitedMessageReader(stream, leaveOpen);
         }
 
         public void Dispose()
         {
-            if (!_leaveOpen)
-                _stream.Dispose();
+            _delimitedMessageReader.Dispose();
         }
 
         /// <summary>
-        ///     Create a new <see cref="SampleReader" /> from the given stream.
+        ///     Create a new <see cref="SampleStreamReader" /> from the given stream.
         /// </summary>
         /// <param name="stream">The stream to create the reader from.</param>
         /// <param name="bufferSize">The size of the buffer for the buffered stream.</param>
         /// <param name="leaveOpen">Whether to leave the stream open when the reader is disposed.</param>
-        /// <returns>A new <see cref="SampleReader" /> instance.</returns>
+        /// <returns>A new <see cref="SampleStreamReader" /> instance.</returns>
         /// <exception cref="ArgumentException">The stream is not readable.</exception>
         /// <exception cref="InvalidDataException">The signature is unknown.</exception>
-        public static SampleReader Create(Stream stream, int bufferSize = 4096, bool leaveOpen = false)
+        public static SampleStreamReader Create(Stream stream, int bufferSize = 4096, bool leaveOpen = false)
         {
             if (!stream.CanRead)
                 throw new ArgumentException("Stream must be readable", nameof(stream));
@@ -57,12 +54,12 @@ namespace Runtime
                 {
                     var compressedStream = LZ4Stream.Decode(stream, leaveOpen: leaveOpen);
                     var bufferedStream = new BufferedStream(compressedStream, bufferSize);
-                    return new SampleReader(bufferedStream, signature, leaveOpen);
+                    return new SampleStreamReader(bufferedStream, signature, leaveOpen);
                 }
                 case SampleStreamSignature.Uncompressed:
                 {
                     var bufferedStream = new BufferedStream(stream, bufferSize);
-                    return new SampleReader(bufferedStream, signature, leaveOpen);
+                    return new SampleStreamReader(bufferedStream, signature, leaveOpen);
                 }
                 default:
                     throw new NotSupportedException($"Unsupported signature 0x{signatureValue:X}");
@@ -79,13 +76,9 @@ namespace Runtime
         /// <exception cref="InvalidDataException">The sample's size is malformed or truncated.</exception>
         /// <exception cref="ArgumentException">The buffer is too small to read the sample's bytes.</exception>
         /// <exception cref="EndOfStreamException">The end of the stream is reached.</exception>
-        public int ReadNextSample(IBufferWriter<byte> bufferWriter)
+        public int ReadSample(IBufferWriter<byte> bufferWriter)
         {
-            var nBytes = (int)_stream.ReadRawVarInt32();
-            var buffer = bufferWriter.GetSpan(nBytes);
-            _stream.ReadExactly(buffer[..nBytes]);
-            bufferWriter.Advance(nBytes);
-            return nBytes;
+            return _delimitedMessageReader.ReadDelimitedMessage(bufferWriter);
         }
 
         /// <summary>
@@ -98,13 +91,9 @@ namespace Runtime
         /// <exception cref="InvalidDataException">The sample's size is malformed or truncated.</exception>
         /// <exception cref="ArgumentException">The buffer is too small to read the sample's bytes.</exception>
         /// <exception cref="EndOfStreamException">The end of the stream is reached.</exception>
-        public async Task<int> ReadNextSampleAsync(IBufferWriter<byte> bufferWriter)
+        public async Task<int> ReadSampleAsync(IBufferWriter<byte> bufferWriter)
         {
-            var nBytes = (int)_stream.ReadRawVarInt32();
-            var buffer = bufferWriter.GetMemory(nBytes);
-            await _stream.ReadExactlyAsync(buffer[..nBytes]);
-            bufferWriter.Advance(nBytes);
-            return nBytes;
+            return await _delimitedMessageReader.ReadDelimitedMessageAsync(bufferWriter);
         }
     }
 }
