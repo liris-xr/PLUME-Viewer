@@ -3,7 +3,7 @@ using Google.Protobuf;
 
 namespace Runtime
 {
-    public readonly struct Sample
+    public class Sample
     {
         public readonly IMessage Payload;
         public readonly ulong? Timestamp;
