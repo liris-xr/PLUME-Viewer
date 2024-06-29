@@ -12,7 +12,7 @@ using Vector3 = PLUME.Sample.Common.Vector3;
 namespace Tests
 {
     [TestFixture]
-    public class TestSampleStreamReaderCreate
+    public class SampleStreamReaderCreateTests
     {
         [OneTimeSetUp]
         public void Init()
@@ -83,7 +83,7 @@ namespace Tests
     }
 
     [TestFixture]
-    public class TestSampleStreamReaderRead
+    public class SampleStreamReaderReadTests
     {
         [OneTimeSetUp]
         public void Init()

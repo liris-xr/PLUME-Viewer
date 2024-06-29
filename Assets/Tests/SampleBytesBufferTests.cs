@@ -4,7 +4,7 @@ using Runtime;
 
 namespace Tests
 {
-    public class TestSampleBytesBuffer
+    public class SampleBytesBufferTests
     {
         [Test]
         [Order(1)]

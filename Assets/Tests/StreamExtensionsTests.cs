@@ -4,7 +4,7 @@ using Runtime;
 
 namespace Tests
 {
-    public class TestStreamExtensions
+    public class StreamExtensionsTests
     {
         [Test]
         public void ReadRawVarInt32_EmptyStream_ThrowsTruncated()

@@ -12,7 +12,7 @@ using UnityEngine.TestTools;
 
 namespace Tests
 {
-    public class TestDelimitedMessageReader
+    public class DelimitedMessageReaderTests
     {
         private byte[] _packedSample1Bytes;
         private byte[] _packedSample2Bytes;

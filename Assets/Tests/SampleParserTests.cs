@@ -9,7 +9,7 @@ using Runtime;
 namespace Tests
 {
     [TestFixture]
-    public class TestSampleParser
+    public class SampleParserTests
     {
         [OneTimeSetUp]
         public void Init()
