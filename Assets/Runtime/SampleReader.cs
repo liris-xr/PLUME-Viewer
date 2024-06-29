@@ -7,17 +7,17 @@ using K4os.Compression.LZ4.Streams;
 namespace Runtime
 {
     /// <summary>
-    ///     Reads record samples from a stream.
+    ///     Reads delimited <see cref="Google.Protobuf.IMessage" /> message bytes from a stream.
     /// </summary>
-    public class RecordReaderCreate : IDisposable
+    public class SampleReader : IDisposable
     {
         private readonly bool _leaveOpen;
         private readonly Stream _stream;
-        public readonly RecordSignature RecordSignature;
+        public readonly SampleStreamSignature SampleStreamSignature;
 
-        private RecordReaderCreate(Stream stream, RecordSignature recordSignature, bool leaveOpen = false)
+        private SampleReader(Stream stream, SampleStreamSignature sampleStreamSignature, bool leaveOpen = false)
         {
-            RecordSignature = recordSignature;
+            SampleStreamSignature = sampleStreamSignature;
             _stream = stream;
             _leaveOpen = leaveOpen;
         }
@@ -29,40 +29,40 @@ namespace Runtime
         }
 
         /// <summary>
-        ///     Create a new <see cref="RecordReaderCreate" /> from the given stream.
+        ///     Create a new <see cref="SampleReader" /> from the given stream.
         /// </summary>
         /// <param name="stream">The stream to create the reader from.</param>
         /// <param name="bufferSize">The size of the buffer for the buffered stream.</param>
         /// <param name="leaveOpen">Whether to leave the stream open when the reader is disposed.</param>
-        /// <returns>A new <see cref="RecordReaderCreate" /> instance.</returns>
+        /// <returns>A new <see cref="SampleReader" /> instance.</returns>
         /// <exception cref="ArgumentException">The stream is not readable.</exception>
         /// <exception cref="InvalidDataException">The signature is unknown.</exception>
-        public static RecordReaderCreate Create(Stream stream, int bufferSize = 4096, bool leaveOpen = false)
+        public static SampleReader Create(Stream stream, int bufferSize = 4096, bool leaveOpen = false)
         {
             if (!stream.CanRead)
                 throw new ArgumentException("Stream must be readable", nameof(stream));
 
             var signatureValue = stream.ReadInt32();
 
-            if (!Enum.IsDefined(typeof(RecordSignature), signatureValue))
-                throw new MalformedStreamException.UnknownSignature(signatureValue);
+            if (!Enum.IsDefined(typeof(SampleStreamSignature), signatureValue))
+                throw new MalformedStreamException.UnknownSampleStreamSignature(signatureValue);
 
             // The signature is a 4-byte integer at the beginning of the stream that indicates the type of record and
             // how it is compressed to determine how to read it.
-            var signature = (RecordSignature)signatureValue;
+            var signature = (SampleStreamSignature)signatureValue;
 
             switch (signature)
             {
-                case RecordSignature.LZ4Compressed:
+                case SampleStreamSignature.LZ4Compressed:
                 {
                     var compressedStream = LZ4Stream.Decode(stream, leaveOpen: leaveOpen);
                     var bufferedStream = new BufferedStream(compressedStream, bufferSize);
-                    return new RecordReaderCreate(bufferedStream, signature, leaveOpen);
+                    return new SampleReader(bufferedStream, signature, leaveOpen);
                 }
-                case RecordSignature.Uncompressed:
+                case SampleStreamSignature.Uncompressed:
                 {
                     var bufferedStream = new BufferedStream(stream, bufferSize);
-                    return new RecordReaderCreate(bufferedStream, signature, leaveOpen);
+                    return new SampleReader(bufferedStream, signature, leaveOpen);
                 }
                 default:
                     throw new NotSupportedException($"Unsupported signature 0x{signatureValue:X}");

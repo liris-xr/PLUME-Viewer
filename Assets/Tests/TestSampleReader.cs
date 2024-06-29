@@ -15,13 +15,13 @@ using Vector3 = PLUME.Sample.Common.Vector3;
 namespace Tests
 {
     [TestFixture]
-    public class TestRecordReaderCreate
+    public class TestSampleReaderCreate
     {
         [OneTimeSetUp]
         public void Init()
         {
             _stream = new MemoryStream();
-            _stream.Write(BitConverter.GetBytes((int)RecordSignature.LZ4Compressed));
+            _stream.Write(BitConverter.GetBytes((int)SampleStreamSignature.LZ4Compressed));
             using var compressedStream = LZ4Stream.Encode(_stream, leaveOpen: true);
 
             var packedSample1 = new PackedSample
@@ -56,44 +56,44 @@ namespace Tests
         private int _packedSample2Size;
 
         [Test]
-        public void Create_WithLZ4CompressedStream_ReturnsRecordReader()
+        public void Create_WithLZ4CompressedStream_ReturnsSampleReader()
         {
-            var reader = RecordReaderCreate.Create(_stream);
+            var reader = SampleReader.Create(_stream);
             Assert.IsNotNull(reader);
-            Assert.AreEqual(RecordSignature.LZ4Compressed, reader.RecordSignature);
+            Assert.AreEqual(SampleStreamSignature.LZ4Compressed, reader.SampleStreamSignature);
         }
 
         [Test]
         public void Create_WithUnreadableStream_ThrowsArgumentException()
         {
             var stream = new MemoryStream(Array.Empty<byte>(), false);
-            Assert.Throws<EndOfStreamException>(() => RecordReaderCreate.Create(stream));
+            Assert.Throws<EndOfStreamException>(() => SampleReader.Create(stream));
         }
 
         [Test]
         public void Create_WithUnknownSignature_ThrowsMalformedSignatureException()
         {
             var stream = new MemoryStream(new byte[] { 0x00, 0x00, 0x00, 0x00 });
-            Assert.Throws<MalformedStreamException.UnknownSignature>(() => RecordReaderCreate.Create(stream));
+            Assert.Throws<MalformedStreamException.UnknownSampleStreamSignature>(() => SampleReader.Create(stream));
         }
 
         [Test]
-        public void Create_WithLZ4CompressedSignature_ReturnsRecordReader()
+        public void Create_WithLZ4CompressedSignature_ReturnsSampleReader()
         {
-            var stream = new MemoryStream(BitConverter.GetBytes((int)RecordSignature.LZ4Compressed));
-            var reader = RecordReaderCreate.Create(stream);
+            var stream = new MemoryStream(BitConverter.GetBytes((int)SampleStreamSignature.LZ4Compressed));
+            var reader = SampleReader.Create(stream);
             Assert.IsNotNull(reader);
         }
     }
 
     [TestFixture]
-    public class TestRecordReaderReadSamples
+    public class TestSampleReaderReadNext
     {
         [OneTimeSetUp]
         public void Init()
         {
             _stream = new MemoryStream();
-            _stream.Write(BitConverter.GetBytes((int)RecordSignature.LZ4Compressed));
+            _stream.Write(BitConverter.GetBytes((int)SampleStreamSignature.LZ4Compressed));
             using var compressedStream = LZ4Stream.Encode(_stream, leaveOpen: true);
 
             var packedSample1 = new PackedSample
@@ -124,13 +124,13 @@ namespace Tests
         public void SetUp()
         {
             _stream.Seek(0, SeekOrigin.Begin);
-            _reader = RecordReaderCreate.Create(_stream);
+            _reader = SampleReader.Create(_stream);
         }
 
         private Stream _stream;
         private byte[] _packedSample1Bytes;
         private byte[] _packedSample2Bytes;
-        private RecordReaderCreate _reader;
+        private SampleReader _reader;
 
         [Test]
         public void ReadNextSample_ReadFirst()

@@ -15,9 +15,9 @@ namespace Runtime
             }
         }
 
-        public class UnknownSignature : MalformedStreamException
+        public class UnknownSampleStreamSignature : MalformedStreamException
         {
-            public UnknownSignature(int signature) : base($"Unknown signature 0x{signature:X}")
+            public UnknownSampleStreamSignature(int signature) : base($"Unknown signature 0x{signature:X}")
             {
             }
         }
