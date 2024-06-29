@@ -54,10 +54,11 @@ namespace Tests
             buffer.AddSampleBytes(bytes);
 
             var dstBuffer = new ArrayBufferWriter<byte>();
-            buffer.TakeSampleBytes(dstBuffer);
+            var sampleSize = buffer.TakeSampleBytes(dstBuffer);
 
             Assert.AreEqual(5, dstBuffer.WrittenCount);
             Assert.AreEqual(bytes, dstBuffer.WrittenSpan.ToArray());
+            Assert.AreEqual(bytes.Length, sampleSize);
             Assert.IsTrue(buffer.IsEmpty);
         }
 

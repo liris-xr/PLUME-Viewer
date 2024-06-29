@@ -48,19 +48,38 @@ namespace Runtime
             }
         }
 
-        public void TakeSampleBytes(IBufferWriter<byte> buffer)
+        /// <summary>
+        ///     Take the first available sample bytes from the buffer and write them to the <paramref name="buffer" />.
+        /// </summary>
+        /// <param name="buffer">The buffer to write the sample bytes to.</param>
+        /// <returns>The number of bytes written to the <paramref name="buffer" />.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when there are no sample bytes in the buffer.</exception>
+        public int TakeSampleBytes(IBufferWriter<byte> buffer)
         {
             lock (_lock)
             {
                 if (IsEmpty) throw new InvalidOperationException("No sample bytes in the buffer.");
 
-                var sample = _samples[0];
-                buffer.Write(_buffer.AsSpan(sample.Offset, sample.Length));
+                var sampleInfo = _samples[0];
+                buffer.Write(_buffer.AsSpan(sampleInfo.Offset, sampleInfo.Length));
                 _samples.RemoveAt(0);
-                _start = sample.Offset + sample.Length;
+                _start = sampleInfo.Offset + sampleInfo.Length;
+                return sampleInfo.Length;
             }
         }
 
+        /// <summary>
+        ///     Add the sample bytes to the buffer.
+        /// </summary>
+        /// <param name="bytes">The sample bytes to add.</param>
+        /// <returns>
+        ///     The <see cref="SampleInfo" /> of the added sample bytes containing the offset and length of the sample bytes
+        ///     in the buffer.
+        /// </returns>
+        /// <remarks>
+        ///     The sample bytes are stored contiguously (i.e. without splitting a sample across the buffer boundary) in the
+        ///     internal circular buffer. If there is not enough space in the buffer, the buffer size is automatically doubled.
+        /// </remarks>
         public SampleInfo AddSampleBytes(Span<byte> bytes)
         {
             lock (_lock)
