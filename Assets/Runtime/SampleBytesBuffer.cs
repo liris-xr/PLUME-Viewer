@@ -52,19 +52,24 @@ namespace Runtime
         ///     Take the first available sample bytes from the buffer and write them to the <paramref name="buffer" />.
         /// </summary>
         /// <param name="buffer">The buffer to write the sample bytes to.</param>
-        /// <returns>The number of bytes written to the <paramref name="buffer" />.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when there are no sample bytes in the buffer.</exception>
-        public int TakeSampleBytes(IBufferWriter<byte> buffer)
+        /// <param name="sampleSize">The number of bytes written to the <paramref name="buffer" />.</param>
+        /// <returns>Whether the sample bytes were successfully taken from the buffer.</returns>
+        public bool TakeSampleBytes(IBufferWriter<byte> buffer, out int sampleSize)
         {
             lock (_lock)
             {
-                if (IsEmpty) throw new InvalidOperationException("No sample bytes in the buffer.");
+                if (IsEmpty)
+                {
+                    sampleSize = -1;
+                    return false;
+                }
 
                 var sampleInfo = _samples[0];
                 buffer.Write(_buffer.AsSpan(sampleInfo.Offset, sampleInfo.Length));
                 _samples.RemoveAt(0);
                 _start = sampleInfo.Offset + sampleInfo.Length;
-                return sampleInfo.Length;
+                sampleSize = sampleInfo.Length;
+                return true;
             }
         }
 

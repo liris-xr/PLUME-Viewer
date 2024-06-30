@@ -58,11 +58,11 @@ namespace Runtime
                 {
                     var sampleBytesBuffer = new ArrayBufferWriter<byte>();
 
-                    while (!buffer.IsEmpty)
+                    while (buffer.TakeSampleBytes(sampleBytesBuffer, out var sampleSize))
                     {
-                        var sampleSize = buffer.TakeSampleBytes(sampleBytesBuffer);
                         var packedSample = Parse(sampleBytesBuffer.WrittenSpan[..sampleSize]);
                         concurrentBag.Add(packedSample);
+                        sampleBytesBuffer.Clear();
                     }
                 });
                 workers[i].Start();

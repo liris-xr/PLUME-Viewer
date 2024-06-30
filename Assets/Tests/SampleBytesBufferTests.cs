@@ -54,8 +54,9 @@ namespace Tests
             buffer.AddSampleBytes(bytes);
 
             var dstBuffer = new ArrayBufferWriter<byte>();
-            var sampleSize = buffer.TakeSampleBytes(dstBuffer);
+            var taken = buffer.TakeSampleBytes(dstBuffer, out var sampleSize);
 
+            Assert.IsTrue(taken);
             Assert.AreEqual(5, dstBuffer.WrittenCount);
             Assert.AreEqual(bytes, dstBuffer.WrittenSpan.ToArray());
             Assert.AreEqual(bytes.Length, sampleSize);
@@ -72,7 +73,7 @@ namespace Tests
 
             // Remove the first sample to make space at the start
             var tmpBuffer = new ArrayBufferWriter<byte>();
-            buffer.TakeSampleBytes(tmpBuffer);
+            _ = buffer.TakeSampleBytes(tmpBuffer, out _);
 
             var bytes = new byte[] { 11, 12, 13 };
             var sampleInfo = buffer.AddSampleBytes(bytes);
@@ -92,7 +93,7 @@ namespace Tests
 
             // Remove the first sample to make space at the start
             var tmpBuffer = new ArrayBufferWriter<byte>();
-            buffer.TakeSampleBytes(tmpBuffer);
+            _ = buffer.TakeSampleBytes(tmpBuffer, out _);
 
             var bytes = new byte[] { 11, 12, 13, 14, 15 };
             var sampleInfo = buffer.AddSampleBytes(bytes);
