@@ -11,7 +11,7 @@ using Vector3 = PLUME.Sample.Common.Vector3;
 namespace Tests
 {
     [TestFixture]
-    public class SampleStreamTests
+    public class SampleReaderTests
     {
         [OneTimeSetUp]
         public void Init()
@@ -49,7 +49,8 @@ namespace Tests
         public void SetUp()
         {
             _stream.Seek(0, SeekOrigin.Begin);
-            _reader = SampleStream.Create(_stream, true);
+            _decoderStream = LZ4Stream.Decode(_stream, leaveOpen: true);
+            _reader = new SampleReader(_decoderStream, true);
             _buffer.Clear();
         }
 
@@ -60,7 +61,8 @@ namespace Tests
         }
 
         private Stream _stream;
-        private SampleStream _reader;
+        private Stream _decoderStream;
+        private SampleReader _reader;
         private byte[] _packedSample1Bytes;
         private byte[] _packedSample2Bytes;
         private ArrayBufferWriter<byte> _buffer;

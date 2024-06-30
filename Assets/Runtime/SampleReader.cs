@@ -2,22 +2,15 @@ using System;
 using System.Buffers;
 using System.IO;
 using System.Threading.Tasks;
-using K4os.Compression.LZ4.Streams;
-using UnityEngine.Assertions;
 
 namespace Runtime
 {
-    public class SampleStream : IDisposable
+    public class SampleReader : IDisposable
     {
         private readonly DelimitedMessageReader _delimitedMessageReader;
-        private readonly Stream _stream;
 
-        private SampleStream(Stream stream, bool leaveOpen = false)
+        public SampleReader(Stream stream, bool leaveOpen = false)
         {
-            Assert.IsTrue(stream.CanSeek, "Expected stream to be seekable.");
-            Assert.IsTrue(stream.CanRead, "Expected stream to be readable.");
-
-            _stream = stream;
             _delimitedMessageReader = new DelimitedMessageReader(stream, leaveOpen);
         }
 
@@ -54,17 +47,6 @@ namespace Runtime
         public async Task<int> ReadSampleAsync(IBufferWriter<byte> bufferWriter)
         {
             return await _delimitedMessageReader.ReadDelimitedMessageAsync(bufferWriter);
-        }
-
-        public static SampleStream Create(Stream baseStream, bool leaveOpen = false, int bufferSize = 4096)
-        {
-            if (!baseStream.CanRead)
-                throw new ArgumentException("Stream must be readable", nameof(baseStream));
-
-            Stream stream = LZ4Stream.Decode(baseStream, leaveOpen: leaveOpen);
-            stream = new CachingStream(stream);
-            stream = new BufferedStream(stream, bufferSize);
-            return new SampleStream(stream, leaveOpen);
         }
     }
 }
