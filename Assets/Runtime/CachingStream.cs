@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Net.Sockets;
-using JetBrains.Annotations;
 using K4os.Compression.LZ4.Streams;
 
 namespace Runtime
@@ -14,33 +13,28 @@ namespace Runtime
     public class CachingStream : Stream
     {
         private readonly Stream _baseStream;
+        private readonly string _cacheFilePath;
         private readonly Stream _cacheStream;
 
         private readonly bool _leaveBaseStreamOpen;
         private readonly bool _leaveCacheStreamOpen;
-        [CanBeNull] private readonly string _tmpCachePath;
 
         public CachingStream(Stream baseStream, Stream cacheStream, bool leaveBaseStreamOpen = false,
             bool leaveCacheStreamOpen = false)
         {
-            if (!cacheStream.CanSeek || !cacheStream.CanWrite)
-                throw new ArgumentException("The cache stream must be seekable and writable.", nameof(cacheStream));
-
             _baseStream = baseStream;
             _leaveBaseStreamOpen = leaveBaseStreamOpen;
             _leaveCacheStreamOpen = leaveCacheStreamOpen;
             _cacheStream = cacheStream;
         }
 
-        public CachingStream(Stream baseStream, bool leaveOpen = false)
+        public CachingStream(Stream baseStream, bool leaveBaseStreamOpen = false, bool leaveCacheStreamOpen = false)
         {
             _baseStream = baseStream;
-            _leaveBaseStreamOpen = leaveOpen;
-            _leaveCacheStreamOpen = false;
-            _tmpCachePath = Path.GetTempFileName();
-
-            _tmpCachePath = Path.GetTempFileName();
-            _cacheStream = new FileStream(_tmpCachePath, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
+            _leaveBaseStreamOpen = leaveBaseStreamOpen;
+            _leaveCacheStreamOpen = leaveCacheStreamOpen;
+            _cacheStream = new FileStream(Path.GetTempFileName(), FileMode.Create, FileAccess.ReadWrite, FileShare.None,
+                4096, FileOptions.DeleteOnClose);
         }
 
         public override bool CanRead => true;
@@ -109,9 +103,6 @@ namespace Runtime
             {
                 if (!_leaveBaseStreamOpen) _baseStream.Dispose();
                 if (!_leaveCacheStreamOpen) _cacheStream.Dispose();
-
-                if (_tmpCachePath != null)
-                    File.Delete(_tmpCachePath);
             }
 
             base.Dispose(disposing);

@@ -10,9 +10,9 @@ namespace Runtime
     public class SampleReader : IDisposable
     {
         private readonly bool _leaveOpen;
-        private readonly Stream _stream;
+        private readonly SampleStream _stream;
 
-        public SampleReader(Stream stream, bool leaveOpen = false)
+        public SampleReader(SampleStream stream, bool leaveOpen = false)
         {
             _stream = stream;
             _leaveOpen = leaveOpen;

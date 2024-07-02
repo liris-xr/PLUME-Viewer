@@ -61,7 +61,10 @@ namespace Tests
         public void SetUp()
         {
             _stream.Seek(0, SeekOrigin.Begin);
-            _sampleLoader = SampleLoader.Create(_stream, _typeRegistry, true);
+            var sampleStream = SampleStream.Create(_stream, true);
+            var sampleReader = new SampleReader(sampleStream, true);
+            var sampleParser = new SampleParser(_typeRegistry);
+            _sampleLoader = new SampleLoader(sampleReader, sampleParser);
         }
 
         [TearDown]

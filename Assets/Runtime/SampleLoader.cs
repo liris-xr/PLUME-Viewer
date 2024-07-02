@@ -1,13 +1,10 @@
 using System;
 using System.Buffers;
-using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Google.Protobuf.Reflection;
-using K4os.Compression.LZ4.Streams;
 using PLUME.Sample;
 
 namespace Runtime
@@ -23,7 +20,7 @@ namespace Runtime
 
         private readonly Stream _stream;
 
-        private SampleLoader(SampleReader reader, SampleParser parser)
+        public SampleLoader(SampleReader reader, SampleParser parser)
         {
             _reader = reader;
             _parser = parser;
@@ -143,47 +140,6 @@ namespace Runtime
             } while (packedSample.Timestamp <= endTime);
 
             return samples;
-        }
-
-        private static SampleStreamSignature ReadStreamSignature(Stream stream)
-        {
-            Span<byte> signatureBytes = stackalloc byte[4];
-            stream.ReadExactly(signatureBytes);
-
-            var signature = BinaryPrimitives.ReadUInt32LittleEndian(signatureBytes);
-
-            if (!Enum.IsDefined(typeof(SampleStreamSignature), signature))
-                throw new MalformedStreamException.UnknownSampleStreamSignature(signature);
-
-            return (SampleStreamSignature)signature;
-        }
-
-        public static SampleLoader Create(Stream stream, TypeRegistry typeRegistry, bool leaveOpen = false,
-            int bufferSize = 4096)
-        {
-            if (!stream.CanRead)
-                throw new ArgumentException("Stream must be readable", nameof(stream));
-
-            if (!stream.CanSeek) stream = new CachingStream(stream, leaveOpen);
-
-            var signature = ReadStreamSignature(stream);
-
-            switch (signature)
-            {
-                case SampleStreamSignature.LZ4Compressed:
-                    var decoderStream = LZ4Stream.Decode(stream, leaveOpen: leaveOpen);
-                    stream = new BufferedStream(decoderStream, bufferSize);
-                    break;
-                case SampleStreamSignature.Uncompressed:
-                    stream = new BufferedStream(stream, bufferSize);
-                    break;
-                default:
-                    throw new NotSupportedException($"Unsupported sample stream signature 0x{signature:X}");
-            }
-
-            var reader = new SampleReader(stream, leaveOpen);
-            var parser = new SampleParser(typeRegistry);
-            return new SampleLoader(reader, parser);
         }
     }
 }

@@ -1,4 +1,6 @@
+using System;
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections;
 using System.IO;
 using Cysharp.Threading.Tasks;
@@ -20,6 +22,11 @@ namespace Tests
         public void Init()
         {
             _stream = new MemoryStream();
+
+            Span<byte> signature = stackalloc byte[4];
+            BinaryPrimitives.WriteUInt32LittleEndian(signature, (uint)SampleStreamSignature.LZ4Compressed);
+            _stream.Write(signature);
+
             using var compressedStream = LZ4Stream.Encode(_stream, leaveOpen: true);
 
             var packedSample1 = new PackedSample
@@ -52,8 +59,8 @@ namespace Tests
         public void SetUp()
         {
             _stream.Seek(0, SeekOrigin.Begin);
-            _decoderStream = LZ4Stream.Decode(_stream, leaveOpen: true);
-            _reader = new SampleReader(_decoderStream, true);
+            var sampleStream = SampleStream.Create(_stream, true);
+            _reader = new SampleReader(sampleStream, true);
             _buffer.Clear();
         }
 
