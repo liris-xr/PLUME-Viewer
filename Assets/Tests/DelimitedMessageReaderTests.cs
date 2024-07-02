@@ -84,12 +84,12 @@ namespace Tests
         }
 
         [Test]
-        public void ReadDelimitedMessage_ReadTooMany_ThrowsTruncatedStreamException()
+        public void ReadDelimitedMessage_ReadTooMany_ReturnsZero()
         {
             ArrayBufferWriter<byte> bufferWriter = new(256);
             _streamReader.ReadDelimitedMessage(bufferWriter);
             _streamReader.ReadDelimitedMessage(bufferWriter);
-            Assert.Throws<EndOfStreamException>(() => _streamReader.ReadDelimitedMessage(bufferWriter));
+            Assert.AreEqual(0, _streamReader.ReadDelimitedMessage(bufferWriter));
         }
 
         [UnityTest]
@@ -121,7 +121,7 @@ namespace Tests
         }
 
         [UnityTest]
-        public IEnumerator ReadDelimitedMessageAsync_ReadTooMany_ThrowsTruncatedStreamException()
+        public IEnumerator ReadDelimitedMessageAsync_ReadTooMany_ReturnsZero()
         {
             return UniTask.ToCoroutine(async () =>
             {
@@ -129,7 +129,7 @@ namespace Tests
                 ArrayBufferWriter<byte> bufferWriter = new(256);
                 await _streamReader.ReadDelimitedMessageAsync(bufferWriter);
                 await _streamReader.ReadDelimitedMessageAsync(bufferWriter);
-                Assert.Throws<EndOfStreamException>(() => _streamReader.ReadDelimitedMessage(bufferWriter));
+                Assert.AreEqual(0, await _streamReader.ReadDelimitedMessageAsync(bufferWriter));
             });
         }
     }

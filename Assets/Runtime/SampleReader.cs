@@ -25,7 +25,7 @@ namespace Runtime
         /// <param name="bufferWriter">
         ///     Output sink into which the sample's bytes are written.
         /// </param>
-        /// <returns>The number of bytes read into the buffer.</returns>
+        /// <returns>The number of bytes read into the buffer or 0 if the end of the stream is reached.</returns>
         /// <exception cref="InvalidDataException">The sample's size is malformed or truncated.</exception>
         /// <exception cref="ArgumentException">The buffer is too small to read the sample's bytes.</exception>
         /// <exception cref="EndOfStreamException">The end of the stream is reached.</exception>
@@ -40,7 +40,7 @@ namespace Runtime
         /// <param name="bufferWriter">
         ///     Output sink into which the sample's bytes are written.
         /// </param>
-        /// <returns>The number of bytes read into the buffer.</returns>
+        /// <returns>The number of bytes read into the buffer or 0 if the end of the stream is reached.</returns>
         /// <exception cref="InvalidDataException">The sample's size is malformed or truncated.</exception>
         /// <exception cref="ArgumentException">The buffer is too small to read the sample's bytes.</exception>
         /// <exception cref="EndOfStreamException">The end of the stream is reached.</exception>
