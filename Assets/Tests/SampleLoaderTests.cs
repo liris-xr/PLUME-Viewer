@@ -17,8 +17,6 @@ namespace Tests
 {
     public class SampleLoaderTests
     {
-        private byte[] _packedSample1Bytes;
-        private byte[] _packedSample2Bytes;
         private Sample _sample1, _sample2;
 
         private SampleLoader _sampleLoader;
@@ -44,9 +42,6 @@ namespace Tests
                 Timestamp = _sample2.Timestamp!.Value,
                 Payload = Any.Pack(_sample2.Payload)
             };
-
-            _packedSample1Bytes = packedSample1.ToByteArray();
-            _packedSample2Bytes = packedSample2.ToByteArray();
 
             _stream = new MemoryStream();
             Span<byte> signature = stackalloc byte[4];
