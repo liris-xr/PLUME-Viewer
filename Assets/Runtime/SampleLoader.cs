@@ -1,5 +1,6 @@
 using System;
 using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -144,6 +145,19 @@ namespace Runtime
             return samples;
         }
 
+        private static SampleStreamSignature ReadStreamSignature(Stream stream)
+        {
+            Span<byte> signatureBytes = stackalloc byte[4];
+            stream.ReadExactly(signatureBytes);
+
+            var signature = BinaryPrimitives.ReadUInt32LittleEndian(signatureBytes);
+
+            if (!Enum.IsDefined(typeof(SampleStreamSignature), signature))
+                throw new MalformedStreamException.UnknownSampleStreamSignature(signature);
+
+            return (SampleStreamSignature)signature;
+        }
+
         public static SampleLoader Create(Stream stream, TypeRegistry typeRegistry, bool leaveOpen = false,
             int bufferSize = 4096)
         {
@@ -152,19 +166,19 @@ namespace Runtime
 
             if (!stream.CanSeek) stream = new CachingStream(stream, leaveOpen);
 
-            var headerBytes = new byte[4];
-            _ = stream.Read(headerBytes, 0, 4);
-            stream.Seek(-4, SeekOrigin.Current);
-            var headerValue = BitConverter.ToUInt32(headerBytes, 0);
+            var signature = ReadStreamSignature(stream);
 
-            if (headerValue == 0x184D2204)
+            switch (signature)
             {
-                var decoderStream = LZ4Stream.Decode(stream, leaveOpen: leaveOpen);
-                stream = new BufferedStream(decoderStream, bufferSize);
-            }
-            else
-            {
-                stream = new BufferedStream(stream, bufferSize);
+                case SampleStreamSignature.LZ4Compressed:
+                    var decoderStream = LZ4Stream.Decode(stream, leaveOpen: leaveOpen);
+                    stream = new BufferedStream(decoderStream, bufferSize);
+                    break;
+                case SampleStreamSignature.Uncompressed:
+                    stream = new BufferedStream(stream, bufferSize);
+                    break;
+                default:
+                    throw new NotSupportedException($"Unsupported sample stream signature 0x{signature:X}");
             }
 
             var reader = new SampleReader(stream, leaveOpen);

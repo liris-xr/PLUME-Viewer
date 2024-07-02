@@ -1,3 +1,5 @@
+using System;
+using System.Buffers.Binary;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -47,6 +49,10 @@ namespace Tests
             _packedSample2Bytes = packedSample2.ToByteArray();
 
             _stream = new MemoryStream();
+            Span<byte> signature = stackalloc byte[4];
+            BinaryPrimitives.WriteUInt32LittleEndian(signature, (uint)SampleStreamSignature.Uncompressed);
+
+            _stream.Write(signature);
             packedSample1.WriteDelimitedTo(_stream);
             packedSample2.WriteDelimitedTo(_stream);
         }
