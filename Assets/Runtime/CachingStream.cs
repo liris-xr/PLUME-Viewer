@@ -32,10 +32,10 @@ namespace Runtime
             _cacheStream = cacheStream;
         }
 
-        public CachingStream(Stream baseStream, bool leaveBaseStreamOpen = false)
+        public CachingStream(Stream baseStream, bool leaveOpen = false)
         {
             _baseStream = baseStream;
-            _leaveBaseStreamOpen = leaveBaseStreamOpen;
+            _leaveBaseStreamOpen = leaveOpen;
             _leaveCacheStreamOpen = false;
             _tmpCachePath = Path.GetTempFileName();
 
