@@ -33,9 +33,8 @@ namespace Runtime
         ///     Output sink into which the message bytes are written.
         /// </param>
         /// <returns>The number of bytes read into the buffer.</returns>
-        /// <exception cref="TruncatedStreamException">
-        ///     The message's size is truncated or the end of the stream is reached before
-        ///     the message is fully read.
+        /// <exception cref="EndOfStreamException">
+        ///     The end of the stream is reached before the message is fully read.
         /// </exception>
         /// <exception cref="MalformedStreamException.MalformedVarInt">The message's size is malformed.</exception>
         public int ReadDelimitedMessage(IBufferWriter<byte> bufferWriter)
@@ -56,9 +55,8 @@ namespace Runtime
         /// </param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The number of bytes read into the buffer.</returns>
-        /// <exception cref="TruncatedStreamException">
-        ///     The message's size is truncated or the end of the stream is reached before
-        ///     the message is fully read.
+        /// <exception cref="EndOfStreamException">
+        ///     The end of the stream is reached before the message is fully read.
         /// </exception>
         /// <exception cref="MalformedStreamException.MalformedVarInt">The message's size is malformed.</exception>
         public async Task<int> ReadDelimitedMessageAsync(IBufferWriter<byte> bufferWriter,

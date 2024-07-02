@@ -10,14 +10,14 @@ namespace Tests
         public void ReadRawVarInt32_EmptyStream_ThrowsTruncated()
         {
             using var stream = CreateStream();
-            Assert.Throws<TruncatedStreamException>(() => stream.ReadRawVarInt32());
+            Assert.Throws<EndOfStreamException>(() => stream.ReadRawVarInt32());
         }
 
         [Test]
-        public void ReadRawVarInt64_EmptyStream_ThrowsTruncated()
+        public void ReadRawVarInt64_EmptyStream_ThrowsEndOfStream()
         {
             using var stream = CreateStream();
-            Assert.Throws<TruncatedStreamException>(() => stream.ReadRawVarInt64());
+            Assert.Throws<EndOfStreamException>(() => stream.ReadRawVarInt64());
         }
 
         [Test]
@@ -25,7 +25,7 @@ namespace Tests
         {
             // Set the continuation bit on the first byte, but don't provide any more bytes.
             using var stream = CreateStream(0x80);
-            Assert.Throws<TruncatedStreamException>(() => stream.ReadRawVarInt32());
+            Assert.Throws<EndOfStreamException>(() => stream.ReadRawVarInt32());
         }
 
         [Test]
@@ -33,7 +33,7 @@ namespace Tests
         {
             // Set the continuation bit on the first byte, but don't provide any more bytes.
             using var stream = CreateStream(0x80);
-            Assert.Throws<TruncatedStreamException>(() => stream.ReadRawVarInt64());
+            Assert.Throws<EndOfStreamException>(() => stream.ReadRawVarInt64());
         }
 
         [Test]

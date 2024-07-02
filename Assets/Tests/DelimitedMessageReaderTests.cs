@@ -89,7 +89,7 @@ namespace Tests
             ArrayBufferWriter<byte> bufferWriter = new(256);
             _streamReader.ReadDelimitedMessage(bufferWriter);
             _streamReader.ReadDelimitedMessage(bufferWriter);
-            Assert.Throws<TruncatedStreamException>(() => _streamReader.ReadDelimitedMessage(bufferWriter));
+            Assert.Throws<EndOfStreamException>(() => _streamReader.ReadDelimitedMessage(bufferWriter));
         }
 
         [UnityTest]
@@ -129,7 +129,7 @@ namespace Tests
                 ArrayBufferWriter<byte> bufferWriter = new(256);
                 await _streamReader.ReadDelimitedMessageAsync(bufferWriter);
                 await _streamReader.ReadDelimitedMessageAsync(bufferWriter);
-                Assert.Throws<TruncatedStreamException>(() => _streamReader.ReadDelimitedMessage(bufferWriter));
+                Assert.Throws<EndOfStreamException>(() => _streamReader.ReadDelimitedMessage(bufferWriter));
             });
         }
     }
