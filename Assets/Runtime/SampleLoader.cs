@@ -36,12 +36,12 @@ namespace Runtime
 
         public async IAsyncEnumerable<Sample> LoadSamplesAtTimeAsync(ulong time)
         {
-            var sampleSize = await _reader.ReadSampleAsync(_bytesBuffer);
+            var sampleSize = await _reader.ReadSampleBytesAsync(_bytesBuffer);
             var packedSample = _parser.Parse(_bytesBuffer.WrittenSpan[..sampleSize]);
 
             while (packedSample.Timestamp <= time)
             {
-                sampleSize = await _reader.ReadSampleAsync(_bytesBuffer);
+                sampleSize = await _reader.ReadSampleBytesAsync(_bytesBuffer);
                 packedSample = _parser.Parse(_bytesBuffer.WrittenSpan[..sampleSize]);
 
                 if (packedSample.Timestamp != time) continue;
@@ -65,7 +65,7 @@ namespace Runtime
                     do
                     {
                         _bytesBuffer.Clear();
-                        var sampleSize = _reader.ReadSample(_bytesBuffer);
+                        var sampleSize = _reader.ReadSampleBytes(_bytesBuffer);
 
                         if (sampleSize == 0)
                         {
@@ -96,7 +96,7 @@ namespace Runtime
         {
             var samples = new List<Sample>();
 
-            var sampleSize = _reader.ReadSample(_bytesBuffer);
+            var sampleSize = _reader.ReadSampleBytes(_bytesBuffer);
 
             if (sampleSize == 0) return samples;
 
@@ -104,7 +104,7 @@ namespace Runtime
 
             while (packedSample.Timestamp <= time)
             {
-                sampleSize = _reader.ReadSample(_bytesBuffer);
+                sampleSize = _reader.ReadSampleBytes(_bytesBuffer);
 
                 if (sampleSize == 0) return samples;
 
@@ -128,7 +128,7 @@ namespace Runtime
             do
             {
                 _bytesBuffer.Clear();
-                var sampleSize = _reader.ReadSample(_bytesBuffer);
+                var sampleSize = _reader.ReadSampleBytes(_bytesBuffer);
 
                 if (sampleSize == 0) break;
 

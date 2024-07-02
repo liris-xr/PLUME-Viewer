@@ -73,7 +73,7 @@ namespace Tests
         [Test]
         public void ReadSample_ReadFirst()
         {
-            var sampleSize = _reader.ReadSample(_buffer);
+            var sampleSize = _reader.ReadSampleBytes(_buffer);
             Assert.AreEqual(_packedSample1Bytes.Length, sampleSize);
             Assert.AreEqual(_packedSample1Bytes, _buffer.WrittenSpan.ToArray());
         }
@@ -81,8 +81,8 @@ namespace Tests
         [Test]
         public void ReadSample_ReadAll()
         {
-            var sampleSize1 = _reader.ReadSample(_buffer);
-            var sampleSize2 = _reader.ReadSample(_buffer);
+            var sampleSize1 = _reader.ReadSampleBytes(_buffer);
+            var sampleSize2 = _reader.ReadSampleBytes(_buffer);
             Assert.AreEqual(_packedSample1Bytes.Length, sampleSize1);
             Assert.AreEqual(_packedSample2Bytes.Length, sampleSize2);
             Assert.AreEqual(_packedSample1Bytes, _buffer.WrittenSpan[..sampleSize1].ToArray());
@@ -94,9 +94,9 @@ namespace Tests
         public void ReadDelimitedMessage_ReadTooMany_ReturnsZero()
         {
             ArrayBufferWriter<byte> bufferWriter = new(256);
-            _reader.ReadSample(bufferWriter);
-            _reader.ReadSample(bufferWriter);
-            Assert.AreEqual(0, _reader.ReadSample(bufferWriter));
+            _reader.ReadSampleBytes(bufferWriter);
+            _reader.ReadSampleBytes(bufferWriter);
+            Assert.AreEqual(0, _reader.ReadSampleBytes(bufferWriter));
         }
 
         [UnityTest]
@@ -105,7 +105,7 @@ namespace Tests
             return UniTask.ToCoroutine(async () =>
             {
                 ArrayBufferWriter<byte> bufferWriter = new(256);
-                var sampleSize = await _reader.ReadSampleAsync(bufferWriter);
+                var sampleSize = await _reader.ReadSampleBytesAsync(bufferWriter);
                 Assert.AreEqual(_packedSample1Bytes.Length, sampleSize);
                 Assert.AreEqual(_packedSample1Bytes, bufferWriter.WrittenSpan[..sampleSize].ToArray());
             });
@@ -117,8 +117,8 @@ namespace Tests
             return UniTask.ToCoroutine(async () =>
             {
                 ArrayBufferWriter<byte> bufferWriter = new(256);
-                var sampleSize1 = await _reader.ReadSampleAsync(bufferWriter);
-                var sampleSize2 = await _reader.ReadSampleAsync(bufferWriter);
+                var sampleSize1 = await _reader.ReadSampleBytesAsync(bufferWriter);
+                var sampleSize2 = await _reader.ReadSampleBytesAsync(bufferWriter);
                 Assert.AreEqual(_packedSample1Bytes.Length, sampleSize1);
                 Assert.AreEqual(_packedSample2Bytes.Length, sampleSize2);
                 Assert.AreEqual(_packedSample1Bytes, bufferWriter.WrittenSpan[..sampleSize1].ToArray());
@@ -134,9 +134,9 @@ namespace Tests
             {
                 // The test sample stream only contains two samples. Reading a third sample should throw an exception.
                 ArrayBufferWriter<byte> bufferWriter = new(256);
-                await _reader.ReadSampleAsync(bufferWriter);
-                await _reader.ReadSampleAsync(bufferWriter);
-                Assert.AreEqual(0, await _reader.ReadSampleAsync(bufferWriter));
+                await _reader.ReadSampleBytesAsync(bufferWriter);
+                await _reader.ReadSampleBytesAsync(bufferWriter);
+                Assert.AreEqual(0, await _reader.ReadSampleBytesAsync(bufferWriter));
             });
         }
     }

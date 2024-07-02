@@ -3,6 +3,7 @@ using System.Buffers;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using PLUME.Sample;
 
 namespace Runtime
 {
@@ -24,7 +25,8 @@ namespace Runtime
         }
 
         /// <summary>
-        ///     Reads the next sample's bytes from the stream and advances the position within the stream.
+        ///     Reads the next length-delimited <see cref="PackedSample" />'s bytes from the stream and advances the position
+        ///     within the stream.
         /// </summary>
         /// <param name="bufferWriter">
         ///     Output sink into which the sample's bytes are written.
@@ -33,7 +35,7 @@ namespace Runtime
         /// <exception cref="InvalidDataException">The sample's size is malformed or truncated.</exception>
         /// <exception cref="ArgumentException">The buffer is too small to read the sample's bytes.</exception>
         /// <exception cref="EndOfStreamException">The end of the stream is reached.</exception>
-        public int ReadSample(IBufferWriter<byte> bufferWriter)
+        public int ReadSampleBytes(IBufferWriter<byte> bufferWriter)
         {
             int nBytes;
 
@@ -53,7 +55,8 @@ namespace Runtime
         }
 
         /// <summary>
-        ///     Asynchronously reads the next sample's bytes from the stream and advances the position within the stream.
+        ///     Asynchronously reads the next length-delimited <see cref="PackedSample" />'s bytes from the stream and advances the
+        ///     position within the stream.
         /// </summary>
         /// <param name="bufferWriter">
         ///     Output sink into which the sample's bytes are written.
@@ -63,7 +66,7 @@ namespace Runtime
         /// <exception cref="InvalidDataException">The sample's size is malformed or truncated.</exception>
         /// <exception cref="ArgumentException">The buffer is too small to read the sample's bytes.</exception>
         /// <exception cref="EndOfStreamException">The end of the stream is reached.</exception>
-        public async Task<int> ReadSampleAsync(IBufferWriter<byte> bufferWriter,
+        public async Task<int> ReadSampleBytesAsync(IBufferWriter<byte> bufferWriter,
             CancellationToken cancellationToken = default)
         {
             int nBytes;
