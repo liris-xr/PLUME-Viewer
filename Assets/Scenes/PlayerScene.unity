@@ -195,6 +195,10 @@ PrefabInstance:
       propertyPath: defaultInteractionType
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6271649878948817840, guid: b4a12f1ba345b14438d4ad048811be15, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7626689580427658376, guid: b4a12f1ba345b14438d4ad048811be15, type: 3}
       propertyPath: defaultProjectionCasterId
       value: 33b60d91957b471caf8b05fbcfd37d5d
@@ -210,6 +214,10 @@ PrefabInstance:
     - target: {fileID: 8286422931029270945, guid: b4a12f1ba345b14438d4ad048811be15, type: 3}
       propertyPath: defaultObjectId
       value: 33b60d91957b471caf8b05fbcfd37d5d
+      objectReference: {fileID: 0}
+    - target: {fileID: 9142053595407304039, guid: b4a12f1ba345b14438d4ad048811be15, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
