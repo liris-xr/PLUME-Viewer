@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Scripting;
 using UnityEngine.UIElements;
+using Random = UnityEngine.Random;
 
 namespace PLUME.UI.Element
 {
@@ -40,10 +42,12 @@ namespace PLUME.UI.Element
         }
 
         private readonly Scroller _horizontalScroller;
-        private readonly VisualElement _canvas;
         private readonly VisualElement _trackContent;
+        private readonly VisualElement _trackContentContainer;
         private readonly VisualElement _colorPane;
 
+        private readonly List<VisualElement> _curveCanvases = new();
+        
         private Color _channelColor = Color.red;
 
         private readonly Label _nameLabel;
@@ -73,6 +77,7 @@ namespace PLUME.UI.Element
             _colorPane = track.Q("color");
 
             _trackContent = track.Q("track-content");
+            _trackContentContainer = track.Q("track-content-container");
             _nameLabel = track.Q("track-header").Q<Label>("name");
             _frequencyLabel = track.Q("track-header").Q<Label>("frequency");
             _channelLabel = track.Q("track-header").Q<Label>("channel");
@@ -80,9 +85,6 @@ namespace PLUME.UI.Element
             _minValueLabel = track.Q("track-header").Q<Label>("min-value");
             _maxValueLabel = track.Q("track-header").Q<Label>("max-value");
             _currentValueLabel = track.Q("track-header").Q<Label>("current-value");
-
-            _canvas = track.Q("canvas");
-            _canvas.generateVisualContent += DrawCanvas;
         }
 
         public void SetMinValue(float value)
@@ -119,7 +121,9 @@ namespace PLUME.UI.Element
         public void SetChannelColor(Color color)
         {
             _channelColor = color;
-            _canvas.MarkDirtyRepaint();
+            
+            foreach (var canvas in _curveCanvases)
+                canvas.MarkDirtyRepaint();
         }
 
         public void SetName(string name)
@@ -140,6 +144,28 @@ namespace PLUME.UI.Element
         public void SetPoints(List<Vector2> points)
         {
             _points = points;
+            
+            const int maxPointsPerCanvas = 5000;
+            
+            foreach (var t in _curveCanvases)
+                _trackContent.Remove(t);
+            
+            for (var i = 0; i < _points.Count; i += maxPointsPerCanvas)
+            {
+                var canvas = new VisualElement();
+                canvas.style.flexShrink = 0;
+                canvas.style.flexGrow = 1;
+                canvas.style.width = Length.Percent(100);
+                canvas.style.height = Length.Percent(100);
+                canvas.style.position = Position.Absolute;
+                canvas.style.left = 0;
+                canvas.style.top = 0;
+                var offset = i;
+                canvas.generateVisualContent += mgc => DrawPartialCurve(mgc, offset, Math.Min(_points.Count - offset, maxPointsPerCanvas));
+                _curveCanvases.Add(canvas);
+                _trackContent.Add(canvas);
+            }
+            
             Repaint();
         }
 
@@ -153,36 +179,52 @@ namespace PLUME.UI.Element
 
         public void Repaint()
         {
-            _canvas.MarkDirtyRepaint();
+            foreach (var canvas in _curveCanvases)
+                canvas.MarkDirtyRepaint();
         }
 
-        private void DrawCanvas(MeshGenerationContext mgc)
+        private (long, long) GetVisibleTimeRange()
+        {
+            var lowTime = (long) (_horizontalScroller.value / _timeDivisionWidth * _timeDivisionDuration);
+            var highTime = (long) (lowTime + _trackContentContainer.layout.width / _timeDivisionWidth * _timeDivisionDuration);
+            return (lowTime, highTime);
+        }
+        
+        private void DrawPartialCurve(MeshGenerationContext mgc, int offset, int nPoints)
         {
             if (_points.Count <= 1)
                 return;
-
+            
             // TODO: handle the case where minY == maxY
             var minY = _points.Min(v => v.y);
             var maxY = _points.Max(v => v.y);
             var canvasHeight = mgc.visualElement.layout.height;
+            
+            var (minTimeVisible, maxTimeVisible) = GetVisibleTimeRange();
 
+            var curvePoints = _points.GetRange(offset, nPoints);
+            var visiblePoints = curvePoints.Where(p => p.x >= minTimeVisible && p.x <= maxTimeVisible).ToList();
+            
+            if (visiblePoints.Count == 0)
+                return;
+            
             var painter2D = mgc.painter2D;
             painter2D.lineWidth = 2.0f;
             painter2D.strokeColor = _channelColor;
             painter2D.lineJoin = LineJoin.Round;
             painter2D.lineCap = LineCap.Round;
-
+            
             painter2D.BeginPath();
-            painter2D.MoveTo(new Vector2(_points[0].x / _timeDivisionDuration * _timeDivisionWidth,
-                canvasHeight - (_points[0].y - minY) / (maxY - minY) * canvasHeight));
-
-            for (var i = 0; i < _points.Count; i++)
+            painter2D.MoveTo(new Vector2(visiblePoints[0].x / _timeDivisionDuration * _timeDivisionWidth,
+                canvasHeight - (visiblePoints[0].y - minY) / (maxY - minY) * canvasHeight));
+            
+            for (var i = 0; i < visiblePoints.Count; i++)
             {
-                var x = _points[i].x / _timeDivisionDuration * _timeDivisionWidth;
+                var x = visiblePoints[i].x / _timeDivisionDuration * _timeDivisionWidth;
                 painter2D.LineTo(new Vector2(x,
-                    canvasHeight - (_points[i].y - minY) / (maxY - minY) * canvasHeight));
+                    canvasHeight - (visiblePoints[i].y - minY) / (maxY - minY) * canvasHeight));
             }
-
+            
             painter2D.Stroke();
         }
 
