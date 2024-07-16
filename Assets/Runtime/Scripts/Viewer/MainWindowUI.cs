@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
-using PLUME.Sample;
 using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
 using PLUME.UI.Element;
@@ -242,13 +241,20 @@ namespace PLUME.Viewer
                     continue;
 
                 Random.InitState(streamName.GetHashCode());
-                var streamColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+                var streamColorHue = Random.value;
+                var streamColor = Color.HSVToRGB(streamColorHue, 1f, 1f);
                 var channelsTrack = new TimelinePhysiologicalSignalTrackElement[channelCount];
 
                 for (var channelIdx = 0; channelIdx < channelCount; channelIdx++)
                 {
-                    Random.InitState((streamName + channelIdx).GetHashCode());
-                    var channelColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+                    var hueVariant = streamColorHue + channelIdx * 0.1f;
+
+                    if (hueVariant > 1)
+                    {
+                        hueVariant -= (int) hueVariant;
+                    }
+                    
+                    var channelColor = Color.HSVToRGB(hueVariant, 1f, 1f);
                     channelsTrack[channelIdx] = new TimelinePhysiologicalSignalTrackElement();
                     channelsTrack[channelIdx].SetName(streamName);
                     channelsTrack[channelIdx].SetFrequency(nominalSamplingRate);
@@ -284,41 +290,61 @@ namespace PLUME.Viewer
                         switch (sample.ValuesCase)
                         {
                             case StreamSample.ValuesOneofCase.FloatValues:
-                                min = Math.Min(min, sample.FloatValues.Value[channelIdx]);
-                                max = Math.Max(max, sample.FloatValues.Value[channelIdx]);
-                                points.Add(
-                                    new Vector2(unpackedSample.Timestamp, sample.FloatValues.Value[channelIdx]));
+                            {
+                                var val = sample.FloatValues.Value[channelIdx];
+                                
+                                if(float.IsNaN(val))
+                                    continue;
+                                
+                                min = Math.Min(min, val);
+                                max = Math.Max(max, val);
+                                points.Add(new Vector2(unpackedSample.Timestamp, val));
                                 break;
+                            }
                             case StreamSample.ValuesOneofCase.DoubleValues:
-                                min = Math.Min(min, (float)sample.DoubleValues.Value[channelIdx]);
-                                max = Math.Max(max, (float)sample.DoubleValues.Value[channelIdx]);
-                                points.Add(new Vector2(unpackedSample.Timestamp,
-                                    (float)sample.DoubleValues.Value[channelIdx]));
+                            {
+                                var val = (float) sample.DoubleValues.Value[channelIdx];
+                                
+                                if(float.IsNaN(val))
+                                    continue;
+                                
+                                min = Math.Min(min, val);
+                                max = Math.Max(max, val);
+                                points.Add(new Vector2(unpackedSample.Timestamp, val));
                                 break;
+                            }
                             case StreamSample.ValuesOneofCase.Int8Values:
-                                min = Math.Min(min, sample.Int8Values.Value[channelIdx]);
-                                max = Math.Max(max, sample.Int8Values.Value[channelIdx]);
-                                points.Add(new Vector2(unpackedSample.Timestamp,
-                                    sample.Int8Values.Value[channelIdx]));
+                            {
+                                var val = sample.Int8Values.Value[channelIdx];
+                                min = Math.Min(min, val);
+                                max = Math.Max(max, val);
+                                points.Add(new Vector2(unpackedSample.Timestamp, val));
                                 break;
+                            }
                             case StreamSample.ValuesOneofCase.Int16Values:
-                                min = Math.Min(min, sample.Int16Values.Value[channelIdx]);
-                                max = Math.Max(max, sample.Int16Values.Value[channelIdx]);
-                                points.Add(
-                                    new Vector2(unpackedSample.Timestamp, sample.Int16Values.Value[channelIdx]));
+                            {
+                                var val = sample.Int16Values.Value[channelIdx];
+                                min = Math.Min(min, val);
+                                max = Math.Max(max, val);
+                                points.Add(new Vector2(unpackedSample.Timestamp, val));
                                 break;
+                            }
                             case StreamSample.ValuesOneofCase.Int32Values:
-                                min = Math.Min(min, sample.Int32Values.Value[channelIdx]);
-                                max = Math.Max(max, sample.Int32Values.Value[channelIdx]);
-                                points.Add(
-                                    new Vector2(unpackedSample.Timestamp, sample.Int32Values.Value[channelIdx]));
+                            {
+                                var val = sample.Int32Values.Value[channelIdx];
+                                min = Math.Min(min, val);
+                                max = Math.Max(max, val);
+                                points.Add(new Vector2(unpackedSample.Timestamp, val));
                                 break;
+                            }
                             case StreamSample.ValuesOneofCase.Int64Values:
-                                min = Math.Min(min, sample.Int64Values.Value[channelIdx]);
-                                max = Math.Max(max, sample.Int64Values.Value[channelIdx]);
-                                points.Add(
-                                    new Vector2(unpackedSample.Timestamp, sample.Int64Values.Value[channelIdx]));
+                            {
+                                var val = sample.Int64Values.Value[channelIdx];
+                                min = Math.Min(min, val);
+                                max = Math.Max(max, val);
+                                points.Add(new Vector2(unpackedSample.Timestamp, val));
                                 break;
+                            }
                             case StreamSample.ValuesOneofCase.None:
                             case StreamSample.ValuesOneofCase.StringValues:
                                 break;
