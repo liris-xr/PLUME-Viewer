@@ -576,7 +576,8 @@ namespace PLUME.Viewer.Player
                 return true;
             }
 
-            var componentsEntriesToRemove = _componentByInstanceId.Where(pair => pair.Value == null);
+            // Make sure to create a new list to avoid concurrent modification
+            var componentsEntriesToRemove = _componentByInstanceId.Where(pair => pair.Value == null).ToList();
 
             foreach (var entry in componentsEntriesToRemove)
             {
