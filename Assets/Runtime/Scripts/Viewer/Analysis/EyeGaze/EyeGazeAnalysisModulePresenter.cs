@@ -61,9 +61,9 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
             var generationParameters = new EyeGazeAnalysisModuleParameters
             {
-                XrCameraIdentifier = ui.XrCameraIdTextField.value.Trim(),
+                XrCameraIdentifier = Guid.Parse(ui.XrCameraIdTextField.value.Trim()),
                 ReceiversIdentifiers = ui.ProjectionReceiversIdsTextField.value.Trim().Split(",")
-                    .Where(s => s.Length > 0).ToArray(),
+                    .Where(s => s.Length > 0).Select(Guid.Parse).ToArray(),
                 IncludeReceiversChildren = ui.IncludeReceiversChildrenToggle.value,
                 StartTime = ui.TimeRange.StartTime,
                 EndTime = ui.TimeRange.EndTime,

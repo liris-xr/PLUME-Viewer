@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEngine.UIElements;
 
 namespace PLUME.Viewer
@@ -9,18 +10,18 @@ namespace PLUME.Viewer
     public class HierarchyTreePresenter : MonoBehaviour
     {
         public Player.Player player;
-        public double refreshInterval = 1; // seconds
+        public double refreshInterval = 60; // in frames
 
         private HierarchyTreeUI _hierarchyTreeUI;
         private TreeView _hierarchyTree;
 
-        private readonly Dictionary<string, HierarchyTreeItem> _items = new();
-        private readonly HashSet<HierarchyTreeItem> _createdItems = new(HierarchyTreeItemComparer.Instance);
-        private readonly HashSet<HierarchyTreeItem> _deletedItems = new(HierarchyTreeItemComparer.Instance);
-        private readonly HashSet<HierarchyTreeItem> _updatedItems = new(HierarchyTreeItemComparer.Instance);
+        private readonly Dictionary<Guid, HierarchyTreeItemData> _currentItems = new();
 
-        private double _lastUpdate;
-        private bool _forceRebuild;
+        // New or updated items that need to be processed
+        private readonly Dictionary<Guid, HierarchyTreeItemData> _createdOrUpdatedItems = new();
+        private readonly HashSet<Guid> _destroyedItems = new();
+
+        private double _lastFrameUpdate;
 
         private void Awake()
         {
@@ -39,116 +40,132 @@ namespace PLUME.Viewer
             {
                 case HierarchyCreateGameObjectEvent createEvt:
                 {
-                    var gameObjectGuid = createEvt.gameObjectIdentifier.GameObjectId;
-                    var newHierarchyItem = new HierarchyTreeItem(gameObjectGuid);
+                    var gameObjectGuid = Guid.Parse(createEvt.gameObjectIdentifier.GameObjectId);
 
-                    if (_items.TryAdd(gameObjectGuid, newHierarchyItem))
+                    if (!_currentItems.ContainsKey(gameObjectGuid))
                     {
-                        _createdItems.Add(newHierarchyItem);
-                        _deletedItems.Remove(newHierarchyItem);
+                        var item = new HierarchyTreeItemData(gameObjectGuid);
+                        _createdOrUpdatedItems[gameObjectGuid] = item;
                     }
 
                     break;
                 }
                 case HierarchyDestroyGameObjectEvent destroyEvt:
                 {
-                    var gameObjectGuid = destroyEvt.gameObjectIdentifier.GameObjectId;
-
-                    if (_items.TryGetValue(gameObjectGuid, out var hierarchyTreeItem))
-                    {
-                        _deletedItems.Add(hierarchyTreeItem);
-                        _updatedItems.Remove(hierarchyTreeItem);
-                        _createdItems.Remove(hierarchyTreeItem);
-                        _items.Remove(gameObjectGuid);
-                    }
-
+                    var gameObjectGuid = Guid.Parse(destroyEvt.gameObjectIdentifier.GameObjectId);
+                    _destroyedItems.Add(gameObjectGuid);
                     break;
                 }
                 case HierarchyUpdateGameObjectNameEvent nameUpdateEvt:
                 {
-                    var gameObjectGuid = nameUpdateEvt.gameObjectIdentifier.GameObjectId;
+                    var gameObjectGuid = Guid.Parse(nameUpdateEvt.gameObjectIdentifier.GameObjectId);
 
-                    if (_items.TryGetValue(gameObjectGuid, out var hierarchyTreeItem))
+                    if (!_createdOrUpdatedItems.TryGetValue(gameObjectGuid, out var item))
                     {
-                        hierarchyTreeItem.GameObjectName = nameUpdateEvt.name;
-                        _updatedItems.Add(hierarchyTreeItem);
+                        if (!_currentItems.TryGetValue(gameObjectGuid, out item))
+                        {
+                            item = new HierarchyTreeItemData(gameObjectGuid);
+                        }
                     }
 
+                    item.Name = nameUpdateEvt.name;
+                    _createdOrUpdatedItems[gameObjectGuid] = item;
                     break;
                 }
                 case HierarchyUpdateGameObjectSiblingIndexEvent siblingUpdateEvt:
                 {
-                    var gameObjectGuid = siblingUpdateEvt.gameObjectIdentifier.GameObjectId;
+                    var gameObjectGuid = Guid.Parse(siblingUpdateEvt.gameObjectIdentifier.GameObjectId);
 
-                    if (_items.TryGetValue(gameObjectGuid, out var hierarchyTreeItem))
+                    if (!_createdOrUpdatedItems.TryGetValue(gameObjectGuid, out var item))
                     {
-                        hierarchyTreeItem.SiblingIndex = siblingUpdateEvt.siblingIndex;
-                        _updatedItems.Add(hierarchyTreeItem);
+                        if (!_currentItems.TryGetValue(gameObjectGuid, out item))
+                        {
+                            item = new HierarchyTreeItemData(gameObjectGuid);
+                        }
                     }
 
+                    item.SiblingIndex = siblingUpdateEvt.siblingIndex;
+                    _createdOrUpdatedItems[gameObjectGuid] = item;
                     break;
                 }
                 case HierarchyUpdateGameObjectEnabledEvent enabledUpdateEvt:
                 {
-                    var gameObjectGuid = enabledUpdateEvt.gameObjectIdentifier.GameObjectId;
+                    var gameObjectGuid = Guid.Parse(enabledUpdateEvt.gameObjectIdentifier.GameObjectId);
 
-                    if (_items.TryGetValue(gameObjectGuid, out var hierarchyTreeItem))
+                    if (!_createdOrUpdatedItems.TryGetValue(gameObjectGuid, out var item))
                     {
-                        hierarchyTreeItem.Enabled = enabledUpdateEvt.enabled;
-                        _updatedItems.Add(hierarchyTreeItem);
+                        if (!_currentItems.TryGetValue(gameObjectGuid, out item))
+                        {
+                            item = new HierarchyTreeItemData(gameObjectGuid);
+                        }
                     }
 
+                    item.Enabled = enabledUpdateEvt.enabled;
+                    _createdOrUpdatedItems[gameObjectGuid] = item;
                     break;
                 }
                 case HierarchyUpdateGameObjectParentEvent updateParentEvt:
                 {
-                    var gameObjectGuid = updateParentEvt.gameObjectIdentifier.GameObjectId;
+                    var gameObjectGuid = Guid.Parse(updateParentEvt.gameObjectIdentifier.GameObjectId);
+                    var parentGameObjectGuid = Guid.Parse(updateParentEvt.parentIdentifier.GameObjectId);
 
-                    if (_items.TryGetValue(gameObjectGuid, out var hierarchyTreeItem))
+                    if (!_createdOrUpdatedItems.TryGetValue(gameObjectGuid, out var item))
                     {
-                        hierarchyTreeItem.ParentGuid = updateParentEvt.parentIdentifier.GameObjectId;
-                        hierarchyTreeItem.SiblingIndex = updateParentEvt.siblingIdx;
-                        _updatedItems.Add(hierarchyTreeItem);
+                        if (!_currentItems.TryGetValue(gameObjectGuid, out item))
+                        {
+                            item = new HierarchyTreeItemData(gameObjectGuid);
+                        }
                     }
 
+                    if (parentGameObjectGuid != Guid.Empty &&
+                        !_createdOrUpdatedItems.TryGetValue(parentGameObjectGuid, out var parentItem))
+                    {
+                        if (!_currentItems.TryGetValue(parentGameObjectGuid, out parentItem))
+                        {
+                            Debug.Log("created missing parent");
+                            parentItem = new HierarchyTreeItemData(gameObjectGuid);
+                            _createdOrUpdatedItems[parentGameObjectGuid] = parentItem;
+                        }
+                    }
+
+                    item.ParentGameObjectGuid = parentGameObjectGuid;
+                    item.SiblingIndex = updateParentEvt.siblingIdx;
+                    _createdOrUpdatedItems[gameObjectGuid] = item;
                     break;
                 }
                 case HierarchyForceRebuild:
                 {
+                    _destroyedItems.Clear();
+                    _createdOrUpdatedItems.Clear();
+
                     var playerCtx = player.GetMainPlayerContext();
-                    var goGuids = playerCtx.GetAllGameObjects()
+                    var gameObjectsGuids = playerCtx.GetAllGameObjects()
                         .Select(go => playerCtx.GetRecordIdentifier(go.GetInstanceID()))
-                        .Where(id => id != null)
                         .ToList();
 
-                    var keptItems = new Dictionary<string, HierarchyTreeItem>();
-                    var createdGoGuids = new List<string>(goGuids);
+                    var existingItems = new Dictionary<Guid, HierarchyTreeItemData>();
+                    var createdItems = new List<Guid>(gameObjectsGuids);
 
-                    foreach (var goGuid in goGuids)
+                    foreach (var goGuid in gameObjectsGuids)
                     {
-                        keptItems.Add(goGuid, _items[goGuid]);
-                        createdGoGuids.Remove(goGuid);
+                        if (!_currentItems.ContainsKey(goGuid)) continue;
+                        existingItems.TryAdd(goGuid, _currentItems[goGuid]);
+                        createdItems.Remove(goGuid);
                     }
 
-                    var deletedItems = _items.Except(keptItems).ToList();
+                    var deletedItems = _currentItems.Except(existingItems).ToList();
 
-                    foreach (var deletedItem in deletedItems)
+                    foreach (var (guid, item) in deletedItems)
                     {
-                        _deletedItems.Add(deletedItem.Value);
-                        _updatedItems.Remove(deletedItem.Value);
-                        _createdItems.Remove(deletedItem.Value);
-                        _items.Remove(deletedItem.Key);
+                        _destroyedItems.Add(guid);
                     }
 
-                    foreach (var createdGoGuid in createdGoGuids)
+                    foreach (var createdGoGuid in createdItems)
                     {
-                        var newHierarchyItem = new HierarchyTreeItem(createdGoGuid);
-                        _items.Add(createdGoGuid, newHierarchyItem);
-                        _createdItems.Add(newHierarchyItem);
-                        _deletedItems.Remove(newHierarchyItem);
+                        var item = new HierarchyTreeItemData(createdGoGuid);
+                        _createdOrUpdatedItems[createdGoGuid] = item;
                     }
 
-                    _forceRebuild = true;
                     break;
                 }
             }
@@ -156,72 +173,128 @@ namespace PLUME.Viewer
 
         private void Update()
         {
-            var elapsedTime = Time.time - _lastUpdate;
+            var elapsedTime = Time.frameCount - _lastFrameUpdate;
 
-            if (elapsedTime < refreshInterval && !_forceRebuild)
+            if (elapsedTime < refreshInterval)
                 return;
 
-            _lastUpdate = Time.time;
-            _forceRebuild = false;
+            _lastFrameUpdate = Time.frameCount;
             UpdateHierarchyTree();
         }
 
         private void UpdateHierarchyTree()
         {
-            var controller = _hierarchyTree.viewController;
-            var requiresRebuild = false;
+            if (_createdOrUpdatedItems.Count == 0)
+                return;
 
-            foreach (var createdItem in _createdItems)
+            var controller = _hierarchyTree.viewController;
+            var rebuildTree = false;
+
+            Profiler.BeginSample("UpdateHierarchyTree");
+
+            var justCreated = new HashSet<Guid>();
+
+            // 1. Create new items if needed
+            foreach (var (guid, updatedItem) in _createdOrUpdatedItems)
             {
+                // Skip items that already exist in the tree.
+                if (_currentItems.ContainsKey(guid)) continue;
+
                 try
                 {
-                    _hierarchyTree.AddItem(new TreeViewItemData<HierarchyTreeItem>(createdItem.ItemId, createdItem),
-                        rebuildTree: true);
-                    requiresRebuild = true;
+                    // Item doesn't exist in the tree, create it.
+                    _hierarchyTree.AddItem(
+                        new TreeViewItemData<HierarchyTreeItemData>(updatedItem.GetId(), updatedItem),
+                        rebuildTree: false);
+                    _currentItems.Add(updatedItem.GameObjectGuid, updatedItem);
+                    justCreated.Add(updatedItem.GameObjectGuid);
+                    rebuildTree = true;
                 }
                 catch (Exception)
                 {
-                    // ignored, couldn't add item (duplicate)
+                    Debug.LogWarning(
+                        $"Couldn't add item '{updatedItem.Name}' to tree view, item already exists. (guid={updatedItem.GameObjectGuid}, id={updatedItem.GetId()})");
                 }
             }
 
-            foreach (var deletedItem in _deletedItems)
+            // 2. Update existing items with the new data
+            foreach (var (guid, updatedItem) in _createdOrUpdatedItems)
             {
-                controller.TryRemoveItem(deletedItem.ItemId, rebuildTree: false);
-                requiresRebuild = true;
+                if (!_currentItems.TryGetValue(guid, out var item))
+                {
+                    Debug.LogWarning(
+                        $"Couldn't update item '{updatedItem.Name}' in tree view, item not found. (guid={updatedItem.GameObjectGuid}, id={updatedItem.GetId()})");
+                    continue;
+                }
+
+                var attributesChanged = item.Name != updatedItem.Name ||
+                                        item.Enabled != updatedItem.Enabled || justCreated.Contains(guid);
+
+                if (attributesChanged)
+                {
+                    item.Name = updatedItem.Name;
+                    item.Enabled = updatedItem.Enabled;
+                    _hierarchyTreeUI.TryUpdateItemVisualElement(updatedItem);
+                }
+
+                var hierarchyChanged = item.ParentGameObjectGuid != updatedItem.ParentGameObjectGuid ||
+                                       item.SiblingIndex != updatedItem.SiblingIndex || justCreated.Contains(guid);
+
+                if (!hierarchyChanged) continue;
+
+                try
+                {
+                    controller.Move(updatedItem.GetId(), updatedItem.GetParentId(), updatedItem.SiblingIndex,
+                        rebuildTree: false);
+                    rebuildTree = true;
+                }
+                catch (Exception)
+                {
+                    Debug.LogWarning(
+                        $"Couldn't move item '{updatedItem.Name}' in tree view, item not found. (guid={updatedItem.GameObjectGuid}, id={updatedItem.GetId()}, parentGuid={updatedItem.ParentGameObjectGuid}, parentId={updatedItem.GetParentId()}, siblingIndex={updatedItem.SiblingIndex})");
+                }
+
+                _currentItems[guid] = updatedItem;
             }
 
-            foreach (var updatedItem in _updatedItems)
+            // 3. Remove destroyed items
+            foreach (var guid in _destroyedItems)
             {
-                HierarchyTreeUI.TryUpdateItemVisualElement(updatedItem);
+                if (!_currentItems.TryGetValue(guid, out var item)) continue;
 
-                if (updatedItem.IsParentDirty || updatedItem.IsSiblingIndexDirty)
+                if (controller.TryRemoveItem(item.GetId(), rebuildTree: false))
                 {
+                    _currentItems.Remove(guid);
+
                     try
                     {
-                        controller.Move(updatedItem.ItemId, updatedItem.ParentId, updatedItem.SiblingIndex,
-                            rebuildTree: false);
-                        requiresRebuild = true;
+                        _hierarchyTree.RemoveFromSelectionById(item.GetId());
                     }
                     catch (Exception)
                     {
-                        // ignored, item not found
+                        Debug.LogWarning(
+                            $"Failed to remove item '{item.Name}' from selection. (guid={item.GameObjectGuid}, id={item.GetId()})");
                     }
-                }
 
-                updatedItem.MarkClean();
+                    rebuildTree = true;
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"Failed to remove item '{item.Name}' from tree view. (guid={item.GameObjectGuid}, id={item.GetId()})");
+                }
             }
 
-            if (requiresRebuild)
+            _destroyedItems.Clear();
+            _createdOrUpdatedItems.Clear();
+
+            if (rebuildTree)
             {
                 controller.RebuildTree();
                 _hierarchyTree.RefreshItems();
-                _hierarchyTree.ClearSelection();
             }
 
-            _createdItems.Clear();
-            _deletedItems.Clear();
-            _updatedItems.Clear();
+            Profiler.EndSample();
         }
     }
 }

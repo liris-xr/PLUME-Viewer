@@ -53,9 +53,9 @@ namespace PLUME.Viewer.Analysis.Interaction
         {
             module.SetVisibleResult(null);
 
-            var interactorsIds = ui.InteractorsIdsTextField.value.Trim().Split(",").Where(s => s.Length > 0).ToArray();
+            var interactorsIds = ui.InteractorsIdsTextField.value.Trim().Split(",").Where(s => s.Length > 0).Select(Guid.Parse).ToArray();
             var interactablesIds =
-                ui.InteractablesIdsTextField.value.Trim().Split(",").Where(s => s.Length > 0).ToArray();
+                ui.InteractablesIdsTextField.value.Trim().Split(",").Where(s => s.Length > 0).Select(Guid.Parse).ToArray();
 
             var interactionType = (InteractionType)ui.InteractionTypeEnumField.value;
             var startTime = ui.TimeRange.StartTime;

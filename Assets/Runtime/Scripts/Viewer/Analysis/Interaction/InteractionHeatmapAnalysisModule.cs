@@ -46,7 +46,7 @@ namespace PLUME.Viewer.Analysis.Interaction
             InteractionAnalysisModuleParameters parameters,
             Action<InteractionHeatmapAnalysisResult> finishCallback)
         {
-            Dictionary<string, int> interactions = new();
+            Dictionary<Guid, int> interactions = new();
 
             var totalInteractionsCount = 0;
             var maxInteractionsCount = 0;
@@ -90,16 +90,18 @@ namespace PLUME.Viewer.Analysis.Interaction
                 if (interactorIdentifier == null || interactableIdentifier == null)
                     continue;
 
-                if (!parameters.InteractorsIds.Contains(interactorIdentifier.GameObjectId)) continue;
+                var interactorGameObjectGuid = Guid.Parse(interactorIdentifier.GameObjectId);
+                var interactableGameObjectGuid = Guid.Parse(interactableIdentifier.GameObjectId);
+
+                if (!parameters.InteractorsIds.Contains(interactorGameObjectGuid)) continue;
 
                 if (parameters.InteractablesIds.Length > 0 &&
-                    !parameters.InteractablesIds.Contains(interactableIdentifier.GameObjectId)) continue;
+                    !parameters.InteractablesIds.Contains(interactableGameObjectGuid)) continue;
 
-                var nInteractions = interactions.GetValueOrDefault(interactableIdentifier.GameObjectId, 0);
-                interactions[interactableIdentifier.GameObjectId] = nInteractions + 1;
+                var nInteractions = interactions.GetValueOrDefault(interactableGameObjectGuid, 0);
+                interactions[interactableGameObjectGuid] = nInteractions + 1;
 
-                maxInteractionsCount = Math.Max(maxInteractionsCount,
-                    interactions[interactableIdentifier.GameObjectId]);
+                maxInteractionsCount = Math.Max(maxInteractionsCount, interactions[interactableGameObjectGuid]);
                 totalInteractionsCount++;
             }
 
@@ -132,7 +134,7 @@ namespace PLUME.Viewer.Analysis.Interaction
                 {
                     graphic.enabled = true;
                 }
-                
+
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                     continue;
                 goRenderer.SetSharedMaterials(new List<Material>());
@@ -150,7 +152,7 @@ namespace PLUME.Viewer.Analysis.Interaction
                             playerModule.PlaySample(ctx, sample);
                         }
                     }
-                    
+
                     if (sample.Payload is RendererUpdate)
                     {
                         foreach (var playerModule in player.PlayerModules)
@@ -176,12 +178,12 @@ namespace PLUME.Viewer.Analysis.Interaction
                     terrain.detailObjectDensity = 0;
                     terrain.materialTemplate = _defaultHeatmapMaterial;
                 }
-                
+
                 if (go.TryGetComponent<Graphic>(out var graphic))
                 {
                     graphic.enabled = false;
                 }
-                
+
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                     continue;
 
@@ -189,9 +191,9 @@ namespace PLUME.Viewer.Analysis.Interaction
                 goRenderer.sharedMaterials = Enumerable.Repeat(_defaultHeatmapMaterial, nSharedMaterials).ToArray();
                 goRenderer.SetPropertyBlock(null);
 
-                var gameObjectIdentifier = ctx.GetRecordIdentifier(go.GetInstanceID());
+                var gameObjectGuid = ctx.GetRecordIdentifier(go.GetInstanceID());
 
-                if (gameObjectIdentifier == null)
+                if (gameObjectGuid == Guid.Empty)
                     continue;
 
                 var renderers = new List<Renderer>();
@@ -199,7 +201,7 @@ namespace PLUME.Viewer.Analysis.Interaction
                 renderers.AddRange(go.GetComponentsInChildren<Renderer>());
 
                 if (_visibleResult == null ||
-                    !_visibleResult.Interactions.TryGetValue(gameObjectIdentifier, out var interactionsCount) ||
+                    !_visibleResult.Interactions.TryGetValue(gameObjectGuid, out var interactionsCount) ||
                     interactionsCount == 0)
                     continue;
 

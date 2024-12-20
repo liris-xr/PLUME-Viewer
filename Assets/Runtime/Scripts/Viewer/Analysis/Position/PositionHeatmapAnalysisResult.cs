@@ -7,8 +7,8 @@ namespace PLUME.Viewer.Analysis.Position
 {
     public struct PositionHeatmapAnalysisModuleParameters
     {
-        public string CasterIdentifier;
-        public string[] ReceiversIdentifiers;
+        public Guid CasterIdentifier;
+        public Guid[] ReceiversIdentifiers;
         public bool IncludeReceiversChildren;
         public ulong StartTime;
         public ulong EndTime;

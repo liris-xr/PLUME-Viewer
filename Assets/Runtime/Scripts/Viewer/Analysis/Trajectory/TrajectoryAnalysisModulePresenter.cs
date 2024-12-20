@@ -55,7 +55,7 @@ namespace PLUME.Viewer.Analysis.Trajectory
 
         private void OnClickGenerate()
         {
-            var objectId = ui.ObjectIdTextField.value;
+            var objectId = Guid.Parse(ui.ObjectIdTextField.value.Trim());
             var markers = ui.MarkersTextField.value.Split(",");
             var teleportationTolerance = float.Parse(ui.TeleportationToleranceTextField.value);
             var teleportationSegments = ui.TeleportationSegments.value;

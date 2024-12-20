@@ -56,9 +56,9 @@ namespace PLUME.Viewer.Analysis.Position
 
             var parameters = new PositionHeatmapAnalysisModuleParameters
             {
-                CasterIdentifier = ui.ProjectionCasterIdTextField.value.Trim(),
+                CasterIdentifier = Guid.Parse(ui.ProjectionCasterIdTextField.value.Trim()),
                 ReceiversIdentifiers = ui.ProjectionReceiversIdsTextField.value.Trim().Split(",")
-                    .Where(s => s.Length > 0).ToArray(),
+                    .Where(s => s.Length > 0).Select(Guid.Parse).ToArray(),
                 StartTime = ui.TimeRange.StartTime,
                 EndTime = ui.TimeRange.EndTime,
                 IncludeReceiversChildren = ui.IncludeReceiversChildrenToggle.value

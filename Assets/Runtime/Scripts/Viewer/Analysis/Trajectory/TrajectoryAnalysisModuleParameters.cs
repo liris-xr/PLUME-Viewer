@@ -1,8 +1,10 @@
-﻿namespace PLUME.Viewer.Analysis.Trajectory
+﻿using System;
+
+namespace PLUME.Viewer.Analysis.Trajectory
 {
     public struct TrajectoryAnalysisModuleParameters
     {
-        public string ObjectIdentifier;
+        public Guid ObjectIdentifier;
         public ulong StartTime;
         public ulong EndTime;
         public bool IncludeRotations;
