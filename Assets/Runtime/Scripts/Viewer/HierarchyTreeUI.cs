@@ -14,6 +14,8 @@ namespace PLUME.Viewer
         public UIDocument document;
 
         public TreeView HierarchyTree { get; private set; }
+        
+        private readonly Dictionary<int, VisualElement> _itemIdToVisualElement = new();
 
         private void Awake()
         {
@@ -32,28 +34,38 @@ namespace PLUME.Viewer
             HierarchyTree.bindItem = (element, i) =>
             {
                 Profiler.BeginSample("BindItem");
-                var itemData = HierarchyTree.GetItemDataForIndex<HierarchyTreeItem>(i);
-                itemData.VisualElement = element;
+                var itemData = HierarchyTree.GetItemDataForIndex<HierarchyTreeItemData>(i);
+                _itemIdToVisualElement[itemData.GetId()] = element;
                 TryUpdateItemVisualElement(itemData);
                 // Temporary fix for tree view selection not working reliably
                 element.RegisterCallback<MouseDownEvent>(evt => OnMouseDownEvent(evt, i));
                 Profiler.EndSample();
             };
-            HierarchyTree.SetRootItems(new List<TreeViewItemData<HierarchyTreeItem>>());
+            HierarchyTree.unbindItem = (element, i) =>
+            {
+                Profiler.BeginSample("UnbindItem");
+                var itemData = HierarchyTree.GetItemDataForIndex<HierarchyTreeItemData>(i);
+                _itemIdToVisualElement.Remove(itemData.GetId());
+                Profiler.EndSample();
+            };
+            HierarchyTree.SetRootItems(new List<TreeViewItemData<HierarchyTreeItemData>>());
             HierarchyTree.RegisterCallback<KeyDownEvent>(OnKeyDownEvent);
             HierarchyTree.ClearSelection();
         }
 
-        internal static bool TryUpdateItemVisualElement(HierarchyTreeItem item)
+        internal bool TryUpdateItemVisualElement(HierarchyTreeItemData itemData)
         {
-            if (item.VisualElement == null)
+            var visualElement = _itemIdToVisualElement.GetValueOrDefault(itemData.GetId());
+            
+            if (visualElement == null)
                 return false;
 
             try
             {
-                var label = item.VisualElement.Q<Label>("name");
-                label.text = item.GameObjectName;
-                label.style.color = item.Enabled ? new StyleColor(Color.white) : new StyleColor(Color.gray);
+                var label = visualElement.Q<Label>("name");
+                label.text = itemData.Name;
+                label.style.color = itemData.Enabled ? new StyleColor(Color.white) : new StyleColor(Color.gray);
+                label.MarkDirtyRepaint();
             }
             catch (Exception e)
             {
@@ -82,9 +94,9 @@ namespace PLUME.Viewer
         {
             if (!evt.ctrlKey || evt.keyCode != KeyCode.C) return;
 
-            var selectedItems = HierarchyTree.GetSelectedItems<HierarchyTreeItem>();
+            var selectedItems = HierarchyTree.GetSelectedItems<HierarchyTreeItemData>();
 
-            GUIUtility.systemCopyBuffer = string.Join(",", selectedItems.Select(t => t.data.GameObjectGuid));
+            GUIUtility.systemCopyBuffer = string.Join(",", selectedItems.Select(t => t.data.GameObjectGuid.ToString("N")));
         }
     }
 }

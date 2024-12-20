@@ -4,9 +4,7 @@ using System.Linq;
 using Cysharp.Threading.Tasks;
 using PLUME.Sample;
 using PLUME.Sample.Unity;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 using LoadSceneMode = UnityEngine.SceneManagement.LoadSceneMode;
 using Object = UnityEngine.Object;
@@ -28,12 +26,12 @@ namespace PLUME.Viewer.Player
         /**
          * Correspondence between record and replay object instance ids
          */
-        private readonly Dictionary<string, int> _idMap = new();
+        private readonly Dictionary<Guid, int> _idMap = new();
 
         /**
          * Correspondence between replay instance ids and record identifiers
          */
-        private readonly Dictionary<int, string> _invertIdMap = new();
+        private readonly Dictionary<int, Guid> _invertIdMap = new();
 
         private readonly Dictionary<int, GameObject> _gameObjectsByInstanceId = new();
         private readonly Dictionary<int, string> _gameObjectsTagByInstanceId = new();
@@ -294,21 +292,24 @@ namespace PLUME.Viewer.Player
 
         public IEnumerable<GameObject> GetAllGameObjects()
         {
-            return _gameObjectsByInstanceId.Values;
+            return _gameObjectsByInstanceId.Values.Where(go => go != null);
         }
 
         public IEnumerable<Component> GetAllComponents()
         {
-            return _componentByInstanceId.Values;
+            return _componentByInstanceId.Values.Where(component => component != null);
         }
 
         public GameObject GetOrCreateGameObjectByIdentifier(GameObjectIdentifier id)
         {
-            if (id.TransformId == "00000000000000000000000000000000")
+            var gameObjectGuid = Guid.Parse(id.GameObjectId);
+            var transformGuid = Guid.Parse(id.TransformId);
+            
+            if (transformGuid == Guid.Empty)
                 return null;
 
-            var replayGoInstanceId = GetReplayInstanceId(id.GameObjectId);
-            var replayTransformInstanceId = GetReplayInstanceId(id.TransformId);
+            var replayGoInstanceId = GetReplayInstanceId(gameObjectGuid);
+            var replayTransformInstanceId = GetReplayInstanceId(transformGuid);
 
             if (replayGoInstanceId.HasValue)
             {
@@ -319,7 +320,7 @@ namespace PLUME.Viewer.Player
                     if (!replayTransformInstanceId.HasValue)
                     {
                         _transformsByInstanceId[go.transform.GetInstanceID()] = go.transform;
-                        TryAddIdentifierCorrespondence(id.TransformId, go.transform.GetInstanceID());
+                        TryAddIdentifierCorrespondence(transformGuid, go.transform.GetInstanceID());
                     }
 
                     return go;
@@ -334,7 +335,7 @@ namespace PLUME.Viewer.Player
                 {
                     var go = t.gameObject;
                     _gameObjectsByInstanceId[go.GetInstanceID()] = go;
-                    TryAddIdentifierCorrespondence(id.GameObjectId, go.GetInstanceID());
+                    TryAddIdentifierCorrespondence(gameObjectGuid, go.GetInstanceID());
                     return go;
                 }
             }
@@ -346,20 +347,20 @@ namespace PLUME.Viewer.Player
             var newTransform = newGameObject.transform;
             _gameObjectsByInstanceId[newGameObject.GetInstanceID()] = newGameObject;
             _transformsByInstanceId[newTransform.GetInstanceID()] = newTransform;
-            TryAddIdentifierCorrespondence(id.GameObjectId, newGameObject.GetInstanceID());
-            TryAddIdentifierCorrespondence(id.TransformId, newTransform.GetInstanceID());
+            TryAddIdentifierCorrespondence(gameObjectGuid, newGameObject.GetInstanceID());
+            TryAddIdentifierCorrespondence(transformGuid, newTransform.GetInstanceID());
             updatedHierarchy?.Invoke(new HierarchyCreateGameObjectEvent(id));
             return newGameObject;
         }
 
         public Transform GetOrCreateTransformByIdentifier(ComponentIdentifier id)
         {
-            // If empty guid
-            if (id.ComponentId == "00000000000000000000000000000000")
+            var transformGuid = Guid.Parse(id.ComponentId);
+            var gameObjectGuid = Guid.Parse(id.ParentId.GameObjectId);
+            
+            if (transformGuid == Guid.Empty)
                 return null;
 
-            var transformGuid = id.ComponentId;
-            var gameObjectGuid = id.ParentId.GameObjectId;
             var replayTransformInstanceId = GetReplayInstanceId(transformGuid);
             var replayGameObjectInstanceId = GetReplayInstanceId(gameObjectGuid);
 
@@ -404,11 +405,12 @@ namespace PLUME.Viewer.Player
 
         public RectTransform GetOrCreateRectTransformByIdentifier(ComponentIdentifier id)
         {
-            if (id.ComponentId == "00000000000000000000000000000000")
+            var transformGuid = Guid.Parse(id.ComponentId);
+            var gameObjectGuid = Guid.Parse(id.ParentId.GameObjectId);
+            
+            if (transformGuid == Guid.Empty)
                 return null;
 
-            var transformGuid = id.ComponentId;
-            var gameObjectGuid = id.ParentId.GameObjectId;
             var replayTransformInstanceId = GetReplayInstanceId(transformGuid);
             var replayGameObjectInstanceId = GetReplayInstanceId(gameObjectGuid);
 
@@ -468,10 +470,12 @@ namespace PLUME.Viewer.Player
 
         public T GetOrCreateComponentByIdentifier<T>(ComponentIdentifier id) where T : Component
         {
-            if (id.ComponentId == "00000000000000000000000000000000")
+            var componentGuid = Guid.Parse(id.ComponentId);
+            
+            if (componentGuid == Guid.Empty)
                 return null;
 
-            var replayComponentInstanceId = GetReplayInstanceId(id.ComponentId);
+            var replayComponentInstanceId = GetReplayInstanceId(componentGuid);
 
             if (replayComponentInstanceId.HasValue)
             {
@@ -498,14 +502,17 @@ namespace PLUME.Viewer.Player
                 return null;
 
             _componentByInstanceId[component.GetInstanceID()] = component;
-            TryAddIdentifierCorrespondence(id.ComponentId, component.GetInstanceID());
+            TryAddIdentifierCorrespondence(componentGuid, component.GetInstanceID());
             return component;
         }
 
         public bool TryDestroyGameObjectByIdentifier(GameObjectIdentifier id)
         {
-            var goReplayInstanceId = GetReplayInstanceId(id.GameObjectId);
-            var transformReplayInstanceId = GetReplayInstanceId(id.TransformId);
+            var gameObjectGuid = Guid.Parse(id.GameObjectId);
+            var transformGuid = Guid.Parse(id.TransformId);
+            
+            var goReplayInstanceId = GetReplayInstanceId(gameObjectGuid);
+            var transformReplayInstanceId = GetReplayInstanceId(transformGuid);
 
             GameObject go = null;
 
@@ -553,20 +560,21 @@ namespace PLUME.Viewer.Player
                 Object.DestroyImmediate(go);
             }
 
-            RemoveIdentifierCorrespondence(id.GameObjectId);
-            RemoveIdentifierCorrespondence(id.TransformId);
+            RemoveIdentifierCorrespondence(gameObjectGuid);
+            RemoveIdentifierCorrespondence(transformGuid);
             return true;
         }
 
         public bool TryDestroyComponentByIdentifier(ComponentIdentifier identifier)
         {
-            var componentReplayInstanceId = GetReplayInstanceId(identifier.ComponentId);
+            var guid = Guid.Parse(identifier.ComponentId);
+            var componentReplayInstanceId = GetReplayInstanceId(guid);
 
             if (componentReplayInstanceId.HasValue)
             {
                 var component = _componentByInstanceId.GetValueOrDefault(componentReplayInstanceId.Value);
 
-                RemoveIdentifierCorrespondence(identifier.ComponentId);
+                RemoveIdentifierCorrespondence(guid);
                 if (component != null)
                 {
                     _componentByInstanceId.Remove(component.GetInstanceID());
@@ -576,7 +584,8 @@ namespace PLUME.Viewer.Player
                 return true;
             }
 
-            var componentsEntriesToRemove = _componentByInstanceId.Where(pair => pair.Value == null);
+            // Make sure to create a new list to avoid concurrent modification
+            var componentsEntriesToRemove = _componentByInstanceId.Where(pair => pair.Value == null).ToList();
 
             foreach (var entry in componentsEntriesToRemove)
             {
@@ -586,19 +595,19 @@ namespace PLUME.Viewer.Player
             return false;
         }
 
-        public string GetRecordIdentifier(int replayInstanceId)
+        public Guid GetRecordIdentifier(int replayInstanceId)
         {
-            return _invertIdMap.GetValueOrDefault(replayInstanceId, null);
+            return _invertIdMap.GetValueOrDefault(replayInstanceId, Guid.Empty);
         }
 
-        public int? GetReplayInstanceId(string recordIdentifier)
+        public int? GetReplayInstanceId(Guid recordIdentifier)
         {
             return _idMap.TryGetValue(recordIdentifier, out var replayInstanceId) ? replayInstanceId : null;
         }
 
-        public bool RemoveIdentifierCorrespondence(string recordIdentifier)
+        public bool RemoveIdentifierCorrespondence(Guid recordIdentifier)
         {
-            if (recordIdentifier == null)
+            if (recordIdentifier == Guid.Empty)
                 return false;
 
             var result = true;
@@ -613,8 +622,11 @@ namespace PLUME.Viewer.Player
             return result;
         }
 
-        public bool TryAddIdentifierCorrespondence(string recordIdentifier, int replayInstanceId)
+        public bool TryAddIdentifierCorrespondence(Guid recordIdentifier, int replayInstanceId)
         {
+            if (recordIdentifier == Guid.Empty)
+                return false;
+            
             return _idMap.TryAdd(recordIdentifier, replayInstanceId) &&
                    _invertIdMap.TryAdd(replayInstanceId, recordIdentifier);
         }
@@ -624,8 +636,10 @@ namespace PLUME.Viewer.Player
             if (recordIdentifier == null || replayAsset == null)
                 return false;
 
-            return _idMap.TryAdd(recordIdentifier.Id, replayAsset.GetInstanceID()) &&
-                   _invertIdMap.TryAdd(replayAsset.GetInstanceID(), recordIdentifier.Id);
+            var guid = Guid.Parse(recordIdentifier.Id);
+            
+            return _idMap.TryAdd(guid, replayAsset.GetInstanceID()) &&
+                   _invertIdMap.TryAdd(replayAsset.GetInstanceID(), guid);
         }
 
         public bool IsActive()

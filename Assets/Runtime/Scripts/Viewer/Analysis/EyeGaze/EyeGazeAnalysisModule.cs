@@ -156,19 +156,21 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             var eyeGazePositionSamples = inputActionSamples.Where(s => s.Payload.BindingPaths.Contains("<EyeGaze>/pose/position"));
             var eyeGazeRotationSamples = inputActionSamples.Where(s => s.Payload.BindingPaths.Contains("<EyeGaze>/pose/rotation"));
 
-            for(var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
+            var cameraNeverFound = true;
+
+            for (var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
             {
                 var frame = frames[frameIdx];
-                
+
                 var time = stopwatch.ElapsedMilliseconds;
-                
+
                 // Yield every 33ms (~30fps) to avoid freezing the game
                 if (time - lastYieldTime > 33)
                 {
                     lastYieldTime = time;
                     yield return null;
                 }
-                
+
                 _generationContext.PlayFrame(player.PlayerModules, frame);
 
                 var replayCameraId = _generationContext.GetReplayInstanceId(parameters.XrCameraIdentifier);
@@ -194,8 +196,12 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                     }
                 }
 
-                if (replayCameraId.HasValue && replayProjectionReceiversIds.Count > 0)
+                if (replayCameraId.HasValue)
                 {
+                    cameraNeverFound = false;
+                    
+                    if (replayProjectionReceiversIds.Count > 0)
+                    {
                         var xrCamera = _generationContext.FindGameObjectByInstanceId(replayCameraId.Value);
 
                         if (xrCamera != null)
@@ -210,20 +216,24 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                             {
                                 Vector3? eyeGazePosition;
                                 Quaternion? eyeGazeRotation;
-                                
-                                var eyeGazePositionIdx = eyeGazePositionSamples.FirstIndexBeforeTimestamp(frame.Timestamp);
-                                var eyeGazeRotationIdx = eyeGazeRotationSamples.FirstIndexBeforeTimestamp(frame.Timestamp);
+
+                                var eyeGazePositionIdx =
+                                    eyeGazePositionSamples.FirstIndexBeforeTimestamp(frame.Timestamp);
+                                var eyeGazeRotationIdx =
+                                    eyeGazeRotationSamples.FirstIndexBeforeTimestamp(frame.Timestamp);
 
                                 if (eyeGazePositionIdx >= 0)
-                                    eyeGazePosition = eyeGazePositionSamples[eyeGazePositionIdx].Payload.Vector3.ToEngineType();
+                                    eyeGazePosition = eyeGazePositionSamples[eyeGazePositionIdx].Payload.Vector3
+                                        .ToEngineType();
                                 else
                                     eyeGazePosition = null;
-                                
+
                                 if (eyeGazeRotationIdx >= 0)
-                                    eyeGazeRotation = eyeGazeRotationSamples[eyeGazeRotationIdx].Payload.Quaternion.ToEngineType();
+                                    eyeGazeRotation = eyeGazeRotationSamples[eyeGazeRotationIdx].Payload.Quaternion
+                                        .ToEngineType();
                                 else
                                     eyeGazeRotation = null;
-                                
+
                                 ProjectCurrentEyeGaze(_generationContext, xrCamera,
                                     parameters.CoordinateSystem,
                                     eyeGazePosition, eyeGazeRotation,
@@ -231,9 +241,10 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                                     meshSamplerResults, projectionKernel);
                             }
                         }
-                }
+                    }
 
-                GenerationProgress = (float)frameIdx / nFrames;
+                    GenerationProgress = (float)frameIdx / nFrames;
+                }
             }
 
             GenerationProgress = 1;
@@ -246,6 +257,11 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
             if (player.GetModuleGenerating() == this)
                 player.SetModuleGenerating(null);
+
+            if (cameraNeverFound)
+            {
+                Debug.LogWarning($"Camera with identifier {parameters.XrCameraIdentifier} not found in the given time range {parameters.StartTime} - {parameters.EndTime}.");
+            }
 
             finishCallback(result);
         }

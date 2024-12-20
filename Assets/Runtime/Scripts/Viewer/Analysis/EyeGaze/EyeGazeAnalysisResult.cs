@@ -15,8 +15,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
     public struct EyeGazeAnalysisModuleParameters
     {
-        public string XrCameraIdentifier;
-        public string[] ReceiversIdentifiers;
+        public Guid XrCameraIdentifier;
+        public Guid[] ReceiversIdentifiers;
         public bool IncludeReceiversChildren;
         public ulong StartTime;
         public ulong EndTime;

@@ -28,7 +28,7 @@ namespace PLUME.Viewer.Analysis.Position
         public float nSigmas = 4;
 
         public float samplesPerSquareMeter = 1000;
-        
+
         /**
          * Shader used to encode the object's depth and instance id into a RenderTexture.
          */
@@ -133,9 +133,9 @@ namespace PLUME.Viewer.Analysis.Position
                 meshSamplerResults);
 
             SetVisibleResult(result);
-            
+
             PrepareProjectionShader(samplesMinValueBuffer, samplesMaxValueBuffer, projectionKernel);
-            
+
             if (parameters.StartTime > 0)
             {
                 var skippedFrames = record.Frames.GetInTimeRange(0, parameters.StartTime - 1u);
@@ -144,23 +144,25 @@ namespace PLUME.Viewer.Analysis.Position
 
             var stopwatch = Stopwatch.StartNew();
             var lastYieldTime = stopwatch.ElapsedMilliseconds;
-            
+
             var frames = record.Frames.GetInTimeRange(parameters.StartTime, parameters.EndTime);
             var nFrames = frames.Count;
-            
-            for(var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
+
+            var projectionCasterNeverFound = true;
+
+            for (var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
             {
                 var frame = frames[frameIdx];
-                
+
                 var time = stopwatch.ElapsedMilliseconds;
-                
+
                 // Yield every 33ms (~30fps) to avoid freezing the game
                 if (time - lastYieldTime > 33)
                 {
                     lastYieldTime = time;
                     yield return null;
                 }
-                
+
                 _generationContext.PlayFrame(player.PlayerModules, frame);
 
                 var replayProjectionCasterId = _generationContext.GetReplayInstanceId(parameters.CasterIdentifier);
@@ -186,29 +188,34 @@ namespace PLUME.Viewer.Analysis.Position
                     }
                 }
 
-                if (replayProjectionCasterId.HasValue && replayProjectionReceiversIds.Count > 0)
+                if (replayProjectionCasterId.HasValue)
                 {
-                    var projectionCaster =
-                        _generationContext.FindGameObjectByInstanceId(replayProjectionCasterId.Value);
-
-                    if (projectionCaster != null)
+                    projectionCasterNeverFound = false;
+                    
+                    if (replayProjectionReceiversIds.Count > 0)
                     {
-                        var projectionReceiversGameObjects = replayProjectionReceiversIds
-                            .Select(replayId => _generationContext.FindGameObjectByInstanceId(replayId))
-                            .Where(t => t != null)
-                            .Select(t => t.gameObject)
-                            .ToArray();
+                        var projectionCaster =
+                            _generationContext.FindGameObjectByInstanceId(replayProjectionCasterId.Value);
 
-                        if (projectionReceiversGameObjects.Length > 0)
+                        if (projectionCaster != null)
                         {
-                            ProjectCurrentPosition(_generationContext, projectionCaster,
-                                projectionReceiversGameObjects,
-                                meshSamplerResults, projectionKernel);
+                            var projectionReceiversGameObjects = replayProjectionReceiversIds
+                                .Select(replayId => _generationContext.FindGameObjectByInstanceId(replayId))
+                                .Where(t => t != null)
+                                .Select(t => t.gameObject)
+                                .ToArray();
+
+                            if (projectionReceiversGameObjects.Length > 0)
+                            {
+                                ProjectCurrentPosition(_generationContext, projectionCaster,
+                                    projectionReceiversGameObjects,
+                                    meshSamplerResults, projectionKernel);
+                            }
                         }
                     }
+
+                    GenerationProgress = (float)frameIdx / nFrames;
                 }
-                
-                GenerationProgress = (float)frameIdx / nFrames;
             }
 
             GenerationProgress = 1;
@@ -222,6 +229,11 @@ namespace PLUME.Viewer.Analysis.Position
             if (player.GetModuleGenerating() == this)
                 player.SetModuleGenerating(null);
 
+            if (projectionCasterNeverFound)
+            {
+                Debug.LogWarning($"Projection caster {parameters.CasterIdentifier} was never found in the given time range {parameters.StartTime} - {parameters.EndTime}.");
+            }
+            
             finishCallback(result);
         }
 
@@ -349,7 +361,8 @@ namespace PLUME.Viewer.Analysis.Position
             return meshSamplerResult;
         }
 
-        private void PrepareProjectionShader(ComputeBuffer samplesMinValueBuffer, ComputeBuffer samplesMaxValueBuffer,
+        private void PrepareProjectionShader(ComputeBuffer samplesMinValueBuffer,
+            ComputeBuffer samplesMaxValueBuffer,
             int projectionKernel)
         {
             projectionShader.SetFloat("n_sigmas", nSigmas);
@@ -384,7 +397,7 @@ namespace PLUME.Viewer.Analysis.Position
                 {
                     graphic.enabled = true;
                 }
-                
+
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                     continue;
                 goRenderer.SetSharedMaterials(new List<Material>());
@@ -402,7 +415,7 @@ namespace PLUME.Viewer.Analysis.Position
                             playerModule.PlaySample(ctx, sample);
                         }
                     }
-                    
+
                     if (sample.Payload is RendererUpdate)
                     {
                         foreach (var playerModule in player.PlayerModules)
@@ -458,12 +471,12 @@ namespace PLUME.Viewer.Analysis.Position
                     terrain.detailObjectDensity = 0;
                     terrain.materialTemplate = _defaultHeatmapMaterial;
                 }
-                
+
                 if (go.TryGetComponent<Graphic>(out var graphic))
                 {
                     graphic.enabled = false;
                 }
-                
+
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                 {
                     continue;

@@ -13,8 +13,8 @@ namespace PLUME.Viewer.Analysis.Interaction
 
     public struct InteractionAnalysisModuleParameters
     {
-        public string[] InteractorsIds;
-        public string[] InteractablesIds;
+        public Guid[] InteractorsIds;
+        public Guid[] InteractablesIds;
         public InteractionType InteractionType;
         public ulong StartTime;
         public ulong EndTime;
@@ -25,7 +25,7 @@ namespace PLUME.Viewer.Analysis.Interaction
         public InteractionAnalysisModuleParameters GenerationParameters { get; }
 
         // Mapping between interactors record identifier and number of interactions
-        public readonly Dictionary<string, int> Interactions = new();
+        public readonly Dictionary<Guid, int> Interactions = new();
 
         public readonly int TotalInteractionCount;
 
@@ -36,7 +36,7 @@ namespace PLUME.Viewer.Analysis.Interaction
         }
 
         public InteractionHeatmapAnalysisResult(InteractionAnalysisModuleParameters generationParameters,
-            Dictionary<string, int> interactions, int totalInteractionCount, int maxInteractionCount)
+            Dictionary<Guid, int> interactions, int totalInteractionCount, int maxInteractionCount)
         {
             GenerationParameters = generationParameters;
             Interactions = interactions;

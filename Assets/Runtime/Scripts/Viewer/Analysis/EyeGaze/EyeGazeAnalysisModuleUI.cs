@@ -66,7 +66,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                     .ToString(@"hh\:mm\:ss\.fff");
                 var projectionReceiversIds = string.Join(",", result.Parameters.ReceiversIdentifiers);
 
-                resultEntry.Q("xr-camera").Q<Label>("value").text = result.Parameters.XrCameraIdentifier;
+                resultEntry.Q("xr-camera").Q<Label>("value").text = result.Parameters.XrCameraIdentifier.ToString();
                 resultEntry.Q("projection-receivers").Q<Label>("value").text = projectionReceiversIds;
                 resultEntry.Q("start-time").Q<Label>("value").text = startTimeStr;
                 resultEntry.Q("end-time").Q<Label>("value").text = endTimeStr;
