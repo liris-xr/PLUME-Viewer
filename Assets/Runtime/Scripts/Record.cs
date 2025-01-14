@@ -4,7 +4,7 @@ using PLUME.Sample;
 using PLUME.Sample.Common;
 using PLUME.Sample.LSL;
 using PLUME.Sample.Unity.Settings;
-using PLUME.Sample.Unity.XRITK;
+using PLUME.Sample.Unity;
 
 namespace PLUME
 {
