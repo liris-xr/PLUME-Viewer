@@ -138,34 +138,19 @@ namespace PLUME.Viewer
                     _destroyedItems.Clear();
                     _createdOrUpdatedItems.Clear();
 
+                    ClearHierarchyTree();
+
                     var playerCtx = player.GetMainPlayerContext();
                     var gameObjectsGuids = playerCtx.GetAllGameObjects()
                         .Select(go => playerCtx.GetRecordIdentifier(go.GetInstanceID()))
                         .ToList();
 
-                    var existingItems = new Dictionary<Guid, HierarchyTreeItemData>();
-                    var createdItems = new List<Guid>(gameObjectsGuids);
-
                     foreach (var goGuid in gameObjectsGuids)
                     {
-                        if (!_currentItems.ContainsKey(goGuid)) continue;
-                        existingItems.TryAdd(goGuid, _currentItems[goGuid]);
-                        createdItems.Remove(goGuid);
+                        var item = new HierarchyTreeItemData(goGuid);
+                        _createdOrUpdatedItems[goGuid] = item;
                     }
-
-                    var deletedItems = _currentItems.Except(existingItems).ToList();
-
-                    foreach (var (guid, item) in deletedItems)
-                    {
-                        _destroyedItems.Add(guid);
-                    }
-
-                    foreach (var createdGoGuid in createdItems)
-                    {
-                        var item = new HierarchyTreeItemData(createdGoGuid);
-                        _createdOrUpdatedItems[createdGoGuid] = item;
-                    }
-
+                    
                     break;
                 }
             }
@@ -180,6 +165,12 @@ namespace PLUME.Viewer
 
             _lastFrameUpdate = Time.frameCount;
             UpdateHierarchyTree();
+        }
+
+        private void ClearHierarchyTree()
+        {
+            _hierarchyTree.Clear();
+            _hierarchyTree.viewController.RebuildTree();
         }
 
         private void UpdateHierarchyTree()
