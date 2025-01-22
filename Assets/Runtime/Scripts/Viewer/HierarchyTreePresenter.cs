@@ -42,7 +42,8 @@ namespace PLUME.Viewer
                 {
                     var gameObjectGuid = Guid.Parse(createEvt.gameObjectIdentifier.GameObjectId);
 
-                    if (!_currentItems.ContainsKey(gameObjectGuid))
+                    if (!_currentItems.ContainsKey(gameObjectGuid) &&
+                        !_createdOrUpdatedItems.ContainsKey(gameObjectGuid))
                     {
                         var item = new HierarchyTreeItemData(gameObjectGuid);
                         _createdOrUpdatedItems[gameObjectGuid] = item;
@@ -117,14 +118,15 @@ namespace PLUME.Viewer
                         }
                     }
 
-                    if (parentGameObjectGuid != Guid.Empty &&
-                        !_createdOrUpdatedItems.TryGetValue(parentGameObjectGuid, out var parentItem))
+                    if (parentGameObjectGuid != Guid.Empty)
                     {
-                        if (!_currentItems.TryGetValue(parentGameObjectGuid, out parentItem))
+                        if (!_createdOrUpdatedItems.TryGetValue(parentGameObjectGuid, out var parentItem))
                         {
-                            Debug.Log("created missing parent");
-                            parentItem = new HierarchyTreeItemData(gameObjectGuid);
-                            _createdOrUpdatedItems[parentGameObjectGuid] = parentItem;
+                            if (!_currentItems.TryGetValue(parentGameObjectGuid, out parentItem))
+                            {
+                                parentItem = new HierarchyTreeItemData(gameObjectGuid);
+                                _createdOrUpdatedItems[parentGameObjectGuid] = parentItem;
+                            }
                         }
                     }
 
@@ -133,6 +135,7 @@ namespace PLUME.Viewer
                     _createdOrUpdatedItems[gameObjectGuid] = item;
                     break;
                 }
+
                 case HierarchyForceRebuild:
                 {
                     _destroyedItems.Clear();
@@ -141,16 +144,28 @@ namespace PLUME.Viewer
                     ClearHierarchyTree();
 
                     var playerCtx = player.GetMainPlayerContext();
-                    var gameObjectsGuids = playerCtx.GetAllGameObjects()
-                        .Select(go => playerCtx.GetRecordIdentifier(go.GetInstanceID()))
-                        .ToList();
+                    var gameObjects = playerCtx.GetAllGameObjects();
 
-                    foreach (var goGuid in gameObjectsGuids)
+                    foreach (var go in gameObjects)
                     {
-                        var item = new HierarchyTreeItemData(goGuid);
-                        _createdOrUpdatedItems[goGuid] = item;
+                        var guid = playerCtx.GetRecordIdentifier(go.GetInstanceID());
+                        var parentGuid = Guid.Empty;
+
+                        if (go.transform.parent != null)
+                        {
+                            parentGuid = playerCtx.GetRecordIdentifier(go.transform.parent.GetInstanceID());
+                        }
+
+                        var item = new HierarchyTreeItemData(guid)
+                        {
+                            ParentGameObjectGuid = parentGuid,
+                            SiblingIndex = go.transform.GetSiblingIndex(),
+                            Enabled = go.activeSelf,
+                            Name = go.name
+                        };
+                        _createdOrUpdatedItems[guid] = item;
                     }
-                    
+
                     break;
                 }
             }
@@ -276,15 +291,14 @@ namespace PLUME.Viewer
                 }
             }
 
-            _destroyedItems.Clear();
-            _createdOrUpdatedItems.Clear();
-
             if (rebuildTree)
             {
                 controller.RebuildTree();
                 _hierarchyTree.RefreshItems();
             }
 
+            _destroyedItems.Clear();
+            _createdOrUpdatedItems.Clear();
             Profiler.EndSample();
         }
     }
