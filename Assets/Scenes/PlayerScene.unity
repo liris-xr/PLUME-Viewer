@@ -131,18 +131,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 153223054718299161, guid: b4a12f1ba345b14438d4ad048811be15, type: 3}
-      propertyPath: defaultXrCameraId
-      value: 33b60d91957b471caf8b05fbcfd37d5d
-      objectReference: {fileID: 0}
-    - target: {fileID: 153223054718299161, guid: b4a12f1ba345b14438d4ad048811be15, type: 3}
-      propertyPath: defaultCoordinateSystem
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 153223054718299161, guid: b4a12f1ba345b14438d4ad048811be15, type: 3}
-      propertyPath: defaultProjectionReceiversIds
-      value: eff8c3343341490e902a0c4a24ea12c0,b507c89f32e34f53a8467bda16b67400,c9515f9fa25549bcbe001fd97a3627b7,9cba7a46d6b145d79c53dc9a802c0e3f,0b85fe0febdd4abe9f5600ad30902015,222c32f08ecb4bd2a350caf86392a9af,724845965db1492a8546b3ee69f9acce,3d0ffc7f53c94a25bd32f90c295d9022,e802dd7ca0fb412eb28a4509cebf8bf4,6ae3ea8c98a14585b5070799a7a57da3,d431ae4868ee41aaa29a6addff6a7a77,4b1765337c844d619a4e23d0a5cacf62,2425bf36288a4265879cda31cad50e1d,ac6c22c54c624599b2ef9a527d79c0b9,7a5e7664a16f4914819e946b97404d7b,6b5cb1fb4c414623a751015d281fb0d4,a424c73c158b40a0a559fa30656bf047,d1c19d282f47433ca0edcd56b7062616,eb852e276a8f4de5844efb64c8eed496,fa7fab7c9195438083b63222bc19195d,207e8dcd1e754079b269c4451dd8d854,9721437ede2d4716b78110475638f34e,0982134598f84dc09929cf81170a76d8,40298d078b87450085ad6a589b04e005
-      objectReference: {fileID: 0}
     - target: {fileID: 845563009106389425, guid: b4a12f1ba345b14438d4ad048811be15, type: 3}
       propertyPath: m_IsActive
       value: 1

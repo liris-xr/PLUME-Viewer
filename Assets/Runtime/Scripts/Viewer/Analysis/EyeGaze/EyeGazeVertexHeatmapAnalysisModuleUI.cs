@@ -24,6 +24,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         public Toggle IncludeReceiversChildrenToggle { get; private set; }
         public TimeRangeElement TimeRange { get; private set; }
         public EnumField EyeGazeCoordinateSystemEnumField { get; private set; }
+        public FloatField FovealAngleField { get; private set; }
 
         protected new void Awake()
         {
@@ -38,6 +39,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             IncludeReceiversChildrenToggle = Options.Q<Toggle>("include-receivers-children");
             TimeRange = Options.Q<TimeRangeElement>("time-range");
             EyeGazeCoordinateSystemEnumField = Options.Q<EnumField>("coordinate-system");
+            FovealAngleField = Options.Q<FloatField>("foveal-angle");
         }
 
         public override void RefreshResults()

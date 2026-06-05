@@ -21,6 +21,9 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         public ulong StartTime;
         public ulong EndTime;
         public EyeGazeCoordinateSystem CoordinateSystem;
+        public float FovealVisionOpticalAxisAngle;
+        public float NSigmas;
+        public float SamplesPerSquareMeter;
     }
 
     public class EyeGazeAnalysisResult : AnalysisModuleResult

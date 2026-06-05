@@ -9,6 +9,7 @@
         <ui:EnumField label="Coordinate system:"
                       type="PLUME.Viewer.Analysis.EyeGaze.EyeGazeCoordinateSystem, Assembly-CSharp"
                       name="coordinate-system"/>
+        <ui:FloatField label="Foveal angle (deg):" value="2.5" name="foveal-angle"/>
         <ui:Label text="Time range:" display-tooltip-when-elided="true" class="unity-base-field__label"
                   style="padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; margin-left: 3px;"/>
         <PLUME.UI.Element.TimeRangeElement name="time-range"

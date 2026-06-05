@@ -127,6 +127,10 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
             SetVisibleResult(result);
 
+            _projectionCamera.projectionMatrix = Matrix4x4.Perspective(
+                parameters.FovealVisionOpticalAxisAngle * 2, 1.0f,
+                _projectionCamera.nearClipPlane, _projectionCamera.farClipPlane);
+
             projectionShader.SetTexture(projectionKernel, "segmented_object_depth_texture",
                 _projectionCamera.targetTexture);
             projectionShader.SetMatrix("projection_mtx", _projectionCamera.projectionMatrix);

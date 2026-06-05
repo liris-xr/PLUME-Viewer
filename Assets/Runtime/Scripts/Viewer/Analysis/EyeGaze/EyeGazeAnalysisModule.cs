@@ -154,7 +154,11 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
             SetVisibleResult(result);
             
-            PrepareProjectionShader(samplesMinValueBuffer, samplesMaxValueBuffer, projectionKernel);
+            _projectionCamera.projectionMatrix = Matrix4x4.Perspective(
+                parameters.FovealVisionOpticalAxisAngle * 2, 1.0f,
+                _projectionCamera.nearClipPlane, _projectionCamera.farClipPlane);
+
+            PrepareProjectionShader(samplesMinValueBuffer, samplesMaxValueBuffer, projectionKernel, parameters.NSigmas);
 
             if (parameters.StartTime > 0)
             {
@@ -269,7 +273,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                                     parameters.CoordinateSystem,
                                     eyeGazePosition, eyeGazeRotation,
                                     projectionReceiversGameObjects,
-                                    meshSamplerResults, projectionKernel);
+                                    meshSamplerResults, projectionKernel,
+                                    parameters.SamplesPerSquareMeter);
                             }
                         }
                     }
@@ -323,7 +328,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             Vector3? eyeGazePosition,
             Quaternion? eyeGazeRotation,
             GameObject[] projectionReceiversGameObjects,
-            IDictionary<int, MeshSamplerResult> meshSamplerResults, int projectionKernel)
+            IDictionary<int, MeshSamplerResult> meshSamplerResults, int projectionKernel,
+            float samplesPerSquareMeter)
         {
             switch (coordinateSystem)
             {
@@ -455,7 +461,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                         continue;
 
                     var meshSamplerResult =
-                        GetOrCreateMeshSamplerResult(ctx, go, mesh, meshSamplerResults);
+                        GetOrCreateMeshSamplerResult(ctx, go, mesh, meshSamplerResults, samplesPerSquareMeter);
 
                     if (meshSamplerResult == null)
                         continue;
@@ -528,7 +534,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         }
 
         private MeshSamplerResult GetOrCreateMeshSamplerResult(PlayerContext ctx, GameObject go, Mesh mesh,
-            IDictionary<int, MeshSamplerResult> meshSamplerResults)
+            IDictionary<int, MeshSamplerResult> meshSamplerResults, float samplesPerSquareMeter)
         {
             var gameObjectIdentifier = ctx.GetRecordIdentifier(go.GetInstanceID());
             var meshIdentifier = ctx.GetRecordIdentifier(mesh.GetInstanceID());
@@ -552,7 +558,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         }
 
         private void PrepareProjectionShader(ComputeBuffer samplesMinValueBuffer, ComputeBuffer samplesMaxValueBuffer,
-            int projectionKernel)
+            int projectionKernel, float nSigmas)
         {
             projectionShader.SetFloat("n_sigmas", nSigmas);
             projectionShader.SetTexture(projectionKernel, "segmented_object_depth_texture",

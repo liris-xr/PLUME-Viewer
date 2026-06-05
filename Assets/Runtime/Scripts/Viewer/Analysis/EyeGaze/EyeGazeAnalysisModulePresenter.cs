@@ -12,6 +12,9 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         public string defaultXrCameraId = "";
         public string defaultProjectionReceiversIds = "";
         public EyeGazeCoordinateSystem defaultCoordinateSystem = EyeGazeCoordinateSystem.Camera;
+        public float defaultFovealVisionOpticalAxisAngle = 2.5f;
+        public float defaultNSigmas = 4f;
+        public float defaultSamplesPerSquareMeter = 1000f;
         
         public EyeGazeAnalysisModule module;
         public EyeGazeAnalysisModuleUI ui;
@@ -25,6 +28,9 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             ui.XrCameraIdTextField.value = defaultXrCameraId;
             ui.ProjectionReceiversIdsTextField.value = defaultProjectionReceiversIds;
             ui.EyeGazeCoordinateSystemEnumField.value = defaultCoordinateSystem;
+            ui.FovealAngleField.value = defaultFovealVisionOpticalAxisAngle;
+            ui.NSigmasField.value = defaultNSigmas;
+            ui.SamplesPerSquareMeterField.value = defaultSamplesPerSquareMeter;
             
             ui.clickedDeleteResult += OnClickDeleteResult;
             ui.clickedExportResult += OnClickExportResult;
@@ -67,7 +73,10 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 IncludeReceiversChildren = ui.IncludeReceiversChildrenToggle.value,
                 StartTime = ui.TimeRange.StartTime,
                 EndTime = ui.TimeRange.EndTime,
-                CoordinateSystem = (EyeGazeCoordinateSystem)ui.EyeGazeCoordinateSystemEnumField.value
+                CoordinateSystem = (EyeGazeCoordinateSystem)ui.EyeGazeCoordinateSystemEnumField.value,
+                FovealVisionOpticalAxisAngle = ui.FovealAngleField.value,
+                NSigmas = ui.NSigmasField.value,
+                SamplesPerSquareMeter = ui.SamplesPerSquareMeterField.value
             };
 
             var onFinishCallback = new Action<EyeGazeAnalysisResult>(result =>

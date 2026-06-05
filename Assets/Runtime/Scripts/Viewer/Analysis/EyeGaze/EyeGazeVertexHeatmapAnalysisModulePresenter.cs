@@ -12,6 +12,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         public string defaultXrCameraId = "";
         public string defaultProjectionReceiversIds = "";
         public EyeGazeCoordinateSystem defaultCoordinateSystem = EyeGazeCoordinateSystem.Camera;
+        public float defaultFovealVisionOpticalAxisAngle = 2.5f;
 
         public EyeGazeVertexHeatmapAnalysisModule module;
         public EyeGazeVertexHeatmapAnalysisModuleUI ui;
@@ -25,6 +26,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             ui.XrCameraIdTextField.value = defaultXrCameraId;
             ui.ProjectionReceiversIdsTextField.value = defaultProjectionReceiversIds;
             ui.EyeGazeCoordinateSystemEnumField.value = defaultCoordinateSystem;
+            ui.FovealAngleField.value = defaultFovealVisionOpticalAxisAngle;
 
             ui.clickedDeleteResult += OnClickDeleteResult;
             ui.toggledResultVisibility += OnToggleResultVisibility;
@@ -64,7 +66,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 IncludeReceiversChildren = ui.IncludeReceiversChildrenToggle.value,
                 StartTime = ui.TimeRange.StartTime,
                 EndTime = ui.TimeRange.EndTime,
-                CoordinateSystem = (EyeGazeCoordinateSystem)ui.EyeGazeCoordinateSystemEnumField.value
+                CoordinateSystem = (EyeGazeCoordinateSystem)ui.EyeGazeCoordinateSystemEnumField.value,
+                FovealVisionOpticalAxisAngle = ui.FovealAngleField.value
             };
 
             var onFinish = new Action<EyeGazeVertexHeatmapResult>(result =>
