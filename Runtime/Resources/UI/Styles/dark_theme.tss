@@ -1,8 +1,0 @@
-@import url("dark_theme.uss");
-
-:root{
-    -unity-font-definition: resource("UI/Fonts/Inter/Inter-Regular");
-}
-.unity-theme-env-variables {
-    --current-font: resource("UI/Fonts/Inter/Inter-Regular");
-}

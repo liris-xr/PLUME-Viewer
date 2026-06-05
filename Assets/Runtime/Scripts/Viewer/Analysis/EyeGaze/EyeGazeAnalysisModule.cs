@@ -12,6 +12,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
+using UnityEngine.Rendering;
 
 namespace PLUME.Viewer.Analysis.EyeGaze
 {
@@ -72,6 +73,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             new();
 
         private readonly Dictionary<int, MaterialPropertyBlock> _cachedSegmentedObjectsDepthPropertyBlocks = new();
+
+        private readonly Dictionary<int, Mesh> _bakedMeshes = new();
         
         private void Awake()
         {
@@ -120,14 +123,28 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             IsGenerating = true;
             player.SetModuleGenerating(this);
 
-            var samplesMinValueBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
-            var samplesMaxValueBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
-            samplesMinValueBuffer.SetData(new[] { uint.MaxValue });
-            samplesMaxValueBuffer.SetData(new[] { uint.MinValue });
+            ComputeBuffer samplesMinValueBuffer;
+            ComputeBuffer samplesMaxValueBuffer;
+            int projectionKernel;
 
-            var projectionKernel = projectionShader.FindKernel("project_std_normal_distribution");
+            try
+            {
+                samplesMinValueBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
+                samplesMaxValueBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
+                samplesMinValueBuffer.SetData(new[] { uint.MaxValue });
+                samplesMaxValueBuffer.SetData(new[] { uint.MinValue });
 
-            _generationContext = PlayerContext.CreatePlayerContext(assets);
+                projectionKernel = projectionShader.FindKernel("project_std_normal_distribution");
+
+                _generationContext = PlayerContext.CreatePlayerContext(assets);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[EyeGaze] Exception during setup: " + e);
+                IsGenerating = false;
+                if (player.GetModuleGenerating() == this) player.SetModuleGenerating(null);
+                yield break;
+            }
 
             // key: mesh record id, value: sampled mesh containing values
             var meshSamplerResults = new Dictionary<int, MeshSamplerResult>();
@@ -154,7 +171,21 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             
             var inputActionSamples = record.InputActions.GetInTimeRange(parameters.StartTime, parameters.EndTime);
             var eyeGazePositionSamples = inputActionSamples.Where(s => s.Payload.BindingPaths.Contains("<EyeGaze>/pose/position"));
-            var eyeGazeRotationSamples = inputActionSamples.Where(s => s.Payload.BindingPaths.Contains("<EyeGaze>/pose/rotation"));
+            var eyeGazeRotationSamples =
+                inputActionSamples.Where(s => s.Payload.BindingPaths.Contains("<EyeGaze>/pose/rotation"));
+            
+            Debug.Log($"[EyeGaze] input actions in range: {inputActionSamples.Count()}, " +
+                      $"gaze position samples: {eyeGazePositionSamples.Count()}, " +
+                      $"gaze rotation samples: {eyeGazeRotationSamples.Count()}");
+
+            if (!eyeGazePositionSamples.Any() || !eyeGazeRotationSamples.Any())
+            {
+                var paths = inputActionSamples
+                    .SelectMany(s => s.Payload.BindingPaths)
+                    .Distinct();
+                Debug.LogWarning("[EyeGaze] No gaze samples. Recorded binding paths: "
+                                 + string.Join(", ", paths));
+            }
 
             var cameraNeverFound = true;
 
@@ -252,6 +283,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             PlayerContext.Destroy(_generationContext);
             _generationContext = null;
 
+            DisposeBakedMeshes();
+
             PlayerContext.Activate(player.GetMainPlayerContext());
             IsGenerating = false;
 
@@ -273,6 +306,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 PlayerContext.Destroy(_generationContext);
                 _generationContext = null;
             }
+
+            DisposeBakedMeshes();
 
             PlayerContext.Activate(player.GetMainPlayerContext());
             IsGenerating = false;
@@ -404,14 +439,16 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                         continue;
 
                     Mesh mesh = null;
+                    SkinnedMeshRenderer smr = null;
 
                     if (go.TryGetComponent<MeshFilter>(out var meshFilter))
                     {
                         mesh = meshFilter.sharedMesh;
                     }
-                    else if (go.TryGetComponent<SkinnedMeshRenderer>(out var skinnedMeshRenderer))
+                    else if (go.TryGetComponent<SkinnedMeshRenderer>(out smr))
                     {
-                        mesh = skinnedMeshRenderer.sharedMesh;
+                        // Topology/resolution come from the rest pose; deformed positions are bound below.
+                        mesh = smr.sharedMesh;
                     }
 
                     if (mesh == null || mesh.vertexBufferCount == 0)
@@ -423,17 +460,33 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                     if (meshSamplerResult == null)
                         continue;
 
+                    // Default (static MeshFilter): rest-pose buffer, model_mtx carries T/R/S.
+                    var vertexBuffer = meshSamplerResult.VertexBuffer;
+                    var vertexBufferStride = meshSamplerResult.VertexBufferStride;
+                    var vertexBufferPositionOffset = meshSamplerResult.VertexBufferPositionOffset;
+                    GraphicsBuffer bakedVertexBuffer = null;
+
+                    // Skinned: bake the current pose so projection uses deformed positions.
+                    // useScale:false keeps vertices unscaled so localToWorldMatrix applies scale exactly once.
+                    if (smr != null)
+                    {
+                        var baked = GetOrCreateBakedMesh(go.GetInstanceID());
+                        smr.BakeMesh(baked, false);
+                        bakedVertexBuffer = baked.GetVertexBuffer(0);
+                        vertexBuffer = bakedVertexBuffer;
+                        vertexBufferStride = bakedVertexBuffer.stride;
+                        vertexBufferPositionOffset = baked.GetVertexAttributeOffset(VertexAttribute.Position);
+                    }
+
                     projectionShader.SetInt("object_instance_id", go.GetInstanceID());
                     projectionShader.SetMatrix("model_mtx", r.localToWorldMatrix);
                     projectionShader.SetInt("n_triangles", (int)meshSamplerResult.NTriangles);
                     projectionShader.SetBuffer(projectionKernel, "index_buffer",
                         meshSamplerResult.IndexBuffer);
                     projectionShader.SetInt("index_buffer_stride", meshSamplerResult.IndexBufferStride);
-                    projectionShader.SetBuffer(projectionKernel, "vertex_buffer",
-                        meshSamplerResult.VertexBuffer);
-                    projectionShader.SetInt("vertex_buffer_stride", meshSamplerResult.VertexBufferStride);
-                    projectionShader.SetInt("vertex_buffer_position_offset",
-                        meshSamplerResult.VertexBufferPositionOffset);
+                    projectionShader.SetBuffer(projectionKernel, "vertex_buffer", vertexBuffer);
+                    projectionShader.SetInt("vertex_buffer_stride", vertexBufferStride);
+                    projectionShader.SetInt("vertex_buffer_position_offset", vertexBufferPositionOffset);
                     projectionShader.SetBuffer(projectionKernel, "triangles_resolution_buffer",
                         meshSamplerResult.TrianglesResolutionBuffer);
                     projectionShader.SetBuffer(projectionKernel, "triangles_samples_index_offset_buffer",
@@ -449,8 +502,29 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                         Mathf.CeilToInt(meshSamplerResult.NSamplesMaxPerTriangle / (float)threadGroupSizeY);
                     projectionShader.SplitDispatch(projectionKernel, totalNumberOfGroupsNeededX,
                         totalNumberOfGroupsNeededY);
+
+                    bakedVertexBuffer?.Release();
                 }
             }
+        }
+
+        private Mesh GetOrCreateBakedMesh(int instanceId)
+        {
+            if (_bakedMeshes.TryGetValue(instanceId, out var mesh))
+                return mesh;
+
+            var newMesh = new Mesh { name = "EyeGazeBakedMesh_" + instanceId };
+            newMesh.MarkDynamic();
+            newMesh.vertexBufferTarget |= GraphicsBuffer.Target.Raw;
+            _bakedMeshes.Add(instanceId, newMesh);
+            return newMesh;
+        }
+
+        private void DisposeBakedMeshes()
+        {
+            foreach (var mesh in _bakedMeshes.Values)
+                if (mesh != null) Destroy(mesh);
+            _bakedMeshes.Clear();
         }
 
         private MeshSamplerResult GetOrCreateMeshSamplerResult(PlayerContext ctx, GameObject go, Mesh mesh,
@@ -803,6 +877,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
         private void OnDestroy()
         {
+            DisposeBakedMeshes();
+
             foreach (var result in GetResults())
             {
                 result.Dispose();
