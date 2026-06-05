@@ -127,7 +127,9 @@ void project_std_normal_distribution(const uint2 id : SV_DispatchThreadID)
     const float3 ndc_pos = clip_pos.xyz / clip_pos.w;
     const float2 sample_uv_pos = (ndc_pos.xy + 1) / 2.0;
 
-    const bool clipped = ndc_pos.x < -1 && ndc_pos.x > 1 && ndc_pos.y < -1 && ndc_pos.y > 1;
+    const bool clipped = ndc_pos.x < -1 || ndc_pos.x > 1
+                      || ndc_pos.y < -1 || ndc_pos.y > 1
+                      || ndc_pos.z < -1 || ndc_pos.z > 1;
 
     if (clipped)
         return;

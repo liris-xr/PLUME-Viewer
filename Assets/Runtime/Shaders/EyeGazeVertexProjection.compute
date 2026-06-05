@@ -1,0 +1,173 @@
+#include "MeshData.cginc"
+#include "SplitDispatch.cginc"
+#include "Math.cginc"
+
+float4x4 model_mtx;
+float4x4 view_mtx;
+float4x4 projection_mtx;
+bool is_projection_orthographic;
+
+int object_instance_id;
+uint n_triangles;
+
+Texture2D segmented_object_depth_texture;
+
+// Float values stored as uint bits to allow atomic CAS operations
+RWStructuredBuffer<uint> vertex_value_buffer;
+RWStructuredBuffer<uint> samples_max_value;
+
+struct parsed_embedding
+{
+    float depth;
+    int object_instance_id;
+};
+
+parsed_embedding parse_embedding(const uint2 embedding_uv)
+{
+    float tex_w, tex_h;
+    segmented_object_depth_texture.GetDimensions(tex_w, tex_h);
+
+    parsed_embedding emb;
+
+    if (embedding_uv.x >= (uint)tex_w || embedding_uv.y >= (uint)tex_h)
+    {
+        emb.depth = 0;
+        emb.object_instance_id = 0;
+    }
+    else
+    {
+        const float4 val = segmented_object_depth_texture[embedding_uv];
+        emb.depth = val.r;
+        emb.object_instance_id = asint(val.g);
+    }
+
+    return emb;
+}
+
+bool compare_sample_depth(const float sample_depth, const parsed_embedding emb)
+{
+    return emb.object_instance_id == object_instance_id
+        && abs(emb.depth - sample_depth) <= epsilon;
+}
+
+// Atomic float add via compare-and-swap loop
+void atomic_add_float(const uint index, const float value)
+{
+    uint expected = vertex_value_buffer[index];
+    uint actual;
+    [allow_uav_condition]
+    do
+    {
+        actual = expected;
+        InterlockedCompareExchange(
+            vertex_value_buffer[index],
+            expected,
+            asuint(asfloat(expected) + value),
+            expected);
+    }
+    while (actual != expected);
+}
+
+#pragma kernel project_eye_gaze_to_vertices
+[numthreads(64, 1, 1)]
+void project_eye_gaze_to_vertices(const uint id : SV_DispatchThreadID)
+{
+    const uint triangle_index = id.x + x_dispatch_index * dispatch_max_thread_group;
+
+    if (triangle_index >= n_triangles)
+        return;
+
+    const uint3 tri_idx = load_triangle_indices(triangle_index);
+    const float3 p0 = load_vertex_position(tri_idx[0]);
+    const float3 p1 = load_vertex_position(tri_idx[1]);
+    const float3 p2 = load_vertex_position(tri_idx[2]);
+
+    const float4 c0 = mul(projection_mtx, mul(view_mtx, mul(model_mtx, float4(p0, 1))));
+    const float4 c1 = mul(projection_mtx, mul(view_mtx, mul(model_mtx, float4(p1, 1))));
+    const float4 c2 = mul(projection_mtx, mul(view_mtx, mul(model_mtx, float4(p2, 1))));
+
+    // Skip triangles fully behind the camera
+    if (c0.w <= 0 && c1.w <= 0 && c2.w <= 0)
+        return;
+
+    const float3 n0 = c0.xyz / c0.w;
+    const float3 n1 = c1.xyz / c1.w;
+    const float3 n2 = c2.xyz / c2.w;
+
+    // Conservative frustum cull: skip only if all vertices are outside the same plane
+    if (n0.x < -1 && n1.x < -1 && n2.x < -1) return;
+    if (n0.x >  1 && n1.x >  1 && n2.x >  1) return;
+    if (n0.y < -1 && n1.y < -1 && n2.y < -1) return;
+    if (n0.y >  1 && n1.y >  1 && n2.y >  1) return;
+    if (n0.z < -1 && n1.z < -1 && n2.z < -1) return;
+    if (n0.z >  1 && n1.z >  1 && n2.z >  1) return;
+
+    // Compute barycentric coordinates of the gaze center (NDC 0, 0) in the 2D projected triangle.
+    // Uses the standard formula: bary_i = signed_area(point, v_j, v_k) / signed_area(v_i, v_j, v_k).
+    const float2 v0 = n0.xy;
+    const float2 v1 = n1.xy;
+    const float2 v2 = n2.xy;
+
+    const float denom = (v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y);
+
+    if (abs(denom) < epsilon)
+        return; // degenerate (zero screen-space area)
+
+    const float bary0 = ((v1.y - v2.y) * (0 - v2.x) + (v2.x - v1.x) * (0 - v2.y)) / denom;
+    const float bary1 = ((v2.y - v0.y) * (0 - v2.x) + (v0.x - v2.x) * (0 - v2.y)) / denom;
+    const float bary2 = 1.0 - bary0 - bary1;
+
+    // Gaze center must be strictly inside the triangle
+    if (bary0 < 0 || bary1 < 0 || bary2 < 0)
+        return;
+
+    // Perspective-correct interpolation to recover the 3D hit point in local space.
+    // Dividing by clip_w before interpolating corrects for the perspective non-linearity.
+    const float inv_w0 = 1.0 / c0.w;
+    const float inv_w1 = 1.0 / c1.w;
+    const float inv_w2 = 1.0 / c2.w;
+    const float inv_w_sum = bary0 * inv_w0 + bary1 * inv_w1 + bary2 * inv_w2;
+
+    const float3 hit_local = (bary0 * inv_w0 * p0 + bary1 * inv_w1 * p1 + bary2 * inv_w2 * p2) / inv_w_sum;
+
+    // Re-project the hit point to get its clip-space depth for the depth test
+    const float4 hit_clip = mul(projection_mtx, mul(view_mtx, mul(model_mtx, float4(hit_local, 1))));
+
+    float sample_depth;
+    if (is_projection_orthographic)
+    {
+        sample_depth = (hit_clip.z + 1) / 2.0;
+    }
+    else
+    {
+        const float far = projection_mtx[2][3] / (projection_mtx[2][2] + 1);
+        const float near = projection_mtx[2][3] / (projection_mtx[2][2] - 1);
+        sample_depth = (hit_clip.z + near) / (far + near);
+    }
+
+    // The gaze center (NDC 0, 0) maps to the center of the depth texture
+    float tex_w, tex_h;
+    segmented_object_depth_texture.GetDimensions(tex_w, tex_h);
+    const uint2 center_pixel = uint2(tex_w * 0.5, tex_h * 0.5);
+
+    // Visibility test. The neighbourhood check handles cases where the triangle edge
+    // passes through the center pixel and the depth texture samples a neighbour surface.
+    if (!compare_sample_depth(sample_depth, parse_embedding(center_pixel))
+        && !compare_sample_depth(sample_depth, parse_embedding(center_pixel + uint2(1, 0)))
+        && !compare_sample_depth(sample_depth, parse_embedding(center_pixel + uint2(0, 1)))
+        && !compare_sample_depth(sample_depth, parse_embedding(center_pixel + uint2(-1, 0)))
+        && !compare_sample_depth(sample_depth, parse_embedding(center_pixel + uint2(0, -1))))
+    {
+        return;
+    }
+
+    // Distribute unit weight to the triangle's 3 vertices proportional to the barycentric
+    // coordinates of the hit point — vertices closer to the gaze direction receive more weight.
+    atomic_add_float(tri_idx[0], bary0);
+    atomic_add_float(tri_idx[1], bary1);
+    atomic_add_float(tri_idx[2], bary2);
+
+    InterlockedMax(samples_max_value[0], vertex_value_buffer[tri_idx[0]]);
+    InterlockedMax(samples_max_value[0], vertex_value_buffer[tri_idx[1]]);
+    InterlockedMax(samples_max_value[0], vertex_value_buffer[tri_idx[2]]);
+}
