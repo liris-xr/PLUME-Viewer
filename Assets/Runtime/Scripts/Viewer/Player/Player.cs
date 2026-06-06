@@ -295,7 +295,9 @@ namespace PLUME.Viewer.Player
             var endTime = _currentTimeNanoseconds + durationNanoseconds;
 
             var frames = Record.Frames.GetInTimeRange(_currentTimeNanoseconds, endTime);
+            var otherSamples = Record.OtherSamples.GetInTimeRange(_currentTimeNanoseconds, endTime);
 
+            _mainPlayerContext.PlaySamples(PlayerModules, otherSamples);
             _mainPlayerContext.PlayFrames(PlayerModules, frames);
 
             _currentTimeNanoseconds = Math.Clamp(endTime, 0, Record.Duration + 1);

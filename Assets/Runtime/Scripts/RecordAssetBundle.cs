@@ -34,8 +34,6 @@ namespace PLUME
             var assetName = splitAssetIdentifier[3];
 
             var assetType = Type.GetType(assetTypeName) ?? typeof(Object);
-
-            Debug.Log($"'{assetType}' '{assetPath}' '{assetName}' '{assetSource}'");
             
             var asset = assetSource switch
             {

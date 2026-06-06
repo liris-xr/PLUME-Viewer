@@ -190,6 +190,22 @@ namespace PLUME.Viewer.Player
             }
         }
 
+        public void PlaySamples(PlayerModule[] playerModules, IEnumerable<RawSample> samples)
+        {
+            if (!IsActive())
+            {
+                Activate(this);
+            }
+
+            foreach (var sample in samples)
+            {
+                foreach (var playerModule in playerModules)
+                {
+                    playerModule.PlaySample(this, sample);
+                }
+            }
+        }
+
         public void SetGameObjectTag(GameObjectIdentifier id, string tag)
         {
             var go = GetOrCreateGameObjectByIdentifier(id);

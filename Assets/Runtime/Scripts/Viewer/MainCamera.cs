@@ -35,10 +35,18 @@ namespace PLUME.Viewer
             {
                 if (mainCamera != null)
                 {
-                    // Main camera changed, copy all of its properties except target texture.
+                    // Main camera changed, copy all of its properties except the viewer-owned
+                    // output settings (CopyFrom would otherwise clobber them with the recorded
+                    // camera's values, e.g. resetting the preview to Display 1 and its clear flags).
                     var prevTargetTexture = _camera.targetTexture;
+                    var prevTargetDisplay = _camera.targetDisplay;
+                    var prevClearFlags = _camera.clearFlags;
+                    var prevBackgroundColor = _camera.backgroundColor;
                     _camera.CopyFrom(mainCamera);
                     _camera.targetTexture = prevTargetTexture;
+                    _camera.targetDisplay = prevTargetDisplay;
+                    _camera.clearFlags = prevClearFlags;
+                    _camera.backgroundColor = prevBackgroundColor;
                 }
 
                 _followedMainCamera = mainCamera;
