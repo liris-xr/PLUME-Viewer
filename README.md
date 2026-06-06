@@ -28,9 +28,9 @@ https://github.com/liris-xr/PLUME-Viewer/assets/20073809/7c594d2a-f9cb-4759-8192
 
 ## Getting Started
 
-PLUME Viewer can be installed on Windows using the [latest release](https://www.github.com/liris-xr/PLUME-Viewer/releases/). Unzip the archive and launch the `PLUME-Viewer.exe` file. You will be prompted to select the record file and its associated asset bundle you want to replay. For more information, please refer to the [guide on how to replay a record](https://liris-xr.github.io/PLUME/viewer/replay/).
+PLUME Viewer can be installed on Windows using the [latest release](https://www.github.com/liris-xr/PLUME-Viewer/releases/). Unzip the archive and launch the `PLUME-Viewer.exe` file. You will be prompted to select the record file and its associated asset bundle you want to replay. For more information, please refer to the [guide on how to replay a record](https://liris-xr.github.io/PLUME/learn/tutorials/beginner/basics/replay/).
 
-If you need more global information about PLUME, please refer to the [getting started guide](https://liris-xr.github.io/PLUME/get-started/).
+If you need more global information about PLUME, please refer to the [getting started guide](https://liris-xr.github.io/PLUME/learn/get-started/).
 
 ## Documentation
 
