@@ -681,9 +681,18 @@ namespace PLUME.Viewer.Analysis.Position
 
             _visibleResult = result;
 
-            if (result == null && prevVisibleResult != null)
+            // Switch to the heatmap-friendly pipeline (URP/built-in) while a result is generating/visible, restore on hide.
+            if (result != null && prevVisibleResult == null)
+            {
+                if (HeatmapPipelineSwitcher.Instance != null)
+                    HeatmapPipelineSwitcher.Instance.Acquire();
+            }
+            else if (result == null && prevVisibleResult != null)
             {
                 RestoreRecordMaterials(player.GetMainPlayerContext());
+
+                if (HeatmapPipelineSwitcher.Instance != null)
+                    HeatmapPipelineSwitcher.Instance.Release();
             }
         }
 
