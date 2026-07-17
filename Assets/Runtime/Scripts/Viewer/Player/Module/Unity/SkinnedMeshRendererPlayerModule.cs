@@ -49,6 +49,27 @@ namespace PLUME.Viewer.Player.Module.Unity
 
                     break;
                 }
+                case SkinnedMeshRendererBlendShapeUpdate skinnedMeshRendererBlendShapeUpdate:
+                {
+                    var skinnedMeshRenderer =
+                        ctx.GetOrCreateComponentByIdentifier<SkinnedMeshRenderer>(
+                            skinnedMeshRendererBlendShapeUpdate.Component);
+
+                    var sharedMesh = skinnedMeshRenderer.sharedMesh;
+
+                    if (sharedMesh == null)
+                        break;
+
+                    // Weights are packed in shape index order (0..blendShapeCount-1); the index is implicit.
+                    var weights = skinnedMeshRendererBlendShapeUpdate.Weights;
+                    var count = Mathf.Min(weights.Count, sharedMesh.blendShapeCount);
+                    for (var i = 0; i < count; i++)
+                    {
+                        skinnedMeshRenderer.SetBlendShapeWeight(i, weights[i]);
+                    }
+
+                    break;
+                }
             }
         }
     }
