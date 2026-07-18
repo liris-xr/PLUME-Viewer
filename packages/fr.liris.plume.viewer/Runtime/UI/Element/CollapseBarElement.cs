@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Scripting;
 using UnityEngine.UIElements;
 
+#pragma warning disable CS0618 // UxmlTraits/UxmlFactory retained for Unity 2022 compatibility (UxmlElement is 2023.2+)
 namespace PLUME.UI.Element
 {
     public class CollapseBarElement : VisualElement
