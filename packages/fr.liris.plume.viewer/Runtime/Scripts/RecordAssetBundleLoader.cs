@@ -35,6 +35,14 @@ namespace PLUME.Viewer.Player
             
             var assetBundlePath = Path.Combine(tempDirectory, "plume_assets");
             var sceneBundlePath = Path.Combine(tempDirectory, "plume_scenes");
+
+            // Optional name->hash manifest for diffusion profiles (see RecordAssetBundle.DiffusionProfileHashes).
+            // Absent in bundles built before the manifest was introduced.
+            DiffusionProfileHashManifest diffusionProfileHashManifest = null;
+            var manifestPath = Path.Combine(tempDirectory, "plume_diffusion_hashes.json");
+            if (File.Exists(manifestPath))
+                diffusionProfileHashManifest =
+                    JsonUtility.FromJson<DiffusionProfileHashManifest>(File.ReadAllText(manifestPath));
             
             var assetBundleName = Path.GetFileName(assetBundlePath);
             var sceneBundleName = Path.GetFileName(sceneBundlePath);
@@ -56,7 +64,7 @@ namespace PLUME.Viewer.Player
                 _loadingStatus = LoadingStatus.Done;
             }
 
-            return new RecordAssetBundle(assetBundle, sceneBundle);
+            return new RecordAssetBundle(assetBundle, sceneBundle, diffusionProfileHashManifest);
         }
 
         public float GetLoadingProgress()
