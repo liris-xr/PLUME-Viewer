@@ -73,7 +73,10 @@ namespace PLUME.Viewer.Player.Module.Unity
                     }
 #endif
 
-                    if (lightUpdate.HasShape)
+                    // LightShape (Cone/Pyramid/Box) is only meaningful for Spot lights. The recorder emits a
+                    // default shape (Cone) for non-spot lights; applying it unconditionally under Unity 6 would
+                    // clobber Light.type (folded into type there) and turn Directional/Point lights into Spot.
+                    if (lightUpdate.HasShape && replayLight.type == UnityEngine.LightType.Spot)
                     {
 #if UNITY_6000_0_OR_NEWER
                         replayLight.type = lightUpdate.Shape.ToEngineShapeType();
