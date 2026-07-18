@@ -40,7 +40,7 @@ namespace PLUME.Viewer.Player.Module.Unity
                     if (terrainColliderUpdate.Material != null)
                     {
                         var material =
-                            ctx.GetOrDefaultAssetByIdentifier<PhysicMaterial>(terrainColliderUpdate.Material);
+                            ctx.GetOrDefaultAssetByIdentifier<PhysicsMaterial>(terrainColliderUpdate.Material);
                         terrainCollider.sharedMaterial = material;
                     }
 

@@ -110,7 +110,7 @@ namespace PLUME.Viewer.Player
                 var renderPipelineAsset =
                     RecordAssetBundle.GetOrDefaultAssetByIdentifier<RenderPipelineAsset>(Record.graphicsSettings
                         .DefaultRenderPipelineAsset);
-                
+
                 if (renderPipelineAsset == null)
                     GraphicsSettings.defaultRenderPipeline = null;
             };
@@ -147,7 +147,7 @@ namespace PLUME.Viewer.Player
                 fd.Filter = "plm files (*.plm)|*.plm";
                 fd.FilterIndex = 0;
 
-                if (fd.ShowDialog() == DialogResult.OK)
+                if (fd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
                     //Get the path of specified file
                     return fd.FileName;
@@ -186,7 +186,7 @@ namespace PLUME.Viewer.Player
                 fd.Filter = "asset bundle (*.zip)|*.zip";
                 fd.FilterIndex = 0;
 
-                if (fd.ShowDialog() == DialogResult.OK)
+                if (fd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
                     //Get the path of specified file
                     return fd.FileName;
