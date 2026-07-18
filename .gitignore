@@ -88,6 +88,7 @@ crashlytics-build.properties
 
 Records
 
-# Superpowers brainstorming/plan artifacts (local only)
+# Local-only tooling artifacts
 docs/superpowers/
 .superpowers/
+.claude/
