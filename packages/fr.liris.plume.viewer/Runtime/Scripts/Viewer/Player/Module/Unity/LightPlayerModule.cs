@@ -2,6 +2,7 @@
 using PLUME.Sample;
 using PLUME.Sample.Unity;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace PLUME.Viewer.Player.Module.Unity
 {
@@ -65,9 +66,20 @@ namespace PLUME.Viewer.Player.Module.Unity
                         replayLight.bounceIntensity = lightUpdate.BounceIntensity;
                     }
 
+#if UNITY_6000_0_OR_NEWER
+                    if (lightUpdate.HasLightUnit)
+                    {
+                        replayLight.lightUnit = lightUpdate.LightUnit.ToEngineType();
+                    }
+#endif
+
                     if (lightUpdate.HasShape)
                     {
+#if UNITY_6000_0_OR_NEWER
+                        replayLight.type = lightUpdate.Shape.ToEngineShapeType();
+#else
                         replayLight.shape = lightUpdate.Shape.ToEngineType();
+#endif
                     }
 
                     if (lightUpdate.HasSpotAngle)
@@ -90,14 +102,19 @@ namespace PLUME.Viewer.Player.Module.Unity
                         replayLight.shadowBias = lightUpdate.ShadowBias;
                     }
 
-                    if (lightUpdate.HasShadowResolution)
+                    // shadowResolution / shadowCustomResolution are Built-in RP only APIs: setting them under
+                    // SRP (URP/HDRP) logs a per-frame warning and has no effect.
+                    if (GraphicsSettings.defaultRenderPipeline == null)
                     {
-                        replayLight.shadowResolution = lightUpdate.ShadowResolution.ToEngineType();
-                    }
+                        if (lightUpdate.HasShadowResolution)
+                        {
+                            replayLight.shadowResolution = lightUpdate.ShadowResolution.ToEngineType();
+                        }
 
-                    if (lightUpdate.HasShadowCustomResolution)
-                    {
-                        replayLight.shadowCustomResolution = lightUpdate.ShadowCustomResolution;
+                        if (lightUpdate.HasShadowCustomResolution)
+                        {
+                            replayLight.shadowCustomResolution = lightUpdate.ShadowCustomResolution;
+                        }
                     }
 
                     if (lightUpdate.HasShadowStrength)
@@ -148,7 +165,11 @@ namespace PLUME.Viewer.Player.Module.Unity
 
                     if (lightUpdate.HasCookieSize)
                     {
+#if UNITY_6000_0_OR_NEWER
+                        replayLight.cookieSize2D = new Vector2(lightUpdate.CookieSize, lightUpdate.CookieSize);
+#else
                         replayLight.cookieSize = lightUpdate.CookieSize;
+#endif
                     }
 
                     if (lightUpdate.Flare != null)
