@@ -1,4 +1,6 @@
-#if HDRP_ENABLED
+// VolumeManager.SetGlobalDefaultProfile is core RP 17+ (Unity 6). Guarded so the
+// shared package still compiles under the Unity 2022 (HDRP 14) app shell.
+#if HDRP_ENABLED && UNITY_6000_0_OR_NEWER
 using PLUME.Sample;
 using PLUME.Sample.Unity.Settings;
 using UnityEngine.Rendering;
