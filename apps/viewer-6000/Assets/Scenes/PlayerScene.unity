@@ -180,6 +180,14 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2212083007568512951, guid: b4a12f1ba345b14438d4ad048811be15, type: 3}
+      propertyPath: m_HDR
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2212083007568512951, guid: b4a12f1ba345b14438d4ad048811be15, type: 3}
+      propertyPath: m_AllowMSAA
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3853190475704171640, guid: b4a12f1ba345b14438d4ad048811be15, type: 3}
       propertyPath: m_HDR
       value: 0
