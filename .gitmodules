@@ -1,3 +1,0 @@
-[submodule "Packages/Unity-Runtime-GUID"]
-	path = apps/viewer-6000/Packages/Unity-Runtime-GUID
-	url = https://github.com/liris-xr/Unity-Runtime-GUID
