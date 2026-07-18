@@ -6,6 +6,7 @@ using PLUME.Viewer.Analysis;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.HighDefinition;
 using Application = UnityEngine.Application;
 using System.Windows.Forms;
 using Cysharp.Threading.Tasks;
@@ -37,6 +38,9 @@ namespace PLUME.Viewer.Player
         private PlayerContext _mainPlayerContext;
         private bool _isPlaying;
         private ulong _currentTimeNanoseconds;
+
+        // Global volume that registers the record's bundled diffusion profiles with HDRP at runtime.
+        private Volume _diffusionProfileVolume;
 
         public RenderTexture PreviewRenderTexture { get; private set; }
 
@@ -113,9 +117,50 @@ namespace PLUME.Viewer.Player
 
                 if (renderPipelineAsset == null)
                     GraphicsSettings.defaultRenderPipeline = null;
+
+                RegisterRecordDiffusionProfiles();
             };
 
             UniTask.WhenAll(recordLoadTask, assetBundleLoadTask).ContinueWith(() => { OnFinishLoading(); }).Forget();
+        }
+
+        /// <summary>
+        /// Registers the record's diffusion profiles with HDRP so subsurface-scattering materials (notably skin)
+        /// scatter correctly instead of falling back to the neutral profile and rendering bright red. The recorder
+        /// packs the profiles into the bundle explicitly (HDRP references them by GUID/hash, which the bundle
+        /// dependency walk misses); here they are put on a dedicated global volume whose <c>DiffusionProfileList</c>
+        /// HDRP accumulates into the active stack. No-op for URP records, whose bundles contain no profiles.
+        /// </summary>
+        private void RegisterRecordDiffusionProfiles()
+        {
+            var profiles = RecordAssetBundle.LoadAllDiffusionProfiles();
+
+            if (profiles == null || profiles.Length == 0)
+                return;
+
+            // DIFFUSION_PROFILE_COUNT (16) minus the slot reserved for the neutral profile.
+            const int maxProfiles = 15;
+            if (profiles.Length > maxProfiles)
+            {
+                Debug.LogWarning($"Record has {profiles.Length} diffusion profiles but HDRP only registers " +
+                                 $"{maxProfiles}. Some subsurface materials may render incorrectly.");
+                var truncated = new DiffusionProfileSettings[maxProfiles];
+                Array.Copy(profiles, truncated, maxProfiles);
+                profiles = truncated;
+            }
+
+            var go = new GameObject("Record Diffusion Profiles");
+            go.transform.parent = transform;
+
+            _diffusionProfileVolume = go.AddComponent<Volume>();
+            _diffusionProfileVolume.isGlobal = true;
+            _diffusionProfileVolume.priority = float.MaxValue;
+
+            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            var list = profile.Add<DiffusionProfileList>();
+            list.diffusionProfiles.value = profiles;
+            list.diffusionProfiles.overrideState = true;
+            _diffusionProfileVolume.profile = profile;
         }
 
         private static string GetRecordPath()
@@ -233,6 +278,10 @@ namespace PLUME.Viewer.Player
         {
             PreviewRenderTexture.Release();
             _recordLoader.Dispose();
+
+            // The runtime volume profile is created via CreateInstance and is not destroyed with its GameObject.
+            if (_diffusionProfileVolume != null && _diffusionProfileVolume.profile != null)
+                Destroy(_diffusionProfileVolume.profile);
         }
 
         public bool TogglePlaying()

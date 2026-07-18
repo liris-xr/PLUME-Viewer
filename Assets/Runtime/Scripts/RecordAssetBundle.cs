@@ -3,6 +3,7 @@ using System.Linq;
 using PLUME.Sample.Unity;
 using PLUME.Viewer.Player;
 using UnityEngine;
+using UnityEngine.Rendering.HighDefinition;
 using Object = UnityEngine.Object;
 
 namespace PLUME
@@ -16,6 +17,20 @@ namespace PLUME
         {
             _assetBundle = assetBundle;
             _sceneBundle = sceneBundle;
+        }
+
+        /// <summary>
+        /// Loads every <see cref="DiffusionProfileSettings"/> packed in the record's asset bundle. The recorder
+        /// adds them explicitly (HDRP references them by GUID/hash, so the bundle dependency walk misses them), and
+        /// the viewer must register them at runtime or subsurface materials fall back to the neutral profile and
+        /// render red. Returns an empty array for non-HDRP records, whose bundles contain no diffusion profiles.
+        /// </summary>
+        public DiffusionProfileSettings[] LoadAllDiffusionProfiles()
+        {
+            if (_assetBundle == null)
+                return Array.Empty<DiffusionProfileSettings>();
+
+            return _assetBundle.LoadAllAssets<DiffusionProfileSettings>();
         }
 
         public T GetOrDefaultAssetByIdentifier<T>(AssetIdentifier identifier) where T : Object
