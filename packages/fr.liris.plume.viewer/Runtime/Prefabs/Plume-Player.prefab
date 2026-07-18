@@ -1185,8 +1185,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   assembliesNames:
-  - Assembly-CSharp
-  - fr.liris.plume.viewer
+  - PLUME.Viewer
 --- !u!1 &3899191947362673055
 GameObject:
   m_ObjectHideFlags: 0

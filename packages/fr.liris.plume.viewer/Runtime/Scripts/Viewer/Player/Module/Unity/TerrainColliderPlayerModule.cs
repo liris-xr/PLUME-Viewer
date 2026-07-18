@@ -1,6 +1,11 @@
 using PLUME.Sample;
 using PLUME.Sample.Unity;
 using UnityEngine;
+#if UNITY_6000_0_OR_NEWER
+using PhysicsMaterial = UnityEngine.PhysicsMaterial;
+#else
+using PhysicsMaterial = UnityEngine.PhysicMaterial;
+#endif
 
 namespace PLUME.Viewer.Player.Module.Unity
 {

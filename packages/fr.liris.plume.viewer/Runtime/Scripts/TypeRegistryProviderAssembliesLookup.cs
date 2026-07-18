@@ -9,9 +9,9 @@ namespace PLUME
 {
     public class TypeRegistryProviderAssembliesLookup : TypeRegistryProvider
     {
-        [Tooltip("Assemblies where the module will look for MessageDescriptors, includes Assembly-CSharp by default.")]
+        [Tooltip("Assemblies where the module will look for MessageDescriptors. Defaults to the viewer assembly that holds the generated protobuf types.")]
         public string[] assembliesNames =
-            { "Assembly-CSharp", typeof(TypeRegistryProviderAssembliesLookup).Assembly.GetName().Name };
+            { typeof(TypeRegistryProviderAssembliesLookup).Assembly.GetName().Name };
 
         private TypeRegistry _registry;
 

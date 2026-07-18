@@ -4,7 +4,7 @@
         <ui:TextField picking-mode="Ignore" label="XR Camera:" text="" is-delayed="true"
                       name="xr-camera" style="color: rgb(255, 255, 255);"/>
         <ui:EnumField label="Coordinate system:"
-                      type="PLUME.Viewer.Analysis.EyeGaze.EyeGazeCoordinateSystem, Assembly-CSharp"
+                      type="PLUME.Viewer.Analysis.EyeGaze.EyeGazeCoordinateSystem, PLUME.Viewer"
                       name="coordinate-system"/>
         <ui:FloatField label="Foveal angle (deg):" value="2.5" name="foveal-angle"/>
         <ui:FloatField label="Near offset (m):" value="0.15" name="near-offset"/>
