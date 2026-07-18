@@ -1,0 +1,124 @@
+:root {
+    --media-controller-height: 30px;
+    --media-controller-btn-hover-color: rgb(0, 119, 255);
+}
+
+#media-controller__container #speed-group Label {
+    padding: 0;
+    margin: 0;
+    flex-grow: 0;
+    -unity-text-align: middle-left;
+    min-width: auto;
+}
+
+#media-controller__container #camera-selection Label {
+    padding: 0;
+    margin: 0 5px 0 0;
+    flex-shrink: 0;
+    flex-grow: 0;
+    -unity-text-align: middle-left;
+    min-width: auto;
+}
+
+#media-controller__container #camera-selection > VisualElement {
+    padding: 0;
+    margin: 0;
+    min-width: 50px;
+    flex-shrink: 1;
+    flex-grow: 1;
+}
+
+#media-controller__container #camera-selection > VisualElement > TextElement {
+    padding: 2px;
+    margin: 0;
+    flex-grow: 1;
+}
+
+#media-controller__container {
+    background-color: var(--unity-theme-border-color-9);
+    width: 100%;
+
+    flex-direction: row;
+    flex-grow: 0;
+    flex-shrink: 0;
+
+    min-height: var(--media-controller-height);
+    max-height: var(--media-controller-height);
+    height: var(--media-controller-height);
+
+    justify-content: center;
+}
+
+#speed-textfield {
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+    height: 80%;
+    margin: 0;
+}
+
+#speed-textfield #unity-text-input {
+    -unity-text-align: middle-center;
+    justify-content: center;
+}
+
+#floating-container {
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 1;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--unity-colors-window-background);
+
+    max-width: 300px;
+}
+
+.media-controller__btn-group {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.media-controller__btn {
+    height: 80%;
+    width: auto;
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.media-controller__btn .img {
+    width: 12px;
+    height: 12px;
+}
+
+.media-controller__btn:hover:enabled .img {
+    -unity-background-image-tint-color: var(--media-controller-btn-hover-color);
+}
+
+.media-controller__btn:hover:enabled {
+    color: var(--media-controller-btn-hover-color);
+}
+
+#play-pause-btn.toggle-btn--state1 .img {
+    background-image: resource("UI/Images/media-play");
+}
+
+#play-pause-btn.toggle-btn--state2 .img {
+    background-image: resource("UI/Images/media-pause");
+}
+
+#toggle-maximize-preview-btn.toggle-btn--state1 .img {
+    background-image: resource("UI/Images/maximize");
+}
+
+#toggle-maximize-preview-btn.toggle-btn--state2 .img {
+    background-image: resource("UI/Images/minimize");
+}
+
+#speed-factor-textfield {
+    max-width: 50px;
+    margin: 0;
+}

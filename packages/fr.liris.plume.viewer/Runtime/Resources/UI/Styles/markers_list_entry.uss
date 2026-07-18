@@ -1,0 +1,9 @@
+#markers-list-entry > Toggle > .unity-toggle__input {
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+#markers-list-entry > Toggle > .unity-toggle__checkmark {
+    flex-grow: 1;
+    flex-shrink: 0;
+}

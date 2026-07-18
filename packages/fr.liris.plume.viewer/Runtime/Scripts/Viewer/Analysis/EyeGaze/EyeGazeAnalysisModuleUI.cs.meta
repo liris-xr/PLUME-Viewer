@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 2757cbe01bac4ca0aa7b691f64b8f5da
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - module: {instanceID: 0}
+  - modulesListUI: {instanceID: 0}
+  - containerTemplate: {fileID: 9197481963319205126, guid: 17a4b2957c4762d4299b2cc528d5c41c, type: 3}
+  - optionsTemplate: {fileID: 9197481963319205126, guid: f37ad0d84c5ed0a4787aefab661380c1, type: 3}
+  - player: {instanceID: 0}
+  - resultEntryTemplate: {fileID: 9197481963319205126, guid: 85e58189d5b29a243b91eecb52241ba1, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
