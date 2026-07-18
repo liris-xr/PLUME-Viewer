@@ -17,7 +17,12 @@ using LightmapsMode = UnityEngine.LightmapsMode;
 using LightShadowCasterMode = UnityEngine.LightShadowCasterMode;
 using LightShadowResolution = UnityEngine.Rendering.LightShadowResolution;
 using LightShadows = UnityEngine.LightShadows;
+#if UNITY_6000_0_OR_NEWER
+using LightUnit = UnityEngine.Rendering.LightUnit;
+#endif
+#if !UNITY_6000_0_OR_NEWER
 using LightShape = UnityEngine.LightShape;
+#endif
 using LightType = UnityEngine.LightType;
 using Matrix4x4 = UnityEngine.Matrix4x4;
 using OpaqueSortMode = UnityEngine.Rendering.OpaqueSortMode;
@@ -182,6 +187,19 @@ namespace PLUME
             };
         }
 
+#if UNITY_6000_0_OR_NEWER
+        // Unity 6 folded spot-light shape into LightType (Light.shape / LightShape are obsolete).
+        public static LightType ToEngineShapeType(this Sample.Unity.LightShape lightShape)
+        {
+            return lightShape switch
+            {
+                Sample.Unity.LightShape.Cone => LightType.Spot,
+                Sample.Unity.LightShape.Pyramid => LightType.Pyramid,
+                Sample.Unity.LightShape.Box => LightType.Box,
+                _ => throw new ArgumentOutOfRangeException(nameof(lightShape), lightShape, null)
+            };
+        }
+#else
         public static LightShape ToEngineType(this Sample.Unity.LightShape lightShape)
         {
             return lightShape switch
@@ -192,6 +210,7 @@ namespace PLUME
                 _ => throw new ArgumentOutOfRangeException(nameof(lightShape), lightShape, null)
             };
         }
+#endif
 
         public static LightShadows ToEngineType(this Sample.Unity.LightShadows lightShadows)
         {
@@ -218,6 +237,21 @@ namespace PLUME
                 _ => throw new ArgumentOutOfRangeException(nameof(lightShadowResolution), lightShadowResolution, null)
             };
         }
+
+#if UNITY_6000_0_OR_NEWER
+        public static LightUnit ToEngineType(this Sample.Unity.LightUnit lightUnit)
+        {
+            return lightUnit switch
+            {
+                Sample.Unity.LightUnit.Lumen => LightUnit.Lumen,
+                Sample.Unity.LightUnit.Candela => LightUnit.Candela,
+                Sample.Unity.LightUnit.Lux => LightUnit.Lux,
+                Sample.Unity.LightUnit.Nits => LightUnit.Nits,
+                Sample.Unity.LightUnit.Ev100 => LightUnit.Ev100,
+                _ => LightUnit.Lumen
+            };
+        }
+#endif
 
         public static LightShadowCasterMode ToEngineType(this Sample.Unity.LightShadowCasterMode lightShadowCasterMode)
         {
