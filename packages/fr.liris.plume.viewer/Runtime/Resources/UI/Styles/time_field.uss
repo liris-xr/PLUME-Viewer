@@ -1,0 +1,6 @@
+@import url("dark_theme.uss");
+@import url("global.uss");
+
+.time-field #unity-text-input {
+    color: var(--unity-theme-text-color-11);
+}

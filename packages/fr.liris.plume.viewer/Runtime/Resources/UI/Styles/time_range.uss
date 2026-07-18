@@ -1,0 +1,19 @@
+@import url("dark_theme.uss");
+@import url("global.uss");
+
+TimeRangeElement #container {
+    flex-direction: column;
+}
+
+TimeRangeElement #time-fields {
+    flex-direction: row;
+}
+
+TimeRangeElement #time-fields > Label {
+    -unity-text-align: middle-center;
+}
+
+TimeRangeElement TimeFieldElement {
+    flex-grow: 1;
+    width: 45%;
+}
