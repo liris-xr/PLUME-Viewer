@@ -140,7 +140,9 @@ namespace PLUME.Viewer
         private void OnPreviewRenderNavigationMove(NavigationMoveEvent evt)
         {
             // Prevent navigation keys to change focus to another pane (WASD, arrows, joystick, ...)
+#pragma warning disable CS0618 // PreventDefault kept for Unity 2022 compat; StopPropagation semantics differ
             evt.PreventDefault();
+#pragma warning restore CS0618
         }
 
         private void OnPreviewRenderMouseEnter(MouseEnterEvent evt)

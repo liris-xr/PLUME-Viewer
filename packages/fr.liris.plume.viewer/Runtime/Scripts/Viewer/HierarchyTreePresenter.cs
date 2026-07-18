@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -185,7 +185,9 @@ namespace PLUME.Viewer
         private void ClearHierarchyTree()
         {
             _hierarchyTree.Clear();
+#pragma warning disable CS0618 // RebuildTree kept for Unity 2022 compat; no documented 1:1 replacement
             _hierarchyTree.viewController.RebuildTree();
+#pragma warning restore CS0618
         }
 
         private void UpdateHierarchyTree()
@@ -293,7 +295,9 @@ namespace PLUME.Viewer
 
             if (rebuildTree)
             {
+#pragma warning disable CS0618 // RebuildTree kept for Unity 2022 compat; no documented 1:1 replacement
                 controller.RebuildTree();
+#pragma warning restore CS0618
                 _hierarchyTree.RefreshItems();
             }
 
