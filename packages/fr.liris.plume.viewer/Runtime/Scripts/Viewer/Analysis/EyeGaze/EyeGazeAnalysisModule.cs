@@ -174,9 +174,9 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             var nFrames = frames.Count;
             
             var inputActionSamples = record.InputActions.GetInTimeRange(parameters.StartTime, parameters.EndTime);
-            var eyeGazePositionSamples = inputActionSamples.Where(s => s.Payload.BindingPaths.Contains("<EyeGaze>/pose/position"));
+            var eyeGazePositionSamples = inputActionSamples.Where(s => s.Payload.BindingPaths.Contains(parameters.GazePositionBindingPath));
             var eyeGazeRotationSamples =
-                inputActionSamples.Where(s => s.Payload.BindingPaths.Contains("<EyeGaze>/pose/rotation"));
+                inputActionSamples.Where(s => s.Payload.BindingPaths.Contains(parameters.GazeRotationBindingPath));
             
             Debug.Log($"[EyeGaze] input actions in range: {inputActionSamples.Count()}, " +
                       $"gaze position samples: {eyeGazePositionSamples.Count()}, " +
@@ -875,9 +875,18 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
             _visibleResult = result;
 
-            if (result == null && prevVisibleResult != null)
+            // Switch to the heatmap-friendly pipeline (URP/built-in) while a result is generating/visible, restore on hide.
+            if (result != null && prevVisibleResult == null)
+            {
+                if (HeatmapPipelineSwitcher.Instance != null)
+                    HeatmapPipelineSwitcher.Instance.Acquire();
+            }
+            else if (result == null && prevVisibleResult != null)
             {
                 RestoreRecordMaterials(player.GetMainPlayerContext());
+
+                if (HeatmapPipelineSwitcher.Instance != null)
+                    HeatmapPipelineSwitcher.Instance.Release();
             }
         }
 

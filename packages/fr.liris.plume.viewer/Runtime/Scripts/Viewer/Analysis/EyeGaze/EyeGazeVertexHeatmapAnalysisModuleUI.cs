@@ -21,10 +21,13 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         public Button CancelButton { get; private set; }
         public TextField XrCameraIdTextField { get; private set; }
         public TextField ProjectionReceiversIdsTextField { get; private set; }
+        public TextField GazePositionBindingTextField { get; private set; }
+        public TextField GazeRotationBindingTextField { get; private set; }
         public Toggle IncludeReceiversChildrenToggle { get; private set; }
         public TimeRangeElement TimeRange { get; private set; }
         public EnumField EyeGazeCoordinateSystemEnumField { get; private set; }
         public FloatField FovealAngleField { get; private set; }
+        public FloatField NSigmasField { get; private set; }
 
         protected new void Awake()
         {
@@ -36,10 +39,13 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             GenerationProgressBar = GeneratingPanel.Q<ProgressBar>("progress-bar");
             XrCameraIdTextField = Options.Q<TextField>("xr-camera");
             ProjectionReceiversIdsTextField = Options.Q<TextField>("projection-receivers");
+            GazePositionBindingTextField = Options.Q<TextField>("gaze-position-binding");
+            GazeRotationBindingTextField = Options.Q<TextField>("gaze-rotation-binding");
             IncludeReceiversChildrenToggle = Options.Q<Toggle>("include-receivers-children");
             TimeRange = Options.Q<TimeRangeElement>("time-range");
             EyeGazeCoordinateSystemEnumField = Options.Q<EnumField>("coordinate-system");
             FovealAngleField = Options.Q<FloatField>("foveal-angle");
+            NSigmasField = Options.Q<FloatField>("n-sigmas");
         }
 
         public override void RefreshResults()

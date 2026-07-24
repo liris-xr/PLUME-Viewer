@@ -3,6 +3,10 @@
         <ui:Toggle label="Enabled:" name="enabled" value="false"/>
         <ui:TextField picking-mode="Ignore" label="XR Camera:" text="" is-delayed="true"
                       name="xr-camera" style="color: rgb(255, 255, 255);"/>
+        <ui:TextField picking-mode="Ignore" label="Gaze position binding:" text="&lt;EyeGaze&gt;/pose/position"
+                      is-delayed="true" name="gaze-position-binding" style="color: rgb(255, 255, 255);"/>
+        <ui:TextField picking-mode="Ignore" label="Gaze rotation binding:" text="&lt;EyeGaze&gt;/pose/rotation"
+                      is-delayed="true" name="gaze-rotation-binding" style="color: rgb(255, 255, 255);"/>
         <ui:EnumField label="Coordinate system:"
                       type="PLUME.Viewer.Analysis.EyeGaze.EyeGazeCoordinateSystem, PLUME.Viewer"
                       name="coordinate-system"/>

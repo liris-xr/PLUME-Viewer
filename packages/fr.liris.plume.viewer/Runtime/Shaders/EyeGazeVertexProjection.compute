@@ -2,13 +2,15 @@
 #include "SplitDispatch.cginc"
 #include "Math.cginc"
 
+float n_sigmas;
+
 float4x4 model_mtx;
 float4x4 view_mtx;
 float4x4 projection_mtx;
 bool is_projection_orthographic;
 
 int object_instance_id;
-uint n_triangles;
+uint n_vertices;
 
 Texture2D segmented_object_depth_texture;
 
@@ -46,8 +48,22 @@ parsed_embedding parse_embedding(const uint2 embedding_uv)
 
 bool compare_sample_depth(const float sample_depth, const parsed_embedding emb)
 {
+    // Orthographic depth is normalized [0,1]; perspective depth is linear eye-space metres, so it
+    // needs a metric tolerance relative to the distance (a few mm, floored to handle near surfaces).
+    const float tol = is_projection_orthographic ? epsilon : max(0.001f, 0.004f * sample_depth);
     return emb.object_instance_id == object_instance_id
-        && abs(emb.depth - sample_depth) <= epsilon;
+        && abs(emb.depth - sample_depth) <= tol;
+}
+
+float std_normal_distribution(const float x)
+{
+    float val = 1.0f / sqrt_2_pi * exp(-0.5f * x * x); // sigma = 1
+
+    // Ensure that we don't add up very small values
+    if (val <= 0.0009f)
+        val = 0.0;
+
+    return val;
 }
 
 // Atomic float add via compare-and-swap loop
@@ -72,102 +88,60 @@ void atomic_add_float(const uint index, const float value)
 [numthreads(64, 1, 1)]
 void project_eye_gaze_to_vertices(const uint id : SV_DispatchThreadID)
 {
-    const uint triangle_index = id.x + x_dispatch_index * dispatch_max_thread_group;
+    const uint vertex_index = id.x + x_dispatch_index * dispatch_max_thread_group;
 
-    if (triangle_index >= n_triangles)
+    if (vertex_index >= n_vertices)
         return;
 
-    const uint3 tri_idx = load_triangle_indices(triangle_index);
-    const float3 p0 = load_vertex_position(tri_idx[0]);
-    const float3 p1 = load_vertex_position(tri_idx[1]);
-    const float3 p2 = load_vertex_position(tri_idx[2]);
+    const float3 local_pos = load_vertex_position(vertex_index);
+    const float4 world_pos = mul(model_mtx, float4(local_pos, 1.0f));
+    const float4 camera_pos = mul(view_mtx, world_pos);
+    const float4 clip_pos = mul(projection_mtx, camera_pos);
 
-    const float4 c0 = mul(projection_mtx, mul(view_mtx, mul(model_mtx, float4(p0, 1))));
-    const float4 c1 = mul(projection_mtx, mul(view_mtx, mul(model_mtx, float4(p1, 1))));
-    const float4 c2 = mul(projection_mtx, mul(view_mtx, mul(model_mtx, float4(p2, 1))));
+    const float3 ndc_pos = clip_pos.xyz / clip_pos.w;
+    const float2 sample_uv_pos = (ndc_pos.xy + 1) / 2.0;
 
-    // Skip triangles fully behind the camera
-    if (c0.w <= 0 && c1.w <= 0 && c2.w <= 0)
+    const bool clipped = ndc_pos.x < -1 || ndc_pos.x > 1
+                      || ndc_pos.y < -1 || ndc_pos.y > 1
+                      || ndc_pos.z < -1 || ndc_pos.z > 1;
+
+    if (clipped)
         return;
-
-    const float3 n0 = c0.xyz / c0.w;
-    const float3 n1 = c1.xyz / c1.w;
-    const float3 n2 = c2.xyz / c2.w;
-
-    // Conservative frustum cull: skip only if all vertices are outside the same plane
-    if (n0.x < -1 && n1.x < -1 && n2.x < -1) return;
-    if (n0.x >  1 && n1.x >  1 && n2.x >  1) return;
-    if (n0.y < -1 && n1.y < -1 && n2.y < -1) return;
-    if (n0.y >  1 && n1.y >  1 && n2.y >  1) return;
-    if (n0.z < -1 && n1.z < -1 && n2.z < -1) return;
-    if (n0.z >  1 && n1.z >  1 && n2.z >  1) return;
-
-    // Compute barycentric coordinates of the gaze center (NDC 0, 0) in the 2D projected triangle.
-    // Uses the standard formula: bary_i = signed_area(point, v_j, v_k) / signed_area(v_i, v_j, v_k).
-    const float2 v0 = n0.xy;
-    const float2 v1 = n1.xy;
-    const float2 v2 = n2.xy;
-
-    const float denom = (v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y);
-
-    if (abs(denom) < epsilon)
-        return; // degenerate (zero screen-space area)
-
-    const float bary0 = ((v1.y - v2.y) * (0 - v2.x) + (v2.x - v1.x) * (0 - v2.y)) / denom;
-    const float bary1 = ((v2.y - v0.y) * (0 - v2.x) + (v0.x - v2.x) * (0 - v2.y)) / denom;
-    const float bary2 = 1.0 - bary0 - bary1;
-
-    // Gaze center must be strictly inside the triangle
-    if (bary0 < 0 || bary1 < 0 || bary2 < 0)
-        return;
-
-    // Perspective-correct interpolation to recover the 3D hit point in local space.
-    // Dividing by clip_w before interpolating corrects for the perspective non-linearity.
-    const float inv_w0 = 1.0 / c0.w;
-    const float inv_w1 = 1.0 / c1.w;
-    const float inv_w2 = 1.0 / c2.w;
-    const float inv_w_sum = bary0 * inv_w0 + bary1 * inv_w1 + bary2 * inv_w2;
-
-    const float3 hit_local = (bary0 * inv_w0 * p0 + bary1 * inv_w1 * p1 + bary2 * inv_w2 * p2) / inv_w_sum;
-
-    // Re-project the hit point to get its clip-space depth for the depth test
-    const float4 hit_clip = mul(projection_mtx, mul(view_mtx, mul(model_mtx, float4(hit_local, 1))));
 
     float sample_depth;
     if (is_projection_orthographic)
     {
-        sample_depth = (hit_clip.z + 1) / 2.0;
+        sample_depth = (clip_pos.z + 1) / 2.0;
     }
     else
     {
-        const float far = projection_mtx[2][3] / (projection_mtx[2][2] + 1);
-        const float near = projection_mtx[2][3] / (projection_mtx[2][2] - 1);
-        sample_depth = (hit_clip.z + near) / (far + near);
+        // Linear eye-space depth (metres), matching SegmentedObjectDepth.shader's perspective output.
+        sample_depth = -camera_pos.z;
     }
 
-    // The gaze center (NDC 0, 0) maps to the center of the depth texture
     float tex_w, tex_h;
     segmented_object_depth_texture.GetDimensions(tex_w, tex_h);
-    const uint2 center_pixel = uint2(tex_w * 0.5, tex_h * 0.5);
+    const uint2 embedding_uv = sample_uv_pos * uint2(tex_w, tex_h);
 
-    // Visibility test. The neighbourhood check handles cases where the triangle edge
-    // passes through the center pixel and the depth texture samples a neighbour surface.
-    if (!compare_sample_depth(sample_depth, parse_embedding(center_pixel))
-        && !compare_sample_depth(sample_depth, parse_embedding(center_pixel + uint2(1, 0)))
-        && !compare_sample_depth(sample_depth, parse_embedding(center_pixel + uint2(0, 1)))
-        && !compare_sample_depth(sample_depth, parse_embedding(center_pixel + uint2(-1, 0)))
-        && !compare_sample_depth(sample_depth, parse_embedding(center_pixel + uint2(0, -1))))
+    // Foveal Gaussian falloff: distance from the gaze center (NDC 0, 0), scaled so the projection
+    // boundary corresponds to n_sigmas (e.g. 99.99% of the distribution for n_sigmas = 4). This is
+    // the same weighting as the sub-triangle module, evaluated per vertex instead of per sample.
+    const float x = (sample_uv_pos.x - 0.5) * 2;
+    const float y = (sample_uv_pos.y - 0.5) * 2;
+    const float u = saturate(sqrt(x * x + y * y)) * n_sigmas;
+    const float projected_gaussian_value = saturate(std_normal_distribution(u));
+
+    // Only accumulate on vertices actually visible at their projected pixel (occlusion test). The
+    // neighbourhood check absorbs discretization artefacts at object edges.
+    if (!compare_sample_depth(sample_depth, parse_embedding(embedding_uv))
+        && !compare_sample_depth(sample_depth, parse_embedding(embedding_uv + uint2(1, 0)))
+        && !compare_sample_depth(sample_depth, parse_embedding(embedding_uv + uint2(0, 1)))
+        && !compare_sample_depth(sample_depth, parse_embedding(embedding_uv + uint2(-1, 0)))
+        && !compare_sample_depth(sample_depth, parse_embedding(embedding_uv + uint2(0, -1))))
     {
         return;
     }
 
-    // Distribute unit weight to the triangle's 3 vertices proportional to the barycentric
-    // coordinates of the hit point — vertices closer to the gaze direction receive more weight.
-    atomic_add_float(tri_idx[0], bary0);
-    atomic_add_float(tri_idx[1], bary1);
-    atomic_add_float(tri_idx[2], bary2);
-
-    InterlockedMax(samples_max_value[0], vertex_value_buffer[tri_idx[0]]);
-    InterlockedMax(samples_max_value[0], vertex_value_buffer[tri_idx[1]]);
-    InterlockedMax(samples_max_value[0], vertex_value_buffer[tri_idx[2]]);
+    atomic_add_float(vertex_index, projected_gaussian_value);
+    InterlockedMax(samples_max_value[0], vertex_value_buffer[vertex_index]);
 }

@@ -135,6 +135,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 _projectionCamera.targetTexture);
             projectionShader.SetMatrix("projection_mtx", _projectionCamera.projectionMatrix);
             projectionShader.SetBool("is_projection_orthographic", _projectionCamera.orthographic);
+            projectionShader.SetFloat("n_sigmas", parameters.NSigmas);
             projectionShader.SetBuffer(projectionKernel, "samples_max_value", maxValueBuffer);
 
             if (parameters.StartTime > 0)
@@ -151,9 +152,9 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
             var inputActionSamples = record.InputActions.GetInTimeRange(parameters.StartTime, parameters.EndTime);
             var eyeGazePositionSamples =
-                inputActionSamples.Where(s => s.Payload.BindingPaths.Contains("<EyeGaze>/pose/position"));
+                inputActionSamples.Where(s => s.Payload.BindingPaths.Contains(parameters.GazePositionBindingPath));
             var eyeGazeRotationSamples =
-                inputActionSamples.Where(s => s.Payload.BindingPaths.Contains("<EyeGaze>/pose/rotation"));
+                inputActionSamples.Where(s => s.Payload.BindingPaths.Contains(parameters.GazeRotationBindingPath));
 
             Debug.Log($"[EyeGazeVertex] gaze position samples: {eyeGazePositionSamples.Count()}, " +
                       $"gaze rotation samples: {eyeGazeRotationSamples.Count()}");
@@ -396,16 +397,14 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
                 projectionShader.SetInt("object_instance_id", go.GetInstanceID());
                 projectionShader.SetMatrix("model_mtx", r.localToWorldMatrix);
-                projectionShader.SetInt("n_triangles", (int)meshResult.NTriangles);
-                projectionShader.SetBuffer(projectionKernel, "index_buffer", meshResult.IndexBuffer);
-                projectionShader.SetInt("index_buffer_stride", meshResult.IndexBufferStride);
+                projectionShader.SetInt("n_vertices", (int)meshResult.NVertices);
                 projectionShader.SetBuffer(projectionKernel, "vertex_buffer", vertexBuffer);
                 projectionShader.SetInt("vertex_buffer_stride", vertexBufferStride);
                 projectionShader.SetInt("vertex_buffer_position_offset", vertexBufferPositionOffset);
                 projectionShader.SetBuffer(projectionKernel, "vertex_value_buffer", meshResult.VertexValueBuffer);
 
                 projectionShader.GetKernelThreadGroupSizes(projectionKernel, out var threadGroupSizeX, out _, out _);
-                var totalGroupsX = Mathf.CeilToInt(meshResult.NTriangles / (float)threadGroupSizeX);
+                var totalGroupsX = Mathf.CeilToInt(meshResult.NVertices / (float)threadGroupSizeX);
                 projectionShader.SplitDispatch(projectionKernel, totalGroupsX, 1);
 
                 bakedVertexBuffer?.Release();
@@ -610,8 +609,19 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             var prev = _visibleResult;
             _visibleResult = result;
 
-            if (result == null && prev != null)
+            // Switch to the heatmap-friendly pipeline (URP/built-in) while a result is generating/visible, restore on hide.
+            if (result != null && prev == null)
+            {
+                if (HeatmapPipelineSwitcher.Instance != null)
+                    HeatmapPipelineSwitcher.Instance.Acquire();
+            }
+            else if (result == null && prev != null)
+            {
                 RestoreRecordMaterials(player.GetMainPlayerContext());
+
+                if (HeatmapPipelineSwitcher.Instance != null)
+                    HeatmapPipelineSwitcher.Instance.Release();
+            }
         }
 
         public EyeGazeVertexHeatmapResult GetVisibleResult() => _visibleResult;

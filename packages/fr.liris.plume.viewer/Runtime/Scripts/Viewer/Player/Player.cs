@@ -85,7 +85,10 @@ namespace PLUME.Viewer.Player
             var recordPath = GetRecordPath();
             var bundlePath = GetBundlePath(recordPath);
 
-            PreviewRenderTexture = RenderTexture.GetTemporary(1920, 1080);
+            // 24-bit depth buffer is required so the preview cameras have a depth attachment to
+            // test/write against; without it opaque geometry draws in submission order (internal
+            // meshes bleed through surfaces), which is most visible when replaying HDRP records.
+            PreviewRenderTexture = RenderTexture.GetTemporary(1920, 1080, 24);
             freeCamera.PreviewRenderTexture = PreviewRenderTexture;
             topViewCamera.PreviewRenderTexture = PreviewRenderTexture;
             mainCamera.PreviewRenderTexture = PreviewRenderTexture;

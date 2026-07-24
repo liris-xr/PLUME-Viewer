@@ -11,6 +11,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
         public string defaultXrCameraId = "";
         public string defaultProjectionReceiversIds = "";
+        public string defaultGazePositionBindingPath = "<EyeGaze>/pose/position";
+        public string defaultGazeRotationBindingPath = "<EyeGaze>/pose/rotation";
         public EyeGazeCoordinateSystem defaultCoordinateSystem = EyeGazeCoordinateSystem.Camera;
         public float defaultFovealVisionOpticalAxisAngle = 2.5f;
         public float defaultNSigmas = 4f;
@@ -27,6 +29,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             ui.CancelButton.clicked += OnClickCancel;
             ui.XrCameraIdTextField.value = defaultXrCameraId;
             ui.ProjectionReceiversIdsTextField.value = defaultProjectionReceiversIds;
+            ui.GazePositionBindingTextField.value = defaultGazePositionBindingPath;
+            ui.GazeRotationBindingTextField.value = defaultGazeRotationBindingPath;
             ui.EyeGazeCoordinateSystemEnumField.value = defaultCoordinateSystem;
             ui.FovealAngleField.value = defaultFovealVisionOpticalAxisAngle;
             ui.NSigmasField.value = defaultNSigmas;
@@ -76,7 +80,9 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 CoordinateSystem = (EyeGazeCoordinateSystem)ui.EyeGazeCoordinateSystemEnumField.value,
                 FovealVisionOpticalAxisAngle = ui.FovealAngleField.value,
                 NSigmas = ui.NSigmasField.value,
-                SamplesPerSquareMeter = ui.SamplesPerSquareMeterField.value
+                SamplesPerSquareMeter = ui.SamplesPerSquareMeterField.value,
+                GazePositionBindingPath = ui.GazePositionBindingTextField.value.Trim(),
+                GazeRotationBindingPath = ui.GazeRotationBindingTextField.value.Trim()
             };
 
             var onFinishCallback = new Action<EyeGazeAnalysisResult>(result =>

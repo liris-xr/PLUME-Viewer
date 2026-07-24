@@ -14,6 +14,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         [NonSerialized] public bool isEnabled;
         [NonSerialized] public string xrCameraId = "";
         [NonSerialized] public EyeGazeCoordinateSystem coordinateSystem = EyeGazeCoordinateSystem.Camera;
+        [NonSerialized] public string gazePositionBindingPath = "<EyeGaze>/pose/position";
+        [NonSerialized] public string gazeRotationBindingPath = "<EyeGaze>/pose/rotation";
         [NonSerialized] public float halfAngleDeg = 2.5f;
         [NonSerialized] public float nearOffset = 0.15f;
         [NonSerialized] public float coneLength = 2f;
@@ -28,6 +30,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
         private IReadOnlySamplesSortedList<RawSample<InputAction>> _positionSamples;
         private IReadOnlySamplesSortedList<RawSample<InputAction>> _rotationSamples;
+        private string _cachedPositionBindingPath;
+        private string _cachedRotationBindingPath;
 
         private void Awake()
         {
@@ -57,9 +61,11 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         {
             var inputActions = player.Record.InputActions;
             _positionSamples = inputActions.Where(
-                s => s.Payload.BindingPaths.Contains("<EyeGaze>/pose/position"));
+                s => s.Payload.BindingPaths.Contains(gazePositionBindingPath));
             _rotationSamples = inputActions.Where(
-                s => s.Payload.BindingPaths.Contains("<EyeGaze>/pose/rotation"));
+                s => s.Payload.BindingPaths.Contains(gazeRotationBindingPath));
+            _cachedPositionBindingPath = gazePositionBindingPath;
+            _cachedRotationBindingPath = gazeRotationBindingPath;
         }
 
         private void LateUpdate()
@@ -88,7 +94,9 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 return;
             }
 
-            if (_positionSamples == null)
+            if (_positionSamples == null
+                || _cachedPositionBindingPath != gazePositionBindingPath
+                || _cachedRotationBindingPath != gazeRotationBindingPath)
                 CacheGazeSamples();
 
             var ctx = player.GetMainPlayerContext();

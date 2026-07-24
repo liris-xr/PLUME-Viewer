@@ -11,8 +11,11 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
         public string defaultXrCameraId = "";
         public string defaultProjectionReceiversIds = "";
+        public string defaultGazePositionBindingPath = "<EyeGaze>/pose/position";
+        public string defaultGazeRotationBindingPath = "<EyeGaze>/pose/rotation";
         public EyeGazeCoordinateSystem defaultCoordinateSystem = EyeGazeCoordinateSystem.Camera;
         public float defaultFovealVisionOpticalAxisAngle = 2.5f;
+        public float defaultNSigmas = 4f;
 
         public EyeGazeVertexHeatmapAnalysisModule module;
         public EyeGazeVertexHeatmapAnalysisModuleUI ui;
@@ -25,8 +28,11 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             ui.CancelButton.clicked += OnClickCancel;
             ui.XrCameraIdTextField.value = defaultXrCameraId;
             ui.ProjectionReceiversIdsTextField.value = defaultProjectionReceiversIds;
+            ui.GazePositionBindingTextField.value = defaultGazePositionBindingPath;
+            ui.GazeRotationBindingTextField.value = defaultGazeRotationBindingPath;
             ui.EyeGazeCoordinateSystemEnumField.value = defaultCoordinateSystem;
             ui.FovealAngleField.value = defaultFovealVisionOpticalAxisAngle;
+            ui.NSigmasField.value = defaultNSigmas;
 
             ui.clickedDeleteResult += OnClickDeleteResult;
             ui.toggledResultVisibility += OnToggleResultVisibility;
@@ -67,7 +73,10 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 StartTime = ui.TimeRange.StartTime,
                 EndTime = ui.TimeRange.EndTime,
                 CoordinateSystem = (EyeGazeCoordinateSystem)ui.EyeGazeCoordinateSystemEnumField.value,
-                FovealVisionOpticalAxisAngle = ui.FovealAngleField.value
+                FovealVisionOpticalAxisAngle = ui.FovealAngleField.value,
+                NSigmas = ui.NSigmasField.value,
+                GazePositionBindingPath = ui.GazePositionBindingTextField.value.Trim(),
+                GazeRotationBindingPath = ui.GazeRotationBindingTextField.value.Trim()
             };
 
             var onFinish = new Action<EyeGazeVertexHeatmapResult>(result =>

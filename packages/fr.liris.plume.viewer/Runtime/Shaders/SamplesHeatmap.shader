@@ -13,6 +13,13 @@
 
         Pass
         {
+            // Enforce opaque depth state explicitly: when an HDRP record is displayed, the heatmap
+            // renders under the switched pipeline (built-in/URP) whose default render state differs,
+            // which otherwise breaks depth sorting (internal meshes bleed through the surface).
+            ZWrite On
+            ZTest LEqual
+            Cull Back
+
             CGPROGRAM
             #pragma target 5.0
             #pragma vertex vert

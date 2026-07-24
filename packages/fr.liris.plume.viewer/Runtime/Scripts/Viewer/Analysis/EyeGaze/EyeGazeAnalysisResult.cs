@@ -24,6 +24,17 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         public float FovealVisionOpticalAxisAngle;
         public float NSigmas;
         public float SamplesPerSquareMeter;
+
+        /// <summary>
+        /// Input action binding path of the gaze position sample (e.g. "&lt;EyeGaze&gt;/pose/position" or
+        /// "&lt;VarjoHMD&gt;/eyeGaze/centerEyePosition").
+        /// </summary>
+        public string GazePositionBindingPath;
+
+        /// <summary>
+        /// Input action binding path of the gaze rotation sample (e.g. "&lt;EyeGaze&gt;/pose/rotation").
+        /// </summary>
+        public string GazeRotationBindingPath;
     }
 
     public class EyeGazeAnalysisResult : AnalysisModuleResult

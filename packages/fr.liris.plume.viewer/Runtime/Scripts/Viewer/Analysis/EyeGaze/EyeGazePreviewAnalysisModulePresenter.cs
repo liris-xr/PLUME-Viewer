@@ -5,6 +5,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
     public class EyeGazePreviewAnalysisModulePresenter : MonoBehaviour
     {
         public string defaultXrCameraId = "";
+        public string defaultGazePositionBindingPath = "<EyeGaze>/pose/position";
+        public string defaultGazeRotationBindingPath = "<EyeGaze>/pose/rotation";
         public EyeGazeCoordinateSystem defaultCoordinateSystem = EyeGazeCoordinateSystem.Camera;
         public float defaultFovealAngleDeg = 2.5f;
         public float defaultNearOffset = 0.15f;
@@ -17,6 +19,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         {
             ui.EnabledToggle.value = false;
             ui.XrCameraIdTextField.value = defaultXrCameraId;
+            ui.GazePositionBindingTextField.value = defaultGazePositionBindingPath;
+            ui.GazeRotationBindingTextField.value = defaultGazeRotationBindingPath;
             ui.CoordinateSystemEnumField.value = defaultCoordinateSystem;
             ui.FovealAngleField.value = defaultFovealAngleDeg;
             ui.NearOffsetField.value = defaultNearOffset;
@@ -27,6 +31,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         {
             module.isEnabled = ui.EnabledToggle.value;
             module.xrCameraId = ui.XrCameraIdTextField.value.Trim();
+            module.gazePositionBindingPath = ui.GazePositionBindingTextField.value.Trim();
+            module.gazeRotationBindingPath = ui.GazeRotationBindingTextField.value.Trim();
             module.coordinateSystem = (EyeGazeCoordinateSystem)ui.CoordinateSystemEnumField.value;
             module.halfAngleDeg = ui.FovealAngleField.value;
             module.nearOffset = ui.NearOffsetField.value;

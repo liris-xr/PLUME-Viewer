@@ -69,7 +69,10 @@ parsed_embedding parse_embedding(const uint2 embedding_uv)
 bool compare_sample_depth(const float sample_depth, const parsed_embedding embedding)
 {
     const bool matching_instance_id = embedding.object_instance_id == object_instance_id;
-    const bool matching_depth = abs(embedding.depth - sample_depth) <= epsilon;
+    // Orthographic depth is normalized [0,1]; perspective depth is linear eye-space metres, so it
+    // needs a metric tolerance relative to the distance (a few mm, floored to handle near surfaces).
+    const float tol = is_projection_orthographic ? epsilon : max(0.001f, 0.004f * sample_depth);
+    const bool matching_depth = abs(embedding.depth - sample_depth) <= tol;
     return matching_instance_id && matching_depth;
 }
 
@@ -142,9 +145,8 @@ void project_std_normal_distribution(const uint2 id : SV_DispatchThreadID)
     }
     else
     {
-        const float far = projection_mtx[2][3] / (projection_mtx[2][2] + 1);
-        const float near = projection_mtx[2][3] / (projection_mtx[2][2] - 1);
-        sample_depth = (clip_pos.z + near) / (far + near); // remap from range [-near; far] to [0; 1]
+        // Linear eye-space depth (metres), matching SegmentedObjectDepth.shader's perspective output.
+        sample_depth = -camera_pos.z;
     }
 
     float segmented_object_depth_texture_width, segmented_object_depth_texture_height;
