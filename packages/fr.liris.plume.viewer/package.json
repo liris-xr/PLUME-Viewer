@@ -1,6 +1,6 @@
 {
   "name": "fr.liris.plume.viewer",
-  "version": "1.0.0",
+  "version": "4.0.0-beta",
   "displayName": "PLUME Viewer",
   "description": "Shared, portable PLUME viewer runtime (scripts, prefabs, shaders, materials, UI, plugins). Embedded by per-Unity-version shell projects under apps/.",
   "unity": "2022.3",
