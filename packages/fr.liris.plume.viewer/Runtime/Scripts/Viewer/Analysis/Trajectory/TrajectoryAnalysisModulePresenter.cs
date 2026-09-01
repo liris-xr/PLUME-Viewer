@@ -36,21 +36,31 @@ namespace PLUME.Viewer.Analysis.Trajectory
             ui.RefreshTimeRangeLimits();
             ui.TimeRange.Reset();
 
-            player.onGeneratingModuleChanged += generatingModule =>
+            player.onGeneratingModuleChanged += OnGeneratingModuleChanged;
+        }
+
+        private void OnDestroy()
+        {
+            if (player == null)
+                return;
+
+            player.onGeneratingModuleChanged -= OnGeneratingModuleChanged;
+        }
+
+        // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being shown
+        private void OnGeneratingModuleChanged(AnalysisModule generatingModule)
+        {
+            if (generatingModule == null)
+                return;
+
+            var visibleResults = new List<TrajectoryAnalysisModuleResult>(module.GetVisibleResults());
+
+            foreach (var result in visibleResults)
             {
-                // TODO: remove, quick and dirty fix to prevent heatmap results to be visible while another type of heatmap is being shown
-                if (generatingModule != null)
-                {
-                    var visibleResults = new List<TrajectoryAnalysisModuleResult>(module.GetVisibleResults());
+                module.SetResultVisibility(result, false);
+            }
 
-                    foreach (var result in visibleResults)
-                    {
-                        module.SetResultVisibility(result, false);
-                    }
-
-                    ui.RefreshResults();
-                }
-            };
+            ui.RefreshResults();
         }
 
         private void OnClickGenerate()

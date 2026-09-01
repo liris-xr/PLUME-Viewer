@@ -115,7 +115,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
             if (player.GetModuleGenerating() != null)
             {
-                Debug.LogWarning("Another module is already generating");
+                Debug.LogWarning($"Cannot start generating {GetType().Name}: {player.GetModuleGenerating().GetType().Name} " +
+                                 "is already generating. Wait for it to finish or cancel it first.");
                 yield break;
             }
 
@@ -140,7 +141,9 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             }
             catch (Exception e)
             {
-                Debug.LogError("[EyeGaze] Exception during setup: " + e);
+                Debug.LogError("[EyeGaze] Setup failed, generation aborted. Could not allocate the value buffers, find " +
+                               $"the 'project_std_normal_distribution' kernel in '{projectionShader?.name}', or " +
+                               $"create the playback context.\n{e}");
                 IsGenerating = false;
                 if (player.GetModuleGenerating() == this) player.SetModuleGenerating(null);
                 yield break;
@@ -174,24 +177,32 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             var nFrames = frames.Count;
             
             var inputActionSamples = record.InputActions.GetInTimeRange(parameters.StartTime, parameters.EndTime);
-            var eyeGazePositionSamples = inputActionSamples.Where(s => s.Payload.BindingPaths.Contains(parameters.GazePositionBindingPath));
+            // Filtered on the value type too: a path pointing at an action of another type leaves the field read below unset.
+            var eyeGazePositionSamples =
+                inputActionSamples.Where(s => s.Payload.BindingPaths.Contains(parameters.GazePositionBindingPath) &&
+                                              s.Payload.ValueCase == InputAction.ValueOneofCase.Vector3);
             var eyeGazeRotationSamples =
-                inputActionSamples.Where(s => s.Payload.BindingPaths.Contains(parameters.GazeRotationBindingPath));
+                inputActionSamples.Where(s => s.Payload.BindingPaths.Contains(parameters.GazeRotationBindingPath) &&
+                                              s.Payload.ValueCase == InputAction.ValueOneofCase.Quaternion);
             
-            Debug.Log($"[EyeGaze] input actions in range: {inputActionSamples.Count()}, " +
-                      $"gaze position samples: {eyeGazePositionSamples.Count()}, " +
-                      $"gaze rotation samples: {eyeGazeRotationSamples.Count()}");
+            Debug.Log($"[EyeGaze] {inputActionSamples.Count()} input action samples in " +
+                      $"[{parameters.StartTime}, {parameters.EndTime}]; " +
+                      $"{eyeGazePositionSamples.Count()} match position binding '{parameters.GazePositionBindingPath}', " +
+                      $"{eyeGazeRotationSamples.Count()} match rotation binding '{parameters.GazeRotationBindingPath}'");
 
-            if (!eyeGazePositionSamples.Any() || !eyeGazeRotationSamples.Any())
-            {
-                var paths = inputActionSamples
-                    .SelectMany(s => s.Payload.BindingPaths)
-                    .Distinct();
-                Debug.LogWarning("[EyeGaze] No gaze samples. Recorded binding paths: "
-                                 + string.Join(", ", paths));
-            }
+            if (!eyeGazePositionSamples.Any())
+                Debug.LogWarning("[EyeGaze] No gaze position samples. " +
+                                 EyeGazeDiagnostics.DescribeBindingMismatch(inputActionSamples,
+                                     parameters.GazePositionBindingPath, InputAction.ValueOneofCase.Vector3));
+
+            if (!eyeGazeRotationSamples.Any())
+                Debug.LogWarning("[EyeGaze] No gaze rotation samples. " +
+                                 EyeGazeDiagnostics.DescribeBindingMismatch(inputActionSamples,
+                                     parameters.GazeRotationBindingPath, InputAction.ValueOneofCase.Quaternion));
 
             var cameraNeverFound = true;
+            var receiversNeverResolved = new HashSet<Guid>(parameters.ReceiversIdentifiers);
+            var unresolvedChildLookups = 0;
 
             for (var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
             {
@@ -216,12 +227,22 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                     var replayId = _generationContext.GetReplayInstanceId(receiversIdentifier);
                     if (!replayId.HasValue) continue;
 
+                    receiversNeverResolved.Remove(receiversIdentifier);
+
                     if (!replayProjectionReceiversIds.Contains(replayId.Value))
                         replayProjectionReceiversIds.Add(replayId.Value);
 
                     if (!parameters.IncludeReceiversChildren) continue;
 
                     var go = _generationContext.FindGameObjectByInstanceId(replayId.Value);
+
+                    // Identifiers of transforms, components and assets share the same map, so the id may not resolve
+                    // to a GameObject.
+                    if (go == null)
+                    {
+                        unresolvedChildLookups++;
+                        continue;
+                    }
 
                     foreach (var goInstanceId in go.GetComponentsInChildren<Renderer>()
                                  .Select(r => r.gameObject.GetInstanceID()))
@@ -297,9 +318,23 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 player.SetModuleGenerating(null);
 
             if (cameraNeverFound)
-            {
-                Debug.LogWarning($"Camera with identifier {parameters.XrCameraIdentifier} not found in the given time range {parameters.StartTime} - {parameters.EndTime}.");
-            }
+                Debug.LogWarning($"[EyeGaze] The XR camera {parameters.XrCameraIdentifier} never appeared in " +
+                                 $"[{parameters.StartTime}, {parameters.EndTime}] over {nFrames} frames, so nothing " +
+                                 "was projected. Check the XR camera identifier and the time range.");
+
+            if (receiversNeverResolved.Count > 0)
+                Debug.LogWarning($"[EyeGaze] {receiversNeverResolved.Count} of " +
+                                 $"{parameters.ReceiversIdentifiers.Length} projection receivers never appeared in " +
+                                 $"[{parameters.StartTime}, {parameters.EndTime}] and received no gaze: " +
+                                 string.Join(", ", receiversNeverResolved));
+
+            if (unresolvedChildLookups > 0)
+                Debug.LogWarning($"[EyeGaze] {unresolvedChildLookups} receiver lookup(s) resolved to something that " +
+                                 "is not a GameObject, so their children were skipped. The receiver identifiers are " +
+                                 "probably transform, component or asset identifiers rather than GameObject ones.");
+
+            Debug.Log($"[EyeGaze] Generated {meshSamplerResults.Count} sampled mesh(es) over {nFrames} frames in " +
+                      $"{stopwatch.ElapsedMilliseconds} ms.");
 
             finishCallback(result);
         }
@@ -539,7 +574,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             var gameObjectIdentifier = ctx.GetRecordIdentifier(go.GetInstanceID());
             var meshIdentifier = ctx.GetRecordIdentifier(mesh.GetInstanceID());
 
-            if (gameObjectIdentifier == null || meshIdentifier == null)
+            if (gameObjectIdentifier == Guid.Empty || meshIdentifier == Guid.Empty)
                 return null;
 
             // Two GameObjects might have the same sharedMesh. We add the gameObjectIdentifier as a discriminator.
@@ -699,9 +734,9 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 var gameObjectIdentifier = ctx.GetRecordIdentifier(go.GetInstanceID());
                 var meshRecordIdentifier = ctx.GetRecordIdentifier(mesh.GetInstanceID());
 
-                if (gameObjectIdentifier == null)
+                if (gameObjectIdentifier == Guid.Empty)
                     continue;
-                if (meshRecordIdentifier == null)
+                if (meshRecordIdentifier == Guid.Empty)
                     continue;
 
                 var meshSamplerResultHash = HashCode.Combine(gameObjectIdentifier, meshRecordIdentifier);
@@ -898,6 +933,11 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             {
                 result.Dispose();
             }
+
+            // The projection camera lives on another GameObject, which may already have been destroyed since teardown
+            // order across GameObjects is undefined.
+            if (_projectionCamera == null || _projectionCamera.targetTexture == null)
+                return;
 
             _projectionCamera.targetTexture.Release();
             _projectionCamera.targetTexture = null;

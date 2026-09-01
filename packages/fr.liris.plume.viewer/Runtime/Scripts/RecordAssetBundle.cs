@@ -30,14 +30,12 @@ namespace PLUME
     public class RecordAssetBundle
     {
         private readonly AssetBundle _assetBundle;
-        private readonly AssetBundle _sceneBundle;
         private readonly DiffusionProfileHashManifest _diffusionProfileHashManifest;
 
-        public RecordAssetBundle(AssetBundle assetBundle, AssetBundle sceneBundle,
+        public RecordAssetBundle(AssetBundle assetBundle,
             DiffusionProfileHashManifest diffusionProfileHashManifest = null)
         {
             _assetBundle = assetBundle;
-            _sceneBundle = sceneBundle;
             _diffusionProfileHashManifest = diffusionProfileHashManifest;
         }
 
@@ -85,7 +83,9 @@ namespace PLUME
                     System.Reflection.BindingFlags.NonPublic);
                 if (hashField == null)
                 {
-                    Debug.LogWarning("Could not reflect DiffusionProfile.hash; diffusion profile hashes not restored.");
+                    Debug.LogWarning("Could not reflect DiffusionProfile.hash in Unity " + Application.unityVersion +
+                                     "; no diffusion profile hash was restored, so subsurface materials (skin in " +
+                                     "particular) will not match their profile and render red.");
                     return;
                 }
 
@@ -95,6 +95,10 @@ namespace PLUME
 
         public T GetOrDefaultAssetByIdentifier<T>(AssetIdentifier identifier) where T : Object
         {
+            // Null whenever the record left the corresponding message field unset.
+            if (identifier == null)
+                return null;
+
             if (string.IsNullOrEmpty(identifier.Guid) || Guid.Parse(identifier.Guid) == Guid.Empty)
                 return null;
 
@@ -102,6 +106,14 @@ namespace PLUME
                 return null;
 
             var splitAssetIdentifier = identifier.AssetBundlePath.Split(":", 4);
+
+            if (splitAssetIdentifier.Length < 4)
+            {
+                Debug.LogWarning($"Asset {identifier.Guid} not loaded: its bundle path " +
+                                 $"'{identifier.AssetBundlePath}' has {splitAssetIdentifier.Length} of the 4 expected " +
+                                 "'source:type:path:name' parts.");
+                return null;
+            }
 
             var assetSource = splitAssetIdentifier[0];
             var assetTypeName = splitAssetIdentifier[1];
@@ -128,11 +140,17 @@ namespace PLUME
 
         private static Object LoadBuiltinAsset(Type assetType, string assetPath, string assetName)
         {
-            var builtinAssets = Object.FindAnyObjectByType<BuiltinAssets>();
+            // Instance first: this runs once per builtin asset referenced by the record, and a scene-wide search per
+            // asset is what the singleton exists to avoid. The search remains as a fallback in case no Awake ran yet.
+            var builtinAssets = BuiltinAssets.Instance;
+
+            if (builtinAssets == null)
+                builtinAssets = Object.FindAnyObjectByType<BuiltinAssets>();
 
             if (builtinAssets == null)
             {
-                Debug.LogWarning("BuiltinAssets not found. Cannot load builtin asset.");
+                Debug.LogWarning($"Cannot load the builtin asset '{assetName}' ({assetType.Name}) from '{assetPath}': " +
+                                 "no BuiltinAssets component exists in the loaded scenes.");
                 return null;
             }
 

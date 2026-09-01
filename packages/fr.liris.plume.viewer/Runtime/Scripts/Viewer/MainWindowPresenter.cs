@@ -18,22 +18,61 @@ namespace PLUME.Viewer
         private MainWindowUI _mainWindowUI;
 
         private bool _loading = true;
+        private bool _showedLoadingError;
 
         private void Awake()
         {
             _mainWindowUI = GetComponent<MainWindowUI>();
-            player.OnFinishLoading += () =>
-            {
-                if (playOnFinishLoading)
-                {
-                    player.StartPlaying();
-                    _mainWindowUI.RefreshPlayPauseButton();
-                }
-            };
+            player.OnFinishLoading += OnPlayerFinishLoading;
+        }
+
+        private void OnDestroy()
+        {
+            if (player == null)
+                return;
+
+            player.OnFinishLoading -= OnPlayerFinishLoading;
+        }
+
+        // The label is built here rather than declared in the UXML so that reporting a failure never depends on the
+        // viewer panel having been set up.
+        private void ShowLoadingError(string message)
+        {
+            _mainWindowUI.ViewerPanel.style.display = DisplayStyle.None;
+            _mainWindowUI.LoadingPanel.style.display = DisplayStyle.Flex;
+
+            var progressBar = _mainWindowUI.LoadingPanel.Q<ProgressBar>("progress-bar");
+
+            if (progressBar != null)
+                progressBar.style.display = DisplayStyle.None;
+
+            var errorLabel = new Label { name = "loading-error", text = "Failed to load the record.\n\n" + message };
+            errorLabel.style.whiteSpace = WhiteSpace.Normal;
+            errorLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            _mainWindowUI.LoadingPanel.Add(errorLabel);
+        }
+
+        private void OnPlayerFinishLoading()
+        {
+            if (!playOnFinishLoading)
+                return;
+
+            player.StartPlaying();
+            _mainWindowUI.RefreshPlayPauseButton();
         }
 
         private void Start()
         {
+            // A Player that lost the singleton race aborts its Awake and is destroyed at the end of the frame, but this
+            // Start still runs against it in the meantime, with no preview camera and no render texture set up.
+            if (!ReferenceEquals(player, Player.Player.Instance))
+            {
+                Debug.LogWarning($"'{name}' references a Player that is not the active instance and is about to be " +
+                                 "destroyed; the main window is left uninitialised.");
+                enabled = false;
+                return;
+            }
+
             _mainWindowUI.CloseButton.clicked += Application.Quit;
             
             _mainWindowUI.PreviewRenderAspectRatio.RegisterCallback<FocusInEvent>(OnPreviewRenderFocused);
@@ -246,6 +285,18 @@ namespace PLUME.Viewer
 
         public void FixedUpdate()
         {
+            // Checked before anything else: loading can also fail once the record is in, while OnFinishLoading runs.
+            if (player.LoadingError != null)
+            {
+                if (!_showedLoadingError)
+                {
+                    _showedLoadingError = true;
+                    ShowLoadingError(player.LoadingError);
+                }
+
+                return;
+            }
+
             if (_loading)
             {
                 var isLoading = !player.IsRecordAssetBundleLoaded || !player.IsRecordLoaded;

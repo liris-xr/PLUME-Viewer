@@ -34,6 +34,14 @@ namespace PLUME.Viewer
             player.mainContextUpdatedHierarchy += OnHierarchyUpdateEvent;
         }
 
+        private void OnDestroy()
+        {
+            if (player == null)
+                return;
+
+            player.mainContextUpdatedHierarchy -= OnHierarchyUpdateEvent;
+        }
+
         public void OnHierarchyUpdateEvent(IHierarchyUpdateEvent evt)
         {
             switch (evt)
@@ -218,10 +226,10 @@ namespace PLUME.Viewer
                     justCreated.Add(updatedItem.GameObjectGuid);
                     rebuildTree = true;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     Debug.LogWarning(
-                        $"Couldn't add item '{updatedItem.Name}' to tree view, item already exists. (guid={updatedItem.GameObjectGuid}, id={updatedItem.GetId()})");
+                        $"Couldn't add item '{updatedItem.Name}' to tree view. (guid={updatedItem.GameObjectGuid}, id={updatedItem.GetId()}) {e.GetType().Name}: {e.Message}");
                 }
             }
 
@@ -256,10 +264,10 @@ namespace PLUME.Viewer
                         rebuildTree: false);
                     rebuildTree = true;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     Debug.LogWarning(
-                        $"Couldn't move item '{updatedItem.Name}' in tree view, item not found. (guid={updatedItem.GameObjectGuid}, id={updatedItem.GetId()}, parentGuid={updatedItem.ParentGameObjectGuid}, parentId={updatedItem.GetParentId()}, siblingIndex={updatedItem.SiblingIndex})");
+                        $"Couldn't move item '{updatedItem.Name}' in tree view. (guid={updatedItem.GameObjectGuid}, id={updatedItem.GetId()}, parentGuid={updatedItem.ParentGameObjectGuid}, parentId={updatedItem.GetParentId()}, siblingIndex={updatedItem.SiblingIndex}) {e.GetType().Name}: {e.Message}");
                 }
 
                 _currentItems[guid] = updatedItem;
@@ -278,10 +286,10 @@ namespace PLUME.Viewer
                     {
                         _hierarchyTree.RemoveFromSelectionById(item.GetId());
                     }
-                    catch (Exception)
+                    catch (Exception e)
                     {
                         Debug.LogWarning(
-                            $"Failed to remove item '{item.Name}' from selection. (guid={item.GameObjectGuid}, id={item.GetId()})");
+                            $"Failed to remove item '{item.Name}' from selection. (guid={item.GameObjectGuid}, id={item.GetId()}) {e.GetType().Name}: {e.Message}");
                     }
 
                     rebuildTree = true;

@@ -45,26 +45,37 @@ namespace PLUME.Viewer.Player
                     JsonUtility.FromJson<DiffusionProfileHashManifest>(File.ReadAllText(manifestPath));
             
             var assetBundleName = Path.GetFileName(assetBundlePath);
-            var sceneBundleName = Path.GetFileName(sceneBundlePath);
             var assetBundle = AssetBundle.GetAllLoadedAssetBundles()
                 .FirstOrDefault(bundle => bundle.name == assetBundleName);
-            var sceneBundle = AssetBundle.GetAllLoadedAssetBundles()
-                .FirstOrDefault(bundle => bundle.name == sceneBundleName);
 
             if (assetBundle == null)
             {
+                if (!File.Exists(assetBundlePath))
+                    throw new FileNotFoundException(
+                        $"The bundle archive {_bundlePath} does not contain an asset bundle.", assetBundlePath);
+
                 _loadingStatus = LoadingStatus.Loading;
                 _assetBundleCreateRequest = AssetBundle.LoadFromFileAsync(assetBundlePath);
+                // The scene bundle is loaded so that its contents are registered with Unity, but the viewer builds
+                // replay scenes itself and never reads assets back out of it.
                 _sceneBundleCreateRequest = AssetBundle.LoadFromFileAsync(sceneBundlePath);
                 await _assetBundleCreateRequest;
                 await _sceneBundleCreateRequest;
                 assetBundle = _assetBundleCreateRequest.assetBundle;
-                sceneBundle = _sceneBundleCreateRequest.assetBundle;
+
+                if (assetBundle == null)
+                {
+                    _loadingStatus = LoadingStatus.NotLoading;
+                    throw new InvalidDataException(
+                        $"Failed to load the asset bundle from {assetBundlePath}. The bundle is either corrupt or " +
+                        $"was built with a different Unity version than this viewer ({Application.unityVersion}).");
+                }
+
                 await assetBundle.LoadAllAssetsAsync();
                 _loadingStatus = LoadingStatus.Done;
             }
 
-            return new RecordAssetBundle(assetBundle, sceneBundle, diffusionProfileHashManifest);
+            return new RecordAssetBundle(assetBundle, diffusionProfileHashManifest);
         }
 
         public float GetLoadingProgress()

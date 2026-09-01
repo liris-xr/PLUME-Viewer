@@ -44,6 +44,9 @@ namespace PLUME.Viewer.Player
 
         public RenderTexture PreviewRenderTexture { get; private set; }
 
+        /// <summary>Message of the failure that aborted loading, or null while loading is still viable.</summary>
+        public string LoadingError { get; private set; }
+
         public event Action OnFinishLoading = delegate { };
 
         public FreeCamera freeCamera;
@@ -70,20 +73,18 @@ namespace PLUME.Viewer.Player
 
         private void Awake()
         {
-            if (Instance != null && ReferenceEquals(Instance, this))
+            if (Instance != null && !ReferenceEquals(Instance, this))
             {
                 Debug.LogWarning("Player already exists. Removing new instance.");
                 Destroy(gameObject);
-            }
-            else
-            {
-                Instance = this;
-                transform.parent = null;
-                DontDestroyOnLoad(gameObject);
+                // Destroy is deferred to the end of the frame, so the rest of Awake must be skipped explicitly,
+                // otherwise this instance also prompts for a record and loads it.
+                return;
             }
 
-            var recordPath = GetRecordPath();
-            var bundlePath = GetBundlePath(recordPath);
+            Instance = this;
+            transform.parent = null;
+            DontDestroyOnLoad(gameObject);
 
             // 24-bit depth buffer is required so the preview cameras have a depth attachment to
             // test/write against; without it opaque geometry draws in submission order (internal
@@ -99,18 +100,6 @@ namespace PLUME.Viewer.Player
             SetCurrentPreviewCamera(mainCamera);
 
             PlayerModules = FindObjectsByType<PlayerModule>(FindObjectsSortMode.None);
-            _bundleLoader = new BundleLoader(bundlePath);
-
-            var assetBundleLoadTask = _bundleLoader.LoadAsync().ContinueWith(recordAssetBundle =>
-            {
-                RecordAssetBundle = recordAssetBundle;
-                _mainPlayerContext = PlayerContext.CreatePlayerContext(recordAssetBundle);
-                _mainPlayerContext.updatedHierarchy += mainContextUpdatedHierarchy;
-            });
-
-            _recordLoader = new RecordLoader(recordPath, typeRegistryProvider.GetTypeRegistry());
-
-            var recordLoadTask = _recordLoader.LoadAsync().ContinueWith(record => { Record = record; });
 
             OnFinishLoading += () =>
             {
@@ -124,7 +113,77 @@ namespace PLUME.Viewer.Player
                 RegisterRecordDiffusionProfiles();
             };
 
-            UniTask.WhenAll(recordLoadTask, assetBundleLoadTask).ContinueWith(() => { OnFinishLoading(); }).Forget();
+            Load().Forget();
+        }
+
+        /// <summary>
+        /// Failures are reported through <see cref="LoadingError"/> rather than thrown: an unhandled one would leave the
+        /// loading panel waiting forever on a load that is never going to complete.
+        /// </summary>
+        private async UniTaskVoid Load()
+        {
+            // Loading keeps running on the player loop after this component is destroyed (stopping play mode while a
+            // record loads, for instance), so every continuation below is bound to the component's lifetime.
+            var lifetime = this.GetCancellationTokenOnDestroy();
+
+            // Declared outside the try so the failure report can name the files being loaded, whichever step failed.
+            var recordPath = "<not resolved>";
+            var bundlePath = "<not resolved>";
+            var stage = "resolving the record and bundle paths";
+
+            try
+            {
+                // Runs before the first await, so the file dialogs still open during Awake.
+                recordPath = GetRecordPath();
+                bundlePath = GetBundlePath(recordPath);
+
+                stage = "opening the record and bundle files";
+                _bundleLoader = new BundleLoader(bundlePath);
+
+                var assetBundleLoadTask = _bundleLoader.LoadAsync().ContinueWith(recordAssetBundle =>
+                {
+                    if (lifetime.IsCancellationRequested)
+                        return;
+
+                    RecordAssetBundle = recordAssetBundle;
+                    _mainPlayerContext = PlayerContext.CreatePlayerContext(recordAssetBundle);
+                    // Forwarded rather than subscribed directly: subscribing would copy the delegate as it stands at
+                    // load time, so later subscribers would never be called and unsubscribing would not take effect.
+                    _mainPlayerContext.updatedHierarchy += evt => mainContextUpdatedHierarchy?.Invoke(evt);
+                });
+
+                _recordLoader = new RecordLoader(recordPath, typeRegistryProvider.GetTypeRegistry());
+
+                var recordLoadTask = _recordLoader.LoadAsync().ContinueWith(record =>
+                {
+                    if (lifetime.IsCancellationRequested)
+                        return;
+
+                    Record = record;
+                });
+
+                stage = "reading the record and its asset bundle";
+                await UniTask.WhenAll(recordLoadTask, assetBundleLoadTask).AttachExternalCancellation(lifetime);
+
+                if (lifetime.IsCancellationRequested)
+                    return;
+
+                stage = "applying the record's graphics settings";
+                OnFinishLoading();
+            }
+            catch (OperationCanceledException)
+            {
+                // The component was destroyed while loading.
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed while {stage}.\n" +
+                               $"Record: {recordPath}\n" +
+                               $"Bundle: {bundlePath}\n" +
+                               $"Unity: {Application.unityVersion}\n" +
+                               $"{e.GetType().Name}: {e.Message}\n{e}");
+                LoadingError = $"{e.Message}\n\nFailed while {stage}.\nRecord: {recordPath}\nBundle: {bundlePath}";
+            }
         }
 
         /// <summary>
@@ -279,8 +338,14 @@ namespace PLUME.Viewer.Player
 
         public void OnDestroy()
         {
-            PreviewRenderTexture.Release();
-            _recordLoader.Dispose();
+            if (ReferenceEquals(Instance, this))
+                Instance = null;
+
+            // Unassigned when this instance lost the singleton race and aborted its Awake.
+            if (PreviewRenderTexture != null)
+                PreviewRenderTexture.Release();
+
+            _recordLoader?.Dispose();
 
             // The runtime volume profile is created via CreateInstance and is not destroyed with its GameObject.
             if (_diffusionProfileVolume != null && _diffusionProfileVolume.profile != null)
@@ -448,7 +513,7 @@ namespace PLUME.Viewer.Player
 
         public void Dispose()
         {
-            _recordLoader.Dispose();
+            _recordLoader?.Dispose();
         }
     }
 }

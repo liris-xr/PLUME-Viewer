@@ -41,7 +41,8 @@ namespace PLUME.Viewer.Analysis.Trajectory
 
             if (player.GetModuleGenerating() != null)
             {
-                Debug.LogWarning("Another module is already generating");
+                Debug.LogWarning($"Cannot start generating {GetType().Name}: {player.GetModuleGenerating().GetType().Name} " +
+                                 "is already generating. Wait for it to finish or cancel it first.");
                 yield break;
             }
 
@@ -69,6 +70,9 @@ namespace PLUME.Viewer.Analysis.Trajectory
 
             var stopwatch = Stopwatch.StartNew();
             var lastYieldTime = stopwatch.ElapsedMilliseconds;
+
+            var objectNeverFound = true;
+            var unresolvedLookups = 0;
             
             for(var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
             {
@@ -91,7 +95,17 @@ namespace PLUME.Viewer.Analysis.Trajectory
                 if (!replayId.HasValue)
                     continue;
 
+                objectNeverFound = false;
+
                 var go = _generationContext.FindGameObjectByInstanceId(replayId.Value);
+
+                // Identifiers of transforms, components and assets share the same map, so the id may not resolve to a
+                // GameObject.
+                if (go == null)
+                {
+                    unresolvedLookups++;
+                    continue;
+                }
 
                 // TODO: if frame contains a teleportation sample, add a new segment, instead of using a threshold
 
@@ -108,6 +122,15 @@ namespace PLUME.Viewer.Analysis.Trajectory
             }
 
             GenerationProgress = 1;
+
+            if (objectNeverFound)
+                Debug.LogWarning($"[Trajectory] The object {parameters.ObjectIdentifier} never appeared in " +
+                                 $"[{parameters.StartTime}, {parameters.EndTime}] over {nFrames} frames, so the " +
+                                 "trajectory is empty. Check the object identifier and the time range.");
+            else if (unresolvedLookups > 0)
+                Debug.LogWarning($"[Trajectory] {unresolvedLookups} of {nFrames} frames were skipped because " +
+                                 $"{parameters.ObjectIdentifier} resolved to something that is not a GameObject. It " +
+                                 "is probably a transform, component or asset identifier rather than a GameObject one.");
 
             if (parameters.VisibleMarkers != null)
             {
