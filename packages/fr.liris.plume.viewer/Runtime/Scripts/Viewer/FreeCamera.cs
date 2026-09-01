@@ -112,7 +112,7 @@ namespace PLUME.Viewer
                 return;
 
             // Disable inputs if the camera is not selected
-            if (Player.Player.Instance.GetCurrentPreviewCamera() != this)
+            if (Player.Player.Instance == null || Player.Player.Instance.GetCurrentPreviewCamera() != this)
                 return;
 
             if (Mouse.current?.rightButton?.isPressed == false)
@@ -182,7 +182,10 @@ namespace PLUME.Viewer
 
         public override void ResetView()
         {
-            var cam = Player.Player.Instance.GetMainCamera().GetCamera();
+            var player = Player.Player.Instance;
+            // Explicit null comparisons: ?. would bypass the operator that reports a destroyed object as null.
+            var previewCamera = player == null ? null : player.GetMainCamera();
+            var cam = previewCamera == null ? null : previewCamera.GetCamera();
 
             if (cam == null)
             {

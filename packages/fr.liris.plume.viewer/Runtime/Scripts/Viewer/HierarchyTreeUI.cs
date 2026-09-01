@@ -14,6 +14,8 @@ namespace PLUME.Viewer
         public UIDocument document;
 
         public TreeView HierarchyTree { get; private set; }
+
+        private bool _loggedMissingNameLabel;
         
         private readonly Dictionary<int, VisualElement> _itemIdToVisualElement = new();
 
@@ -60,17 +62,31 @@ namespace PLUME.Viewer
             if (visualElement == null)
                 return false;
 
+            var label = visualElement.Q<Label>("name");
+
+            if (label == null)
+            {
+                // Logged once: this runs per item per refresh, and the template either has the label or it never will.
+                if (!_loggedMissingNameLabel)
+                {
+                    _loggedMissingNameLabel = true;
+                    Debug.LogWarning($"Hierarchy item '{itemData.Name}' has no 'name' label; the tree item template no " +
+                                     "longer matches what this code expects. Hierarchy names will not be shown.");
+                }
+
+                return false;
+            }
+
             try
             {
-                var label = visualElement.Q<Label>("name");
                 label.text = itemData.Name;
                 label.style.color = itemData.Enabled ? new StyleColor(Color.white) : new StyleColor(Color.gray);
                 label.MarkDirtyRepaint();
             }
             catch (Exception e)
             {
-                Debug.LogError(e);
-                // ignored, item not found
+                Debug.LogError($"Failed to bind hierarchy item '{itemData.Name}' " +
+                               $"(guid={itemData.GameObjectGuid}, id={itemData.GetId()}).\n{e}");
                 return false;
             }
 

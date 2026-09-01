@@ -25,7 +25,9 @@ namespace PLUME
 
             if (unpackedPayload == null)
             {
-                Debug.LogWarning($"Failed to unpack payload of type {payload.TypeUrl}");
+                Debug.LogWarning($"Sample of type '{payload.TypeUrl}' at timestamp " +
+                                 $"{(timestamp.HasValue ? timestamp.Value.ToString() : "none")} is ignored: the type " +
+                                 "is not in the sample type registry, so this recorded change will not be replayed.");
                 return null;
             }
 

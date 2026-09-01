@@ -38,6 +38,9 @@ namespace PLUME.Viewer.Player
         private readonly Dictionary<int, Transform> _transformsByInstanceId = new();
         private readonly Dictionary<int, Component> _componentByInstanceId = new();
 
+        // Instance ids that FindObjectFromInstanceID could not resolve, so the reflective call is attempted only once.
+        private readonly HashSet<int> _unresolvableComponentInstanceIds = new();
+
         private readonly Dictionary<Guid, Scene> _scenesByGuid = new();
         private readonly Dictionary<Scene, List<GameObject>> _cachedSceneRootObjectsActive = new();
 
@@ -61,6 +64,8 @@ namespace PLUME.Viewer.Player
                 context._gameObjectsTagByInstanceId.Clear();
                 context._transformsByInstanceId.Clear();
                 context._componentByInstanceId.Clear();
+                context._unresolvableComponentInstanceIds.Clear();
+                context.ReleaseCachedRootGameObjects();
 
                 foreach (var scene in context._scenesByGuid.Values)
                     SceneManager.UnloadSceneAsync(scene);
@@ -79,6 +84,8 @@ namespace PLUME.Viewer.Player
             ctx._gameObjectsTagByInstanceId.Clear();
             ctx._transformsByInstanceId.Clear();
             ctx._componentByInstanceId.Clear();
+            ctx._unresolvableComponentInstanceIds.Clear();
+            ctx.ReleaseCachedRootGameObjects();
             foreach (var scene in ctx._scenesByGuid.Values)
                 SceneManager.UnloadSceneAsync(scene);
             Contexts.Remove(ctx);
@@ -157,6 +164,8 @@ namespace PLUME.Viewer.Player
             _gameObjectsTagByInstanceId.Clear();
             _transformsByInstanceId.Clear();
             _componentByInstanceId.Clear();
+            _unresolvableComponentInstanceIds.Clear();
+            ReleaseCachedRootGameObjects();
             _idMap.Clear();
             _invertIdMap.Clear();
         }
@@ -255,18 +264,35 @@ namespace PLUME.Viewer.Player
             {
                 var cachedRootObjectsActive = _cachedSceneRootObjectsActive.GetValueOrDefault(scene);
 
+                // Null for a scene created after the objects were disabled, which was never cached and whose objects
+                // are therefore already in the state the record put them in.
+                if (cachedRootObjectsActive == null)
+                    continue;
+
                 foreach (var rootGameObject in scene.GetRootGameObjects())
                 {
                     rootGameObject.SetActive(cachedRootObjectsActive.Contains(rootGameObject));
                 }
-
-                ListPool<GameObject>.Release(cachedRootObjectsActive);
             }
+
+            // Not released in the loop above: a scene dropped from _scenesByGuid must still give its list back.
+            ReleaseCachedRootGameObjects();
+        }
+
+        private void ReleaseCachedRootGameObjects()
+        {
+            foreach (var cachedRootObjectsActive in _cachedSceneRootObjectsActive.Values)
+            {
+                if (cachedRootObjectsActive != null)
+                    ListPool<GameObject>.Release(cachedRootObjectsActive);
+            }
+
+            _cachedSceneRootObjectsActive.Clear();
         }
 
         private void DisableRootGameObjects()
         {
-            _cachedSceneRootObjectsActive.Clear();
+            ReleaseCachedRootGameObjects();
 
             foreach (var scene in _scenesByGuid.Values)
             {
@@ -313,7 +339,9 @@ namespace PLUME.Viewer.Player
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Failed to create scene {sceneId.Name}: {ex.Message}");
+                // Returning default leaves the caller creating GameObjects in whatever scene is active, so say so.
+                Debug.LogError($"Failed to create the replay scene '{sceneId.Name}' ({sceneGuid}). Objects recorded in " +
+                               $"it will be created in the active scene instead.\n{ex}");
                 return default;
             }
         }
@@ -514,13 +542,26 @@ namespace PLUME.Viewer.Player
 
             if (replayComponentInstanceId.HasValue)
             {
-                if (!_componentByInstanceId.ContainsKey(replayComponentInstanceId.Value))
+                // Cached as Component rather than as T: a lookup asking for the wrong type must not overwrite the
+                // entry with null, which would make every later lookup of this identifier fail whatever its type.
+                if (!_componentByInstanceId.TryGetValue(replayComponentInstanceId.Value, out var knownComponent) ||
+                    knownComponent == null)
                 {
-                    _componentByInstanceId[replayComponentInstanceId.Value] =
-                        ObjectExtensions.FindObjectFromInstanceID(replayComponentInstanceId.Value) as T;
+                    // Resolvability does not depend on T, so a miss is safe to remember and keeps the reflective
+                    // lookup off the per-sample replay path.
+                    if (_unresolvableComponentInstanceIds.Contains(replayComponentInstanceId.Value))
+                        return null;
+
+                    knownComponent =
+                        ObjectExtensions.FindObjectFromInstanceID(replayComponentInstanceId.Value) as Component;
+
+                    if (knownComponent == null)
+                        _unresolvableComponentInstanceIds.Add(replayComponentInstanceId.Value);
+                    else
+                        _componentByInstanceId[replayComponentInstanceId.Value] = knownComponent;
                 }
 
-                return _componentByInstanceId.GetValueOrDefault(replayComponentInstanceId.Value) as T;
+                return knownComponent as T;
             }
 
             var go = GetOrCreateGameObjectByIdentifier(id.GameObject);

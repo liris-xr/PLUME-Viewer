@@ -40,23 +40,35 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             ui.RefreshTimeRangeLimits();
             ui.TimeRange.Reset();
 
-            player.onVisibleHeatmapModuleChanged += visibleModule =>
-            {
-                if (visibleModule != null && visibleModule != module)
-                {
-                    module.SetVisibleResult(null);
-                    ui.RefreshResults();
-                }
-            };
+            player.onVisibleHeatmapModuleChanged += OnVisibleHeatmapModuleChanged;
+            player.onGeneratingModuleChanged += OnGeneratingModuleChanged;
+        }
 
-            player.onGeneratingModuleChanged += generatingModule =>
+        private void OnDestroy()
+        {
+            if (player == null)
+                return;
+
+            player.onVisibleHeatmapModuleChanged -= OnVisibleHeatmapModuleChanged;
+            player.onGeneratingModuleChanged -= OnGeneratingModuleChanged;
+        }
+
+        private void OnVisibleHeatmapModuleChanged(AnalysisModule visibleModule)
+        {
+            if (visibleModule != null && visibleModule != module)
             {
-                if (generatingModule != null && generatingModule != module)
-                {
-                    module.SetVisibleResult(null);
-                    ui.RefreshResults();
-                }
-            };
+                module.SetVisibleResult(null);
+                ui.RefreshResults();
+            }
+        }
+
+        private void OnGeneratingModuleChanged(AnalysisModule generatingModule)
+        {
+            if (generatingModule != null && generatingModule != module)
+            {
+                module.SetVisibleResult(null);
+                ui.RefreshResults();
+            }
         }
 
         private void OnClickGenerate()

@@ -60,10 +60,14 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         private void CacheGazeSamples()
         {
             var inputActions = player.Record.InputActions;
+            // Filtered on the value type too: a path pointing at an action of another type leaves the field read in
+            // LateUpdate unset.
             _positionSamples = inputActions.Where(
-                s => s.Payload.BindingPaths.Contains(gazePositionBindingPath));
+                s => s.Payload.BindingPaths.Contains(gazePositionBindingPath) &&
+                     s.Payload.ValueCase == InputAction.ValueOneofCase.Vector3);
             _rotationSamples = inputActions.Where(
-                s => s.Payload.BindingPaths.Contains(gazeRotationBindingPath));
+                s => s.Payload.BindingPaths.Contains(gazeRotationBindingPath) &&
+                     s.Payload.ValueCase == InputAction.ValueOneofCase.Quaternion);
             _cachedPositionBindingPath = gazePositionBindingPath;
             _cachedRotationBindingPath = gazeRotationBindingPath;
         }

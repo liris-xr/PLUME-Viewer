@@ -106,7 +106,7 @@ namespace PLUME.Viewer
             }
 
             // Disable inputs if the camera is not selected
-            if (Player.Player.Instance.GetCurrentPreviewCamera() != this)
+            if (Player.Player.Instance == null || Player.Player.Instance.GetCurrentPreviewCamera() != this)
             {
                 _orthoCameraController.enabled = false;
                 return;

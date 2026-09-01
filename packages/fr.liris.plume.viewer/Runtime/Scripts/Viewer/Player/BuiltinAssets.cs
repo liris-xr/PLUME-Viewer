@@ -33,14 +33,21 @@ namespace PLUME.Viewer.Player
 
         private void Awake()
         {
-            if (Instance != null)
+            if (Instance != null && !ReferenceEquals(Instance, this))
             {
+                Debug.LogWarning($"A BuiltinAssets instance already exists ('{Instance.name}'); destroying the " +
+                                 $"duplicate on '{name}'.");
                 Destroy(gameObject);
-                Debug.LogWarning("BuiltinAssets already exists, destroying duplicate");
                 return;
             }
 
             Instance = this;
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(Instance, this))
+                Instance = null;
         }
     }
 }

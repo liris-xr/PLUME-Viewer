@@ -109,7 +109,8 @@ namespace PLUME.Viewer.Analysis.Position
 
             if (player.GetModuleGenerating() != null)
             {
-                Debug.LogWarning("Another module is already generating");
+                Debug.LogWarning($"Cannot start generating {GetType().Name}: {player.GetModuleGenerating().GetType().Name} " +
+                                 "is already generating. Wait for it to finish or cancel it first.");
                 yield break;
             }
 
@@ -149,6 +150,8 @@ namespace PLUME.Viewer.Analysis.Position
             var nFrames = frames.Count;
 
             var projectionCasterNeverFound = true;
+            var receiversNeverResolved = new HashSet<Guid>(parameters.ReceiversIdentifiers);
+            var unresolvedChildLookups = 0;
 
             for (var frameIdx = 0; frameIdx < nFrames; ++frameIdx)
             {
@@ -173,12 +176,22 @@ namespace PLUME.Viewer.Analysis.Position
                     var replayId = _generationContext.GetReplayInstanceId(receiversIdentifier);
                     if (!replayId.HasValue) continue;
 
+                    receiversNeverResolved.Remove(receiversIdentifier);
+
                     if (!replayProjectionReceiversIds.Contains(replayId.Value))
                         replayProjectionReceiversIds.Add(replayId.Value);
 
                     if (!parameters.IncludeReceiversChildren) continue;
 
                     var go = _generationContext.FindGameObjectByInstanceId(replayId.Value);
+
+                    // Identifiers of transforms, components and assets share the same map, so the id may not resolve
+                    // to a GameObject.
+                    if (go == null)
+                    {
+                        unresolvedChildLookups++;
+                        continue;
+                    }
 
                     foreach (var goInstanceId in go.GetComponentsInChildren<Renderer>()
                                  .Select(r => r.gameObject.GetInstanceID()))
@@ -230,9 +243,24 @@ namespace PLUME.Viewer.Analysis.Position
                 player.SetModuleGenerating(null);
 
             if (projectionCasterNeverFound)
-            {
-                Debug.LogWarning($"Projection caster {parameters.CasterIdentifier} was never found in the given time range {parameters.StartTime} - {parameters.EndTime}.");
-            }
+                Debug.LogWarning($"[PositionHeatmap] The projection caster {parameters.CasterIdentifier} never " +
+                                 $"appeared in [{parameters.StartTime}, {parameters.EndTime}] over {nFrames} frames, " +
+                                 "so nothing was projected. Check the caster identifier and the time range.");
+
+            if (receiversNeverResolved.Count > 0)
+                Debug.LogWarning($"[PositionHeatmap] {receiversNeverResolved.Count} of " +
+                                 $"{parameters.ReceiversIdentifiers.Length} projection receivers never appeared in " +
+                                 $"[{parameters.StartTime}, {parameters.EndTime}] and received nothing: " +
+                                 string.Join(", ", receiversNeverResolved));
+
+            if (unresolvedChildLookups > 0)
+                Debug.LogWarning($"[PositionHeatmap] {unresolvedChildLookups} receiver lookup(s) resolved to " +
+                                 "something that is not a GameObject, so their children were skipped. The receiver " +
+                                 "identifiers are probably transform, component or asset identifiers rather than " +
+                                 "GameObject ones.");
+
+            Debug.Log($"[PositionHeatmap] Generated {meshSamplerResults.Count} mesh heatmap(s) over {nFrames} frames " +
+                      $"in {stopwatch.ElapsedMilliseconds} ms.");
             
             finishCallback(result);
         }
@@ -343,7 +371,7 @@ namespace PLUME.Viewer.Analysis.Position
             var gameObjectIdentifier = ctx.GetRecordIdentifier(go.GetInstanceID());
             var meshIdentifier = ctx.GetRecordIdentifier(mesh.GetInstanceID());
 
-            if (gameObjectIdentifier == null || meshIdentifier == null)
+            if (gameObjectIdentifier == Guid.Empty || meshIdentifier == Guid.Empty)
                 return null;
 
             // Two GameObjects might have the same sharedMesh. We add the gameObjectIdentifier as a discriminator.
@@ -503,9 +531,9 @@ namespace PLUME.Viewer.Analysis.Position
                 var gameObjectIdentifier = ctx.GetRecordIdentifier(go.GetInstanceID());
                 var meshRecordIdentifier = ctx.GetRecordIdentifier(mesh.GetInstanceID());
 
-                if (gameObjectIdentifier == null)
+                if (gameObjectIdentifier == Guid.Empty)
                     continue;
-                if (meshRecordIdentifier == null)
+                if (meshRecordIdentifier == Guid.Empty)
                     continue;
 
                 var meshSamplerResultHash = HashCode.Combine(gameObjectIdentifier, meshRecordIdentifier);
@@ -707,6 +735,11 @@ namespace PLUME.Viewer.Analysis.Position
             {
                 result.Dispose();
             }
+
+            // The projection camera lives on another GameObject, which may already have been destroyed since teardown
+            // order across GameObjects is undefined.
+            if (_projectionCamera == null || _projectionCamera.targetTexture == null)
+                return;
 
             _projectionCamera.targetTexture.Release();
             _projectionCamera.targetTexture = null;
