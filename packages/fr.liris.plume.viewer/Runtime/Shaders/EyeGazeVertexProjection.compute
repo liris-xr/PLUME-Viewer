@@ -1,0 +1,147 @@
+#include "MeshData.cginc"
+#include "SplitDispatch.cginc"
+#include "Math.cginc"
+
+float n_sigmas;
+
+float4x4 model_mtx;
+float4x4 view_mtx;
+float4x4 projection_mtx;
+bool is_projection_orthographic;
+
+int object_instance_id;
+uint n_vertices;
+
+Texture2D segmented_object_depth_texture;
+
+// Float values stored as uint bits to allow atomic CAS operations
+RWStructuredBuffer<uint> vertex_value_buffer;
+RWStructuredBuffer<uint> samples_max_value;
+
+struct parsed_embedding
+{
+    float depth;
+    int object_instance_id;
+};
+
+parsed_embedding parse_embedding(const uint2 embedding_uv)
+{
+    float tex_w, tex_h;
+    segmented_object_depth_texture.GetDimensions(tex_w, tex_h);
+
+    parsed_embedding emb;
+
+    if (embedding_uv.x >= (uint)tex_w || embedding_uv.y >= (uint)tex_h)
+    {
+        emb.depth = 0;
+        emb.object_instance_id = 0;
+    }
+    else
+    {
+        const float4 val = segmented_object_depth_texture[embedding_uv];
+        emb.depth = val.r;
+        emb.object_instance_id = asint(val.g);
+    }
+
+    return emb;
+}
+
+bool compare_sample_depth(const float sample_depth, const parsed_embedding emb)
+{
+    // Orthographic depth is normalized [0,1]; perspective depth is linear eye-space metres, so it
+    // needs a metric tolerance relative to the distance (a few mm, floored to handle near surfaces).
+    const float tol = is_projection_orthographic ? epsilon : max(0.001f, 0.004f * sample_depth);
+    return emb.object_instance_id == object_instance_id
+        && abs(emb.depth - sample_depth) <= tol;
+}
+
+float std_normal_distribution(const float x)
+{
+    float val = 1.0f / sqrt_2_pi * exp(-0.5f * x * x); // sigma = 1
+
+    // Ensure that we don't add up very small values
+    if (val <= 0.0009f)
+        val = 0.0;
+
+    return val;
+}
+
+// Atomic float add via compare-and-swap loop
+void atomic_add_float(const uint index, const float value)
+{
+    uint expected = vertex_value_buffer[index];
+    uint actual;
+    [allow_uav_condition]
+    do
+    {
+        actual = expected;
+        InterlockedCompareExchange(
+            vertex_value_buffer[index],
+            expected,
+            asuint(asfloat(expected) + value),
+            expected);
+    }
+    while (actual != expected);
+}
+
+#pragma kernel project_eye_gaze_to_vertices
+[numthreads(64, 1, 1)]
+void project_eye_gaze_to_vertices(const uint id : SV_DispatchThreadID)
+{
+    const uint vertex_index = id.x + x_dispatch_index * dispatch_max_thread_group;
+
+    if (vertex_index >= n_vertices)
+        return;
+
+    const float3 local_pos = load_vertex_position(vertex_index);
+    const float4 world_pos = mul(model_mtx, float4(local_pos, 1.0f));
+    const float4 camera_pos = mul(view_mtx, world_pos);
+    const float4 clip_pos = mul(projection_mtx, camera_pos);
+
+    const float3 ndc_pos = clip_pos.xyz / clip_pos.w;
+    const float2 sample_uv_pos = (ndc_pos.xy + 1) / 2.0;
+
+    const bool clipped = ndc_pos.x < -1 || ndc_pos.x > 1
+                      || ndc_pos.y < -1 || ndc_pos.y > 1
+                      || ndc_pos.z < -1 || ndc_pos.z > 1;
+
+    if (clipped)
+        return;
+
+    float sample_depth;
+    if (is_projection_orthographic)
+    {
+        sample_depth = (clip_pos.z + 1) / 2.0;
+    }
+    else
+    {
+        // Linear eye-space depth (metres), matching SegmentedObjectDepth.shader's perspective output.
+        sample_depth = -camera_pos.z;
+    }
+
+    float tex_w, tex_h;
+    segmented_object_depth_texture.GetDimensions(tex_w, tex_h);
+    const uint2 embedding_uv = sample_uv_pos * uint2(tex_w, tex_h);
+
+    // Foveal Gaussian falloff: distance from the gaze center (NDC 0, 0), scaled so the projection
+    // boundary corresponds to n_sigmas (e.g. 99.99% of the distribution for n_sigmas = 4). This is
+    // the same weighting as the sub-triangle module, evaluated per vertex instead of per sample.
+    const float x = (sample_uv_pos.x - 0.5) * 2;
+    const float y = (sample_uv_pos.y - 0.5) * 2;
+    const float u = saturate(sqrt(x * x + y * y)) * n_sigmas;
+    const float projected_gaussian_value = saturate(std_normal_distribution(u));
+
+    // Only accumulate on vertices actually visible at their projected pixel (occlusion test). The
+    // neighbourhood check absorbs discretization artefacts at object edges.
+    if (!compare_sample_depth(sample_depth, parse_embedding(embedding_uv))
+        && !compare_sample_depth(sample_depth, parse_embedding(embedding_uv + uint2(1, 0)))
+        && !compare_sample_depth(sample_depth, parse_embedding(embedding_uv + uint2(0, 1)))
+        && !compare_sample_depth(sample_depth, parse_embedding(embedding_uv + uint2(-1, 0)))
+        && !compare_sample_depth(sample_depth, parse_embedding(embedding_uv + uint2(0, -1))))
+    {
+        return;
+    }
+
+    atomic_add_float(vertex_index, projected_gaussian_value);
+    InterlockedMax(samples_max_value[0], vertex_value_buffer[vertex_index]);
+}

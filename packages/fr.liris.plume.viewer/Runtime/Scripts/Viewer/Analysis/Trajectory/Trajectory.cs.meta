@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 688a64b162b04d87a8dbc95ef62f81b4
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - fullLineMaterial: {fileID: 2100000, guid: 2422d58f9515981489d972d4e9fe9f96, type: 2}
+  - dottedLineMaterial: {fileID: 2100000, guid: 7bd2fd48ed965d04ea70714bd950749d, type: 2}
+  - rotationAxesPrefab: {fileID: 7484443110919441014, guid: 25b5a20bfcebcde4f80741bebcfe447c, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

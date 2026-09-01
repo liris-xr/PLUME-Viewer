@@ -10,6 +10,17 @@
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 
+# Per-version Unity shell projects (apps/viewer-*) each generate their own
+# Unity-managed folders; ignore them at any depth under apps/.
+apps/**/[Ll]ibrary/
+apps/**/[Tt]emp/
+apps/**/[Oo]bj/
+apps/**/[Bb]uild/
+apps/**/[Bb]uilds/
+apps/**/[Ll]ogs/
+apps/**/[Uu]ser[Ss]ettings/
+apps/**/[Mm]emoryCaptures/
+
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
 /[Mm]emoryCaptures/
@@ -76,3 +87,8 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 Records
+
+# Local-only tooling artifacts
+docs/superpowers/
+.superpowers/
+.claude/
