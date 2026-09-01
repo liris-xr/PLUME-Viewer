@@ -30,6 +30,9 @@ jobs:
           docker-images: false
 
       - uses: actions/checkout@v4
+        with:
+          # versioning: Tag reads the tag from git history.
+          fetch-depth: 0
 
       - uses: actions/cache@v4
         with:
@@ -51,9 +54,7 @@ jobs:
           targetPlatform: StandaloneWindows64
           buildName: PLUME-Viewer
           buildsPath: build
-          # Keep the bundleVersion committed in ProjectSettings.asset; do not
-          # let the builder derive one from the tag.
-          versioning: None
+          versioning: Tag
 
       - name: Package build
         run: |
