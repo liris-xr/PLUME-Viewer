@@ -20,6 +20,8 @@ jobs:
       - run: npm install --global unity-license-activate
 
       - name: Exchange activation file for a license
+        env:
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         run: |
           unity-license-activate \
             "${{ secrets.UNITY_EMAIL }}" \
