@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: viewer-2022
+            unityVersion: 2022.3.62f3
+          - app: viewer-6000
+            unityVersion: 6000.3.16f1
+    steps:
+      # HDRP editor images are ~12 GB; the default runner image leaves too little room.
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          large-packages: false
+          docker-images: false
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: apps/${{ matrix.app }}/Library
+          key: Library-${{ matrix.app }}-${{ matrix.unityVersion }}-${{ hashFiles(format('apps/{0}/Packages/manifest.json', matrix.app)) }}
+          restore-keys: |
+            Library-${{ matrix.app }}-${{ matrix.unityVersion }}-
+            Library-${{ matrix.app }}-
+
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+        with:
+          projectPath: apps/${{ matrix.app }}
+          unityVersion: ${{ matrix.unityVersion }}
+          targetPlatform: StandaloneWindows64
+          buildName: PLUME-Viewer
+          buildsPath: build
+          # Keep the bundleVersion committed in ProjectSettings.asset; do not
+          # let the builder derive one from the tag.
+          versioning: None
+
+      - name: Package build
+        run: |
+          cd build/StandaloneWindows64
+          zip -r "$GITHUB_WORKSPACE/PLUME-Viewer-${{ matrix.app }}-${{ github.ref_name }}-win64.zip" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PLUME-Viewer-${{ matrix.app }}-win64
+          path: PLUME-Viewer-${{ matrix.app }}-${{ github.ref_name }}-win64.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-beta') }}
