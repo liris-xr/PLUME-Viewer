@@ -812,8 +812,7 @@ namespace PLUME.Viewer.Analysis.Position
                     verticesPositionsArr[i] = vertex;
                 }
 
-                var indicesArr = new ushort[samplerResult.IndexBuffer.count];
-                samplerResult.IndexBuffer.GetData(indicesArr);
+                var indicesArr = samplerResult.ReadIndices();
 
                 // For each triangle, get the triangle resolution
                 var trianglesResolutionArr = new uint[samplerResult.NTriangles];
