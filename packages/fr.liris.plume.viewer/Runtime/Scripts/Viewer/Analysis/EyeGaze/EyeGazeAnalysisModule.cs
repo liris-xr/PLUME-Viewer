@@ -69,7 +69,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
         private EyeGazeAnalysisResult _visibleResult;
 
-        private readonly Dictionary<MeshSamplerResult, MaterialPropertyBlock> _cachedMeshSamplerResultPropertyBlocks =
+        private readonly Dictionary<MeshSamplerResult, MaterialPropertyBlock[]> _cachedMeshSamplerResultPropertyBlocks =
             new();
 
         private readonly Dictionary<int, MaterialPropertyBlock> _cachedSegmentedObjectsDepthPropertyBlocks = new();
@@ -630,6 +630,10 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                     continue;
+                // Per-material blocks would otherwise outlive the heatmap and override other modules' blocks.
+                for (var materialIdx = 0; materialIdx < goRenderer.sharedMaterials.Length; ++materialIdx)
+                    goRenderer.SetPropertyBlock(null, materialIdx);
+                goRenderer.SetPropertyBlock(null);
                 goRenderer.SetSharedMaterials(new List<Material>());
             }
 
@@ -672,6 +676,9 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                     Enumerable.Repeat(_segmentedObjectDepthMaterial, nSharedMaterials).ToArray();
                 var propertyBlock = GetOrCreateSegmentedObjectsDepthPropertyBlock(go);
                 goRenderer.SetPropertyBlock(propertyBlock);
+                // Per-material blocks (set by the heatmap display) take precedence over the renderer one.
+                for (var materialIdx = 0; materialIdx < nSharedMaterials; ++materialIdx)
+                    goRenderer.SetPropertyBlock(propertyBlock, materialIdx);
             }
         }
 
@@ -716,6 +723,8 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                 var nSharedMaterials = goRenderer.sharedMaterials.Length;
                 goRenderer.sharedMaterials = Enumerable.Repeat(_defaultHeatmapMaterial, nSharedMaterials).ToArray();
                 goRenderer.SetPropertyBlock(null);
+                for (var materialIdx = 0; materialIdx < nSharedMaterials; ++materialIdx)
+                    goRenderer.SetPropertyBlock(null, materialIdx);
 
                 Mesh mesh = null;
 
@@ -748,16 +757,22 @@ namespace PLUME.Viewer.Analysis.EyeGaze
                     continue;
 
                 goRenderer.sharedMaterials = Enumerable.Repeat(_sampleHeatmapMaterial, nSharedMaterials).ToArray();
-                var propertyBlock = GetOrCreateMeshSamplerResultPropertyBlock(meshSamplerResult);
-                goRenderer.SetPropertyBlock(propertyBlock);
+                var propertyBlocks = GetOrCreateMeshSamplerResultPropertyBlocks(meshSamplerResult, mesh);
+
+                // One block per material: each submesh is drawn separately and needs its own triangle offset.
+                // Materials beyond the submesh count draw the last submesh again, as Unity does.
+                for (var materialIdx = 0; materialIdx < nSharedMaterials; ++materialIdx)
+                    goRenderer.SetPropertyBlock(propertyBlocks[Mathf.Min(materialIdx, propertyBlocks.Length - 1)],
+                        materialIdx);
             }
         }
 
-        private MaterialPropertyBlock GetOrCreateMeshSamplerResultPropertyBlock(MeshSamplerResult meshSamplerResult)
+        private MaterialPropertyBlock[] GetOrCreateMeshSamplerResultPropertyBlocks(MeshSamplerResult meshSamplerResult,
+            Mesh mesh)
         {
-            if (_cachedMeshSamplerResultPropertyBlocks.TryGetValue(meshSamplerResult, out var propertyBlock))
+            if (_cachedMeshSamplerResultPropertyBlocks.TryGetValue(meshSamplerResult, out var propertyBlocks))
             {
-                return propertyBlock;
+                return propertyBlocks;
             }
 
             var trianglesResolutionBuffer = Shader.PropertyToID("triangles_resolution_buffer");
@@ -765,16 +780,28 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             var samplesValueBuffer = Shader.PropertyToID("samples_value_buffer");
             var samplesMinValue = Shader.PropertyToID("samples_min_value");
             var samplesMaxValue = Shader.PropertyToID("samples_max_value");
+            var triangleOffset = Shader.PropertyToID("triangle_offset");
 
-            var newPropertyBlock = new MaterialPropertyBlock();
-            newPropertyBlock.SetBuffer(samplesMinValue, _visibleResult.MinValueBuffer);
-            newPropertyBlock.SetBuffer(samplesMaxValue, _visibleResult.MaxValueBuffer);
-            newPropertyBlock.SetBuffer(trianglesResolutionBuffer, meshSamplerResult.TrianglesResolutionBuffer);
-            newPropertyBlock.SetBuffer(trianglesSamplesIndexOffsetBuffer,
-                meshSamplerResult.TrianglesSamplesIndexOffsetBuffer);
-            newPropertyBlock.SetBuffer(samplesValueBuffer, meshSamplerResult.SampleValuesBuffer);
-            _cachedMeshSamplerResultPropertyBlocks.Add(meshSamplerResult, newPropertyBlock);
-            return newPropertyBlock;
+            var nSubMeshes = Mathf.Max(1, mesh.subMeshCount);
+            var newPropertyBlocks = new MaterialPropertyBlock[nSubMeshes];
+
+            for (var subMeshIdx = 0; subMeshIdx < nSubMeshes; ++subMeshIdx)
+            {
+                var newPropertyBlock = new MaterialPropertyBlock();
+                newPropertyBlock.SetBuffer(samplesMinValue, _visibleResult.MinValueBuffer);
+                newPropertyBlock.SetBuffer(samplesMaxValue, _visibleResult.MaxValueBuffer);
+                newPropertyBlock.SetBuffer(trianglesResolutionBuffer, meshSamplerResult.TrianglesResolutionBuffer);
+                newPropertyBlock.SetBuffer(trianglesSamplesIndexOffsetBuffer,
+                    meshSamplerResult.TrianglesSamplesIndexOffsetBuffer);
+                newPropertyBlock.SetBuffer(samplesValueBuffer, meshSamplerResult.SampleValuesBuffer);
+                // The sampler copies the raw index buffer, so a submesh's first triangle sits at indexStart / 3.
+                var firstTriangle = mesh.subMeshCount > 0 ? mesh.GetSubMesh(subMeshIdx).indexStart / 3 : 0;
+                newPropertyBlock.SetInt(triangleOffset, firstTriangle);
+                newPropertyBlocks[subMeshIdx] = newPropertyBlock;
+            }
+
+            _cachedMeshSamplerResultPropertyBlocks.Add(meshSamplerResult, newPropertyBlocks);
+            return newPropertyBlocks;
         }
 
         private Vector3 SampleIndexToBarycentricWeights(uint sampleIdx, uint triangleResolution)
