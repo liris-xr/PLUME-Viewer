@@ -72,6 +72,9 @@ namespace PLUME.Viewer.Analysis.Position
 
         private readonly Dictionary<int, Mesh> _bakedMeshes = new();
 
+        // Sampler result hashes of meshes the sampler rejected during the current generation.
+        private readonly HashSet<int> _unsampleableMeshes = new();
+
         private void Awake()
         {
             SetupProjectionCamera(segmentedObjectDepthTextureResolution, radius * 2, 0.3f, 1000.0f);
@@ -132,6 +135,7 @@ namespace PLUME.Viewer.Analysis.Position
 
             // key: mesh record id, value: sampled mesh containing values
             var meshSamplerResults = new Dictionary<int, MeshSamplerResult>();
+            _unsampleableMeshes.Clear();
 
             var result = new PositionHeatmapAnalysisResult(parameters, samplesMinValueBuffer, samplesMaxValueBuffer,
                 meshSamplerResults);
@@ -438,7 +442,23 @@ namespace PLUME.Viewer.Analysis.Position
             if (meshSamplerResults.TryGetValue(meshSamplerResultHash, out var result))
                 return result;
 
-            var meshSamplerResult = meshSampler.Sample(mesh, samplesPerSquareMeter, go.transform.lossyScale);
+            if (_unsampleableMeshes.Contains(meshSamplerResultHash))
+                return null;
+
+            MeshSamplerResult meshSamplerResult;
+
+            try
+            {
+                meshSamplerResult = meshSampler.Sample(mesh, samplesPerSquareMeter, go.transform.lossyScale);
+            }
+            catch (MeshSamplingException e)
+            {
+                // Skipped for the rest of the generation so the other receivers still get their heatmap.
+                _unsampleableMeshes.Add(meshSamplerResultHash);
+                Debug.LogWarning($"[PositionHeatmap] Skipping receiver '{go.name}': {e.Message}");
+                return null;
+            }
+
             meshSamplerResult.Name = go.name + "_" + (uint)meshSamplerResultHash;
             meshSamplerResults.Add(meshSamplerResultHash, meshSamplerResult);
             return meshSamplerResult;

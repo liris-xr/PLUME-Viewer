@@ -75,6 +75,9 @@ namespace PLUME.Viewer.Analysis.EyeGaze
         private readonly Dictionary<int, MaterialPropertyBlock> _cachedSegmentedObjectsDepthPropertyBlocks = new();
 
         private readonly Dictionary<int, Mesh> _bakedMeshes = new();
+
+        // Sampler result hashes of meshes the sampler rejected during the current generation.
+        private readonly HashSet<int> _unsampleableMeshes = new();
         
         private void Awake()
         {
@@ -151,6 +154,7 @@ namespace PLUME.Viewer.Analysis.EyeGaze
 
             // key: mesh record id, value: sampled mesh containing values
             var meshSamplerResults = new Dictionary<int, MeshSamplerResult>();
+            _unsampleableMeshes.Clear();
 
             var result = new EyeGazeAnalysisResult(parameters, samplesMinValueBuffer, samplesMaxValueBuffer,
                 meshSamplerResults);
@@ -586,7 +590,23 @@ namespace PLUME.Viewer.Analysis.EyeGaze
             if (meshSamplerResults.TryGetValue(meshSamplerResultHash, out var result))
                 return result;
 
-            var meshSamplerResult = meshSampler.Sample(mesh, samplesPerSquareMeter, go.transform.lossyScale);
+            if (_unsampleableMeshes.Contains(meshSamplerResultHash))
+                return null;
+
+            MeshSamplerResult meshSamplerResult;
+
+            try
+            {
+                meshSamplerResult = meshSampler.Sample(mesh, samplesPerSquareMeter, go.transform.lossyScale);
+            }
+            catch (MeshSamplingException e)
+            {
+                // Skipped for the rest of the generation so the other receivers still get their heatmap.
+                _unsampleableMeshes.Add(meshSamplerResultHash);
+                Debug.LogWarning($"[EyeGaze] Skipping receiver '{go.name}': {e.Message}");
+                return null;
+            }
+
             meshSamplerResult.Name = go.name + "_" + (uint)meshSamplerResultHash;
             meshSamplerResults.Add(meshSamplerResultHash, meshSamplerResult);
             return meshSamplerResult;

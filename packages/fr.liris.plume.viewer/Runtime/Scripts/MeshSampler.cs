@@ -89,6 +89,14 @@ namespace PLUME
             var nTriangles = (uint)(indexBuffer.count / 3);
             var nVertices = (uint)vertexBuffer.count;
 
+            if (nTriangles == 0)
+            {
+                indexBuffer.Release();
+                vertexBuffer.Release();
+                Destroy(readableMeshCopy);
+                throw new MeshSamplingException($"Mesh '{mesh.name}' has no triangles to sample.");
+            }
+
             // Specifically set the initial values to 0 in the buffer to prevent undefined behaviour of InterlockedMax and InterlockedAdd
             var totalSamplesCountArr = new uint[] { 0 };
             var trianglesMaxResolutionArr = new uint[] { 0 };
@@ -112,24 +120,33 @@ namespace PLUME
                 vertexBufferStride,
                 vertexBufferPositionOffset);
 
-            ComputeTrianglesSamplesIndexOffsets(
+            // Counted on the CPU in 64 bits: the GPU total is a 32-bit counter, which silently wraps on large meshes.
+            var totalSamples = ComputeTrianglesSamplesIndexOffsets(
                 trianglesResolutionBuffer,
                 trianglesSamplesIndexOffsetBuffer);
 
-            totalSamplesCountBuffer.GetData(totalSamplesCountArr);
-            var nSamples = totalSamplesCountArr[0];
+            // Sample indices are 32-bit and the values buffer has a maximum size in bytes.
+            var maxSamples = Math.Min(SystemInfo.maxGraphicsBufferSize / Marshal.SizeOf(typeof(float)), int.MaxValue);
 
-            if (nSamples > SystemInfo.maxGraphicsBufferSize)
+            if (totalSamples > (ulong)maxSamples)
             {
-                throw new Exception(
-                    $"Too many sample for this mesh. The compute buffer can store up to {SystemInfo.maxGraphicsBufferSize / Marshal.SizeOf(typeof(float))} samples. Try decreasing the sample density.");
+                trianglesResolutionBuffer.Release();
+                trianglesSamplesIndexOffsetBuffer.Release();
+                indexBuffer.Release();
+                vertexBuffer.Release();
+                Destroy(readableMeshCopy);
+                throw new MeshSamplingException(
+                    $"Mesh '{mesh.name}' (world scale {worldScale}) needs {totalSamples:N0} samples at " +
+                    $"{samplesPerSquareMeter} samples/m², but at most {maxSamples:N0} fit in one buffer. Decrease the " +
+                    "sample density or use a smaller mesh.");
             }
 
+            var nSamples = (uint)totalSamples;
             var sampleValuesBuffer = new ComputeBuffer((int)nSamples, Marshal.SizeOf(typeof(float)));
 
             var triangleResolutionMaxArr = new uint[1];
             trianglesMaxResolutionBuffer.GetData(triangleResolutionMaxArr);
-            var nSamplesMaxPerTriangle = NthTriangleFormula(triangleResolutionMaxArr[0]);
+            var nSamplesMaxPerTriangle = (uint)NthTriangleFormula(triangleResolutionMaxArr[0]);
 
             var sampledMesh = new MeshSamplerResult(nTriangles, nVertices, nSamples, nSamplesMaxPerTriangle,
                 indexBuffer,
@@ -142,9 +159,9 @@ namespace PLUME
             return sampledMesh;
         }
 
-        private static uint NthTriangleFormula(uint r)
+        private static ulong NthTriangleFormula(uint r)
         {
-            return (r + 1) * (r + 2) / 2u;
+            return ((ulong)r + 1) * ((ulong)r + 2) / 2u;
         }
 
         private static void ClearMeshSamplerResult(MeshSamplerResult result, ComputeShader shader)
@@ -190,7 +207,8 @@ namespace PLUME
             shader.SplitDispatch(computeTrianglesResolutionsKernel, totalNumberOfGroupsX, 1);
         }
 
-        private static void ComputeTrianglesSamplesIndexOffsets(
+        /// <returns>The total number of samples. The offsets are only valid when it fits in 32 bits.</returns>
+        private static ulong ComputeTrianglesSamplesIndexOffsets(
             ComputeBuffer trianglesResolutionBuffer,
             ComputeBuffer trianglesSamplesIndexOffsetBuffer)
         {
@@ -201,11 +219,12 @@ namespace PLUME
             trianglesResolutionBuffer.GetData(trianglesResolutionArr);
 
             var exclusivePrefixSum = new uint[nTriangles];
-            exclusivePrefixSum[0] = 0;
+            var total = 0ul;
 
-            for (var i = 1; i < nTriangles; ++i)
+            for (var i = 0; i < nTriangles; ++i)
             {
-                exclusivePrefixSum[i] = NthTriangleFormula(trianglesResolutionArr[i - 1]) + exclusivePrefixSum[i - 1];
+                exclusivePrefixSum[i] = (uint)total;
+                total += NthTriangleFormula(trianglesResolutionArr[i]);
             }
 
             trianglesSamplesIndexOffsetBuffer.SetData(exclusivePrefixSum);
@@ -217,6 +236,16 @@ namespace PLUME
             // shader.SetBuffer(kernel, "triangles_resolution_buffer", trianglesResolutionBuffer);
             // shader.SetBuffer(kernel, "triangles_samples_index_offset_buffer", trianglesSamplesIndexOffsetBuffer);
             // shader.Dispatch(kernel, 1, 1, 1);
+
+            return total;
+        }
+    }
+
+    /// <summary>A mesh that cannot be sampled (no triangles, or more samples than one buffer holds).</summary>
+    public class MeshSamplingException : Exception
+    {
+        public MeshSamplingException(string message) : base(message)
+        {
         }
     }
 }
