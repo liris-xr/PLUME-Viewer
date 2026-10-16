@@ -144,10 +144,25 @@ namespace PLUME.Viewer.Analysis.Position
 
             PrepareProjectionShader(samplesMinValueBuffer, samplesMaxValueBuffer, projectionKernel);
 
-            if (parameters.StartTime > 0)
+            Exception failure = null;
+
+            try
             {
-                var skippedFrames = record.Frames.GetInTimeRange(0, parameters.StartTime - 1u);
-                _generationContext.PlayFrames(player.PlayerModules, skippedFrames);
+                if (parameters.StartTime > 0)
+                {
+                    var skippedFrames = record.Frames.GetInTimeRange(0, parameters.StartTime - 1u);
+                    _generationContext.PlayFrames(player.PlayerModules, skippedFrames);
+                }
+            }
+            catch (Exception e)
+            {
+                failure = e;
+            }
+
+            if (failure != null)
+            {
+                AbortGeneration(result, failure, "replaying the frames before the start time");
+                yield break;
             }
 
             var stopwatch = Stopwatch.StartNew();
@@ -173,68 +188,81 @@ namespace PLUME.Viewer.Analysis.Position
                     yield return null;
                 }
 
-                _generationContext.PlayFrame(player.PlayerModules, frame);
-
-                var replayProjectionCasterId = _generationContext.GetReplayInstanceId(parameters.CasterIdentifier);
-                var replayProjectionReceiversIds = new List<int>();
-
-                foreach (var receiversIdentifier in parameters.ReceiversIdentifiers)
+                try
                 {
-                    var replayId = _generationContext.GetReplayInstanceId(receiversIdentifier);
-                    if (!replayId.HasValue) continue;
+                    _generationContext.PlayFrame(player.PlayerModules, frame);
 
-                    receiversNeverResolved.Remove(receiversIdentifier);
+                    var replayProjectionCasterId = _generationContext.GetReplayInstanceId(parameters.CasterIdentifier);
+                    var replayProjectionReceiversIds = new List<int>();
 
-                    if (!replayProjectionReceiversIds.Contains(replayId.Value))
-                        replayProjectionReceiversIds.Add(replayId.Value);
-
-                    if (!parameters.IncludeReceiversChildren) continue;
-
-                    var go = _generationContext.FindGameObjectByInstanceId(replayId.Value);
-
-                    // Identifiers of transforms, components and assets share the same map, so the id may not resolve
-                    // to a GameObject.
-                    if (go == null)
+                    foreach (var receiversIdentifier in parameters.ReceiversIdentifiers)
                     {
-                        unresolvedChildLookups++;
-                        continue;
-                    }
+                        var replayId = _generationContext.GetReplayInstanceId(receiversIdentifier);
+                        if (!replayId.HasValue) continue;
 
-                    foreach (var goInstanceId in go.GetComponentsInChildren<Renderer>()
-                                 .Select(r => r.gameObject.GetInstanceID()))
-                    {
-                        if (!replayProjectionReceiversIds.Contains(goInstanceId))
-                            replayProjectionReceiversIds.Add(goInstanceId);
-                    }
-                }
+                        receiversNeverResolved.Remove(receiversIdentifier);
 
-                if (replayProjectionCasterId.HasValue)
-                {
-                    projectionCasterNeverFound = false;
-                    
-                    if (replayProjectionReceiversIds.Count > 0)
-                    {
-                        var projectionCaster =
-                            _generationContext.FindGameObjectByInstanceId(replayProjectionCasterId.Value);
+                        if (!replayProjectionReceiversIds.Contains(replayId.Value))
+                            replayProjectionReceiversIds.Add(replayId.Value);
 
-                        if (projectionCaster != null)
+                        if (!parameters.IncludeReceiversChildren) continue;
+
+                        var go = _generationContext.FindGameObjectByInstanceId(replayId.Value);
+
+                        // Identifiers of transforms, components and assets share the same map, so the id may not resolve
+                        // to a GameObject.
+                        if (go == null)
                         {
-                            var projectionReceiversGameObjects = replayProjectionReceiversIds
-                                .Select(replayId => _generationContext.FindGameObjectByInstanceId(replayId))
-                                .Where(t => t != null)
-                                .Select(t => t.gameObject)
-                                .ToArray();
+                            unresolvedChildLookups++;
+                            continue;
+                        }
 
-                            if (projectionReceiversGameObjects.Length > 0)
-                            {
-                                ProjectCurrentPosition(_generationContext, projectionCaster,
-                                    projectionReceiversGameObjects,
-                                    meshSamplerResults, projectionKernel);
-                            }
+                        foreach (var goInstanceId in go.GetComponentsInChildren<Renderer>()
+                                     .Select(r => r.gameObject.GetInstanceID()))
+                        {
+                            if (!replayProjectionReceiversIds.Contains(goInstanceId))
+                                replayProjectionReceiversIds.Add(goInstanceId);
                         }
                     }
 
-                    GenerationProgress = (float)frameIdx / nFrames;
+                    if (replayProjectionCasterId.HasValue)
+                    {
+                        projectionCasterNeverFound = false;
+                    
+                        if (replayProjectionReceiversIds.Count > 0)
+                        {
+                            var projectionCaster =
+                                _generationContext.FindGameObjectByInstanceId(replayProjectionCasterId.Value);
+
+                            if (projectionCaster != null)
+                            {
+                                var projectionReceiversGameObjects = replayProjectionReceiversIds
+                                    .Select(replayId => _generationContext.FindGameObjectByInstanceId(replayId))
+                                    .Where(t => t != null)
+                                    .Select(t => t.gameObject)
+                                    .ToArray();
+
+                                if (projectionReceiversGameObjects.Length > 0)
+                                {
+                                    ProjectCurrentPosition(_generationContext, projectionCaster,
+                                        projectionReceiversGameObjects,
+                                        meshSamplerResults, projectionKernel);
+                                }
+                            }
+                        }
+
+                        GenerationProgress = (float)frameIdx / nFrames;
+                    }
+                }
+                catch (Exception e)
+                {
+                    failure = e;
+                }
+
+                if (failure != null)
+                {
+                    AbortGeneration(result, failure, $"replaying the frame at {frame.Timestamp} ns");
+                    yield break;
                 }
             }
 
@@ -267,6 +295,12 @@ namespace PLUME.Viewer.Analysis.Position
                                  "something that is not a GameObject, so their children were skipped. The receiver " +
                                  "identifiers are probably transform, component or asset identifiers rather than " +
                                  "GameObject ones.");
+
+            if (_unsampleableMeshes.Count > 0)
+                Debug.LogWarning($"[PositionHeatmap] {_unsampleableMeshes.Count} receiver mesh(es) could not be " +
+                                 "sampled and got no heatmap" + (meshSamplerResults.Count == 0
+                                     ? ", so the heatmap is empty."
+                                     : ". See the earlier warnings for which ones."));
 
             Debug.Log($"[PositionHeatmap] Generated {meshSamplerResults.Count} mesh heatmap(s) over {nFrames} frames " +
                       $"in {stopwatch.ElapsedMilliseconds} ms.");
@@ -407,6 +441,23 @@ namespace PLUME.Viewer.Analysis.Position
             _bakedMeshes.Clear();
         }
 
+        /// <summary>
+        /// Ends a generation that threw, the way Cancel does, so the module does not stay stuck in its generating state
+        /// (which also blocks every other heatmap). The partial result is discarded.
+        /// </summary>
+        private void AbortGeneration(PositionHeatmapAnalysisResult result, Exception e, string stage)
+        {
+            Debug.LogError($"[PositionHeatmap] Generation aborted while {stage}; the partial heatmap was discarded.\n{e}");
+
+            CancelGenerate();
+            SetVisibleResult(null);
+
+            foreach (var meshSamplerResult in result.SamplerResults.Values)
+                _cachedMeshSamplerResultPropertyBlocks.Remove(meshSamplerResult);
+
+            result.Dispose();
+        }
+
         public void CancelGenerate()
         {
             if (_generationContext != null)
@@ -455,7 +506,8 @@ namespace PLUME.Viewer.Analysis.Position
             {
                 // Skipped for the rest of the generation so the other receivers still get their heatmap.
                 _unsampleableMeshes.Add(meshSamplerResultHash);
-                Debug.LogWarning($"[PositionHeatmap] Skipping receiver '{go.name}': {e.Message}");
+                Debug.LogWarning($"[PositionHeatmap] Receiver '{go.name}' was skipped and gets no heatmap. " +
+                                 $"{e.Message} Use a smaller receiver mesh.");
                 return null;
             }
 

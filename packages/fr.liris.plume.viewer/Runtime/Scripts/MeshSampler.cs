@@ -136,9 +136,10 @@ namespace PLUME
                 vertexBuffer.Release();
                 Destroy(readableMeshCopy);
                 throw new MeshSamplingException(
-                    $"Mesh '{mesh.name}' (world scale {worldScale}) needs {totalSamples:N0} samples at " +
-                    $"{samplesPerSquareMeter} samples/m², but at most {maxSamples:N0} fit in one buffer. Decrease the " +
-                    "sample density or use a smaller mesh.");
+                    $"Mesh '{mesh.name}' covers about {totalSamples / samplesPerSquareMeter:N0} m² in the world " +
+                    $"(scale {worldScale}), which needs {totalSamples:N0} samples at {samplesPerSquareMeter} " +
+                    $"samples/m². A GPU buffer holds at most {maxSamples:N0} samples here, about " +
+                    $"{maxSamples / samplesPerSquareMeter:N0} m² at this density.");
             }
 
             var nSamples = (uint)totalSamples;
