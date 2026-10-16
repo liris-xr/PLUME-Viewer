@@ -9,6 +9,7 @@ using PLUME.Sample.Unity;
 using PLUME.Viewer.Player;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
 
@@ -64,10 +65,12 @@ namespace PLUME.Viewer.Analysis.Position
 
         private PositionHeatmapAnalysisResult _visibleResult;
 
-        private readonly Dictionary<MeshSamplerResult, MaterialPropertyBlock> _cachedMeshSamplerResultPropertyBlocks =
+        private readonly Dictionary<MeshSamplerResult, MaterialPropertyBlock[]> _cachedMeshSamplerResultPropertyBlocks =
             new();
 
         private readonly Dictionary<int, MaterialPropertyBlock> _cachedSegmentedObjectsDepthPropertyBlocks = new();
+
+        private readonly Dictionary<int, Mesh> _bakedMeshes = new();
 
         private void Awake()
         {
@@ -236,6 +239,8 @@ namespace PLUME.Viewer.Analysis.Position
             PlayerContext.Destroy(_generationContext);
             _generationContext = null;
 
+            DisposeBakedMeshes();
+
             PlayerContext.Activate(player.GetMainPlayerContext());
             IsGenerating = false;
 
@@ -310,7 +315,18 @@ namespace PLUME.Viewer.Analysis.Position
                     if (!insideFrustum)
                         continue;
 
-                    var mesh = go.GetComponent<MeshFilter>().sharedMesh;
+                    Mesh mesh = null;
+                    SkinnedMeshRenderer smr = null;
+
+                    if (go.TryGetComponent<MeshFilter>(out var meshFilter))
+                    {
+                        mesh = meshFilter.sharedMesh;
+                    }
+                    else if (go.TryGetComponent<SkinnedMeshRenderer>(out smr))
+                    {
+                        // Topology/resolution come from the rest pose; deformed positions are bound below.
+                        mesh = smr.sharedMesh;
+                    }
 
                     if (mesh == null || mesh.vertexBufferCount == 0)
                         continue;
@@ -320,17 +336,33 @@ namespace PLUME.Viewer.Analysis.Position
                     if (meshSamplerResult == null)
                         continue;
 
+                    // Default (static MeshFilter): rest-pose buffer, model_mtx carries T/R/S.
+                    var vertexBuffer = meshSamplerResult.VertexBuffer;
+                    var vertexBufferStride = meshSamplerResult.VertexBufferStride;
+                    var vertexBufferPositionOffset = meshSamplerResult.VertexBufferPositionOffset;
+                    GraphicsBuffer bakedVertexBuffer = null;
+
+                    // Skinned: bake the current pose so projection uses deformed positions.
+                    // useScale:false keeps vertices unscaled so localToWorldMatrix applies scale exactly once.
+                    if (smr != null)
+                    {
+                        var baked = GetOrCreateBakedMesh(go.GetInstanceID());
+                        smr.BakeMesh(baked, false);
+                        bakedVertexBuffer = baked.GetVertexBuffer(0);
+                        vertexBuffer = bakedVertexBuffer;
+                        vertexBufferStride = bakedVertexBuffer.stride;
+                        vertexBufferPositionOffset = baked.GetVertexAttributeOffset(VertexAttribute.Position);
+                    }
+
                     projectionShader.SetInt("object_instance_id", go.GetInstanceID());
                     projectionShader.SetMatrix("model_mtx", r.localToWorldMatrix);
                     projectionShader.SetInt("n_triangles", (int)meshSamplerResult.NTriangles);
                     projectionShader.SetBuffer(projectionKernel, "index_buffer",
                         meshSamplerResult.IndexBuffer);
                     projectionShader.SetInt("index_buffer_stride", meshSamplerResult.IndexBufferStride);
-                    projectionShader.SetBuffer(projectionKernel, "vertex_buffer",
-                        meshSamplerResult.VertexBuffer);
-                    projectionShader.SetInt("vertex_buffer_stride", meshSamplerResult.VertexBufferStride);
-                    projectionShader.SetInt("vertex_buffer_position_offset",
-                        meshSamplerResult.VertexBufferPositionOffset);
+                    projectionShader.SetBuffer(projectionKernel, "vertex_buffer", vertexBuffer);
+                    projectionShader.SetInt("vertex_buffer_stride", vertexBufferStride);
+                    projectionShader.SetInt("vertex_buffer_position_offset", vertexBufferPositionOffset);
                     projectionShader.SetBuffer(projectionKernel, "triangles_resolution_buffer",
                         meshSamplerResult.TrianglesResolutionBuffer);
                     projectionShader.SetBuffer(projectionKernel, "triangles_samples_index_offset_buffer",
@@ -346,8 +378,29 @@ namespace PLUME.Viewer.Analysis.Position
                         Mathf.CeilToInt(meshSamplerResult.NSamplesMaxPerTriangle / (float)threadGroupSizeY);
                     projectionShader.SplitDispatch(projectionKernel, totalNumberOfGroupsNeededX,
                         totalNumberOfGroupsNeededY);
+
+                    bakedVertexBuffer?.Release();
                 }
             }
+        }
+
+        private Mesh GetOrCreateBakedMesh(int instanceId)
+        {
+            if (_bakedMeshes.TryGetValue(instanceId, out var mesh))
+                return mesh;
+
+            var newMesh = new Mesh { name = "PositionHeatmapBakedMesh_" + instanceId };
+            newMesh.MarkDynamic();
+            newMesh.vertexBufferTarget |= GraphicsBuffer.Target.Raw;
+            _bakedMeshes.Add(instanceId, newMesh);
+            return newMesh;
+        }
+
+        private void DisposeBakedMeshes()
+        {
+            foreach (var mesh in _bakedMeshes.Values)
+                if (mesh != null) Destroy(mesh);
+            _bakedMeshes.Clear();
         }
 
         public void CancelGenerate()
@@ -357,6 +410,8 @@ namespace PLUME.Viewer.Analysis.Position
                 PlayerContext.Destroy(_generationContext);
                 _generationContext = null;
             }
+
+            DisposeBakedMeshes();
 
             PlayerContext.Activate(player.GetMainPlayerContext());
             IsGenerating = false;
@@ -428,6 +483,10 @@ namespace PLUME.Viewer.Analysis.Position
 
                 if (!go.TryGetComponent<Renderer>(out var goRenderer))
                     continue;
+                // Per-material blocks would otherwise outlive the heatmap and override other modules' blocks.
+                for (var materialIdx = 0; materialIdx < goRenderer.sharedMaterials.Length; ++materialIdx)
+                    goRenderer.SetPropertyBlock(null, materialIdx);
+                goRenderer.SetPropertyBlock(null);
                 goRenderer.SetSharedMaterials(new List<Material>());
             }
 
@@ -469,6 +528,9 @@ namespace PLUME.Viewer.Analysis.Position
                     Enumerable.Repeat(_segmentedObjectDepthMaterial, nSharedMaterials).ToArray();
                 var propertyBlock = GetOrCreateSegmentedObjectsDepthPropertyBlock(go);
                 goRenderer.SetPropertyBlock(propertyBlock);
+                // Per-material blocks (set by the heatmap display) take precedence over the renderer one.
+                for (var materialIdx = 0; materialIdx < nSharedMaterials; ++materialIdx)
+                    goRenderer.SetPropertyBlock(propertyBlock, materialIdx);
             }
         }
 
@@ -513,6 +575,8 @@ namespace PLUME.Viewer.Analysis.Position
                 var nSharedMaterials = goRenderer.sharedMaterials.Length;
                 goRenderer.sharedMaterials = Enumerable.Repeat(_defaultHeatmapMaterial, nSharedMaterials).ToArray();
                 goRenderer.SetPropertyBlock(null);
+                for (var materialIdx = 0; materialIdx < nSharedMaterials; ++materialIdx)
+                    goRenderer.SetPropertyBlock(null, materialIdx);
 
                 Mesh mesh = null;
 
@@ -545,16 +609,22 @@ namespace PLUME.Viewer.Analysis.Position
                     continue;
 
                 goRenderer.sharedMaterials = Enumerable.Repeat(_sampleHeatmapMaterial, nSharedMaterials).ToArray();
-                var propertyBlock = GetOrCreateMeshSamplerResultPropertyBlock(meshSamplerResult);
-                goRenderer.SetPropertyBlock(propertyBlock);
+                var propertyBlocks = GetOrCreateMeshSamplerResultPropertyBlocks(meshSamplerResult, mesh);
+
+                // One block per material: each submesh is drawn separately and needs its own triangle offset.
+                // Materials beyond the submesh count draw the last submesh again, as Unity does.
+                for (var materialIdx = 0; materialIdx < nSharedMaterials; ++materialIdx)
+                    goRenderer.SetPropertyBlock(propertyBlocks[Mathf.Min(materialIdx, propertyBlocks.Length - 1)],
+                        materialIdx);
             }
         }
 
-        private MaterialPropertyBlock GetOrCreateMeshSamplerResultPropertyBlock(MeshSamplerResult meshSamplerResult)
+        private MaterialPropertyBlock[] GetOrCreateMeshSamplerResultPropertyBlocks(MeshSamplerResult meshSamplerResult,
+            Mesh mesh)
         {
-            if (_cachedMeshSamplerResultPropertyBlocks.TryGetValue(meshSamplerResult, out var propertyBlock))
+            if (_cachedMeshSamplerResultPropertyBlocks.TryGetValue(meshSamplerResult, out var propertyBlocks))
             {
-                return propertyBlock;
+                return propertyBlocks;
             }
 
             var trianglesResolutionBuffer = Shader.PropertyToID("triangles_resolution_buffer");
@@ -562,16 +632,28 @@ namespace PLUME.Viewer.Analysis.Position
             var samplesValueBuffer = Shader.PropertyToID("samples_value_buffer");
             var samplesMinValue = Shader.PropertyToID("samples_min_value");
             var samplesMaxValue = Shader.PropertyToID("samples_max_value");
+            var triangleOffset = Shader.PropertyToID("triangle_offset");
 
-            var newPropertyBlock = new MaterialPropertyBlock();
-            newPropertyBlock.SetBuffer(samplesMinValue, _visibleResult.MinValueBuffer);
-            newPropertyBlock.SetBuffer(samplesMaxValue, _visibleResult.MaxValueBuffer);
-            newPropertyBlock.SetBuffer(trianglesResolutionBuffer, meshSamplerResult.TrianglesResolutionBuffer);
-            newPropertyBlock.SetBuffer(trianglesSamplesIndexOffsetBuffer,
-                meshSamplerResult.TrianglesSamplesIndexOffsetBuffer);
-            newPropertyBlock.SetBuffer(samplesValueBuffer, meshSamplerResult.SampleValuesBuffer);
-            _cachedMeshSamplerResultPropertyBlocks.Add(meshSamplerResult, newPropertyBlock);
-            return newPropertyBlock;
+            var nSubMeshes = Mathf.Max(1, mesh.subMeshCount);
+            var newPropertyBlocks = new MaterialPropertyBlock[nSubMeshes];
+
+            for (var subMeshIdx = 0; subMeshIdx < nSubMeshes; ++subMeshIdx)
+            {
+                var newPropertyBlock = new MaterialPropertyBlock();
+                newPropertyBlock.SetBuffer(samplesMinValue, _visibleResult.MinValueBuffer);
+                newPropertyBlock.SetBuffer(samplesMaxValue, _visibleResult.MaxValueBuffer);
+                newPropertyBlock.SetBuffer(trianglesResolutionBuffer, meshSamplerResult.TrianglesResolutionBuffer);
+                newPropertyBlock.SetBuffer(trianglesSamplesIndexOffsetBuffer,
+                    meshSamplerResult.TrianglesSamplesIndexOffsetBuffer);
+                newPropertyBlock.SetBuffer(samplesValueBuffer, meshSamplerResult.SampleValuesBuffer);
+                // The sampler copies the raw index buffer, so a submesh's first triangle sits at indexStart / 3.
+                var firstTriangle = mesh.subMeshCount > 0 ? mesh.GetSubMesh(subMeshIdx).indexStart / 3 : 0;
+                newPropertyBlock.SetInt(triangleOffset, firstTriangle);
+                newPropertyBlocks[subMeshIdx] = newPropertyBlock;
+            }
+
+            _cachedMeshSamplerResultPropertyBlocks.Add(meshSamplerResult, newPropertyBlocks);
+            return newPropertyBlocks;
         }
 
         public override void RemoveResult(PositionHeatmapAnalysisResult result)
@@ -731,6 +813,8 @@ namespace PLUME.Viewer.Analysis.Position
 
         private void OnDestroy()
         {
+            DisposeBakedMeshes();
+
             foreach (var result in GetResults())
             {
                 result.Dispose();
