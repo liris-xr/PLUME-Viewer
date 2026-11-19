@@ -190,13 +190,35 @@ namespace PLUME.Viewer.Player
                 Activate(this);
             }
 
+            // The recorder writes a frame's scene loads and unloads after the samples creating the loaded scene's
+            // objects. Duplicated scene assets share their scene GUID, so played in that order the incoming scene's
+            // objects would be created in the outgoing replay scene and destroyed with it: scene samples go first.
             foreach (var sample in frame.Data)
             {
+                if (!IsSceneLifecycleSample(sample))
+                    continue;
+
                 foreach (var playerModule in playerModules)
                 {
                     playerModule.PlaySample(this, sample);
                 }
             }
+
+            foreach (var sample in frame.Data)
+            {
+                if (IsSceneLifecycleSample(sample))
+                    continue;
+
+                foreach (var playerModule in playerModules)
+                {
+                    playerModule.PlaySample(this, sample);
+                }
+            }
+        }
+
+        private static bool IsSceneLifecycleSample(RawSample sample)
+        {
+            return sample.Payload is LoadScene or UnloadScene;
         }
 
         public void PlaySamples(PlayerModule[] playerModules, IEnumerable<RawSample> samples)
@@ -353,10 +375,60 @@ namespace PLUME.Viewer.Player
             if (sceneGuid == Guid.Empty)
                 return;
 
-            if (_scenesByGuid.TryGetValue(sceneGuid, out var scene))
+            if (!_scenesByGuid.TryGetValue(sceneGuid, out var scene))
+                return;
+
+            _scenesByGuid.Remove(sceneGuid);
+
+            // UnloadSceneAsync destroys the scene's objects only frames later. Until then they would keep answering
+            // lookups of their record identifiers, which duplicated scene assets reuse in the scene loaded next, so
+            // they are forgotten and destroyed now.
+            if (scene.IsValid() && scene.isLoaded)
             {
-                SceneManager.UnloadSceneAsync(scene);
-                _scenesByGuid.Remove(sceneGuid);
+                foreach (var rootGameObject in scene.GetRootGameObjects())
+                {
+                    ForgetGameObjectHierarchy(rootGameObject);
+                    Object.DestroyImmediate(rootGameObject);
+                }
+            }
+
+            if (_cachedSceneRootObjectsActive.Remove(scene, out var cachedRootObjectsActive) &&
+                cachedRootObjectsActive != null)
+                ListPool<GameObject>.Release(cachedRootObjectsActive);
+
+            SceneManager.UnloadSceneAsync(scene);
+            updatedHierarchy?.Invoke(new HierarchyForceRebuild());
+        }
+
+        /**
+         * Drops every replay mapping of a GameObject and its descendants, inactive ones included, so their record
+         * identifiers resolve to new objects afterwards.
+         */
+        private void ForgetGameObjectHierarchy(GameObject root)
+        {
+            foreach (var component in root.GetComponentsInChildren<Component>(true))
+            {
+                // Null for a missing script.
+                if (component == null)
+                    continue;
+
+                var instanceId = component.GetInstanceID();
+
+                if (component is Transform t)
+                {
+                    var gameObjectInstanceId = t.gameObject.GetInstanceID();
+                    _transformsByInstanceId.Remove(instanceId);
+                    _gameObjectsByInstanceId.Remove(gameObjectInstanceId);
+                    _gameObjectsTagByInstanceId.Remove(gameObjectInstanceId);
+                    RemoveIdentifierCorrespondence(GetRecordIdentifier(gameObjectInstanceId));
+                }
+                else
+                {
+                    _componentByInstanceId.Remove(instanceId);
+                    _unresolvableComponentInstanceIds.Remove(instanceId);
+                }
+
+                RemoveIdentifierCorrespondence(GetRecordIdentifier(instanceId));
             }
         }
 
