@@ -31,6 +31,10 @@
 
             uniform float _Shading;
 
+            // SV_PrimitiveID restarts at 0 for every submesh draw, while the sampler buffers are indexed over the
+            // whole index buffer. This is the index of the drawn submesh's first triangle in that buffer.
+            uint triangle_offset;
+
             StructuredBuffer<uint> triangles_resolution_buffer;
             StructuredBuffer<uint> triangles_samples_index_offset_buffer;
             StructuredBuffer<float> samples_value_buffer;
@@ -79,7 +83,7 @@
 
                 for (int j = 0; j < 3; ++j)
                 {
-                    o[j].triangle_id = pid;
+                    o[j].triangle_id = triangle_offset + pid;
                     o[j].normal_dir = tri[j].normal_dir;
                     o[j].pos_world = tri[j].pos_world;
                     o[j].vertex = tri[j].vertex;

@@ -44,6 +44,29 @@ namespace PLUME
             TrianglesSamplesIndexOffsetBuffer = trianglesSamplesIndexOffsetBuffer;
         }
 
+        /// <summary>
+        /// Reads the index buffer back to the CPU. Meshes with more than 65535 vertices use 32-bit indices, so the
+        /// buffer must be read at its own index size.
+        /// </summary>
+        public uint[] ReadIndices()
+        {
+            var indices = new uint[IndexBuffer.count];
+
+            if (IndexBufferStride == 2)
+            {
+                var shortIndices = new ushort[IndexBuffer.count];
+                IndexBuffer.GetData(shortIndices);
+                for (var i = 0; i < shortIndices.Length; ++i)
+                    indices[i] = shortIndices[i];
+            }
+            else
+            {
+                IndexBuffer.GetData(indices);
+            }
+
+            return indices;
+        }
+
         public void Dispose()
         {
             SampleValuesBuffer?.Dispose();
