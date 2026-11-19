@@ -694,32 +694,8 @@ namespace PLUME.Viewer.Player
             {
                 updatedHierarchy?.Invoke(new HierarchyDestroyGameObjectEvent(id));
 
-                _gameObjectsByInstanceId.Remove(go.GetInstanceID());
-                _gameObjectsTagByInstanceId.Remove(go.GetInstanceID());
-                _transformsByInstanceId.Remove(go.transform.GetInstanceID());
-
-                var children = go.GetComponentsInChildren<Component>();
-
-                foreach (var child in children)
-                {
-                    if (child is Transform childTransform)
-                    {
-                        var childTransformInstanceId = childTransform.GetInstanceID();
-                        var childGameObjectInstanceId = childTransform.gameObject.GetInstanceID();
-                        _transformsByInstanceId.Remove(childTransformInstanceId);
-                        _gameObjectsByInstanceId.Remove(childGameObjectInstanceId);
-                        _gameObjectsTagByInstanceId.Remove(childGameObjectInstanceId);
-                        RemoveIdentifierCorrespondence(GetRecordIdentifier(childTransformInstanceId));
-                        RemoveIdentifierCorrespondence(GetRecordIdentifier(childGameObjectInstanceId));
-                    }
-                    else
-                    {
-                        var childComponentInstanceId = child.GetInstanceID();
-                        _componentByInstanceId.Remove(childComponentInstanceId);
-                        RemoveIdentifierCorrespondence(GetRecordIdentifier(childComponentInstanceId));
-                    }
-                }
-
+                // Inactive descendants are destroyed too, so their mappings must go with them.
+                ForgetGameObjectHierarchy(go);
                 Object.DestroyImmediate(go);
             }
 
