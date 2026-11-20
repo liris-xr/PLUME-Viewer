@@ -74,6 +74,7 @@ namespace PLUME.Viewer.Analysis.Position
 
         // Sampler result hashes of meshes the sampler rejected during the current generation.
         private readonly HashSet<int> _unsampleableMeshes = new();
+        private readonly HashSet<int> _skippedSkinnedReceivers = new();
 
         private void Awake()
         {
@@ -124,25 +125,44 @@ namespace PLUME.Viewer.Analysis.Position
             IsGenerating = true;
             player.SetModuleGenerating(this);
 
-            var samplesMinValueBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
-            var samplesMaxValueBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
-            samplesMinValueBuffer.SetData(new[] { uint.MaxValue });
-            samplesMaxValueBuffer.SetData(new[] { uint.MinValue });
-
-            var projectionKernel = projectionShader.FindKernel("project_std_normal_distribution");
-
-            _generationContext = PlayerContext.CreatePlayerContext(assets);
+            ComputeBuffer samplesMinValueBuffer = null;
+            ComputeBuffer samplesMaxValueBuffer = null;
+            PositionHeatmapAnalysisResult result;
+            int projectionKernel;
 
             // key: mesh record id, value: sampled mesh containing values
             var meshSamplerResults = new Dictionary<int, MeshSamplerResult>();
             _unsampleableMeshes.Clear();
+            _skippedSkinnedReceivers.Clear();
 
-            var result = new PositionHeatmapAnalysisResult(parameters, samplesMinValueBuffer, samplesMaxValueBuffer,
-                meshSamplerResults);
+            try
+            {
+                samplesMinValueBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
+                samplesMaxValueBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
+                samplesMinValueBuffer.SetData(new[] { uint.MaxValue });
+                samplesMaxValueBuffer.SetData(new[] { uint.MinValue });
 
-            SetVisibleResult(result);
+                projectionKernel = projectionShader.FindKernel("project_std_normal_distribution");
 
-            PrepareProjectionShader(samplesMinValueBuffer, samplesMaxValueBuffer, projectionKernel);
+                _generationContext = PlayerContext.CreatePlayerContext(assets);
+
+                result = new PositionHeatmapAnalysisResult(parameters, samplesMinValueBuffer, samplesMaxValueBuffer,
+                    meshSamplerResults);
+
+                SetVisibleResult(result);
+
+                PrepareProjectionShader(samplesMinValueBuffer, samplesMaxValueBuffer, projectionKernel);
+            }
+            catch (Exception e)
+            {
+                // Same as a failure during the replay: leave the generating state so other heatmaps stay usable.
+                Debug.LogError($"[PositionHeatmap] Generation aborted while setting up.\n{e}");
+                CancelGenerate();
+                SetVisibleResult(null);
+                samplesMinValueBuffer?.Release();
+                samplesMaxValueBuffer?.Release();
+                yield break;
+            }
 
             Exception failure = null;
 
@@ -384,16 +404,23 @@ namespace PLUME.Viewer.Analysis.Position
                     // useScale:false keeps vertices unscaled so localToWorldMatrix applies scale exactly once.
                     if (smr != null)
                     {
-                        var baked = GetOrCreateBakedMesh(go.GetInstanceID());
-                        smr.BakeMesh(baked, false);
-                        bakedVertexBuffer = baked.GetVertexBuffer(0);
+                        if (_skippedSkinnedReceivers.Contains(go.GetInstanceID()))
+                            continue;
+
+                        bakedVertexBuffer = TryBakeSkinnedMesh(go, smr, meshSamplerResult,
+                            out vertexBufferPositionOffset);
+
+                        if (bakedVertexBuffer == null)
+                            continue;
+
                         vertexBuffer = bakedVertexBuffer;
                         vertexBufferStride = bakedVertexBuffer.stride;
-                        vertexBufferPositionOffset = baked.GetVertexAttributeOffset(VertexAttribute.Position);
                     }
 
                     projectionShader.SetInt("object_instance_id", go.GetInstanceID());
-                    projectionShader.SetMatrix("model_mtx", r.localToWorldMatrix);
+                    // The transform's matrix, not the renderer's: BakeMesh writes vertices in the transform's space,
+                    // while a SkinnedMeshRenderer's localToWorldMatrix may follow its root bone.
+                    projectionShader.SetMatrix("model_mtx", go.transform.localToWorldMatrix);
                     projectionShader.SetInt("n_triangles", (int)meshSamplerResult.NTriangles);
                     projectionShader.SetBuffer(projectionKernel, "index_buffer",
                         meshSamplerResult.IndexBuffer);
@@ -420,6 +447,45 @@ namespace PLUME.Viewer.Analysis.Position
                     bakedVertexBuffer?.Release();
                 }
             }
+        }
+
+        /// <summary>
+        /// Bakes the current pose of a skinned receiver. Returns null, and skips the receiver for the rest of the
+        /// generation, when the pose cannot be baked or does not match the sampled mesh, so that one receiver does not
+        /// abort the whole heatmap.
+        /// </summary>
+        private GraphicsBuffer TryBakeSkinnedMesh(GameObject go, SkinnedMeshRenderer smr,
+            MeshSamplerResult meshSamplerResult, out int positionOffset)
+        {
+            positionOffset = 0;
+            GraphicsBuffer bakedVertexBuffer = null;
+            var reason = "its baked pose does not match its sampled mesh.";
+
+            try
+            {
+                var baked = GetOrCreateBakedMesh(go.GetInstanceID());
+                smr.BakeMesh(baked, false);
+
+                if (baked.vertexCount == meshSamplerResult.NVertices)
+                {
+                    bakedVertexBuffer = baked.GetVertexBuffer(0);
+                    positionOffset = baked.GetVertexAttributeOffset(VertexAttribute.Position);
+                }
+            }
+            catch (Exception e)
+            {
+                bakedVertexBuffer?.Release();
+                bakedVertexBuffer = null;
+                reason = e.Message;
+            }
+
+            if (bakedVertexBuffer != null)
+                return bakedVertexBuffer;
+
+            _skippedSkinnedReceivers.Add(go.GetInstanceID());
+            Debug.LogWarning($"[PositionHeatmap] Skinned receiver '{go.name}' was skipped for the rest of the " +
+                             $"generation: {reason}");
+            return null;
         }
 
         private Mesh GetOrCreateBakedMesh(int instanceId)
@@ -680,14 +746,23 @@ namespace PLUME.Viewer.Analysis.Position
                 if (!hasMeshSamplerResult)
                     continue;
 
-                goRenderer.sharedMaterials = Enumerable.Repeat(_sampleHeatmapMaterial, nSharedMaterials).ToArray();
                 var propertyBlocks = GetOrCreateMeshSamplerResultPropertyBlocks(meshSamplerResult, mesh);
 
                 // One block per material: each submesh is drawn separately and needs its own triangle offset.
-                // Materials beyond the submesh count draw the last submesh again, as Unity does.
+                // Materials beyond the submesh count draw the last submesh again, as Unity does. Submeshes that were
+                // not sampled (not triangles) keep the default heatmap material.
+                var materialBlocks = Enumerable.Range(0, nSharedMaterials)
+                    .Select(materialIdx => propertyBlocks[Mathf.Min(materialIdx, propertyBlocks.Length - 1)])
+                    .ToArray();
+                goRenderer.sharedMaterials = materialBlocks
+                    .Select(block => block != null ? _sampleHeatmapMaterial : _defaultHeatmapMaterial)
+                    .ToArray();
+
                 for (var materialIdx = 0; materialIdx < nSharedMaterials; ++materialIdx)
-                    goRenderer.SetPropertyBlock(propertyBlocks[Mathf.Min(materialIdx, propertyBlocks.Length - 1)],
-                        materialIdx);
+                {
+                    if (materialBlocks[materialIdx] != null)
+                        goRenderer.SetPropertyBlock(materialBlocks[materialIdx], materialIdx);
+                }
             }
         }
 
@@ -718,9 +793,14 @@ namespace PLUME.Viewer.Analysis.Position
                 newPropertyBlock.SetBuffer(trianglesSamplesIndexOffsetBuffer,
                     meshSamplerResult.TrianglesSamplesIndexOffsetBuffer);
                 newPropertyBlock.SetBuffer(samplesValueBuffer, meshSamplerResult.SampleValuesBuffer);
-                // The sampler copies the raw index buffer, so a submesh's first triangle sits at indexStart / 3.
-                var firstTriangle = mesh.subMeshCount > 0 ? mesh.GetSubMesh(subMeshIdx).indexStart / 3 : 0;
-                newPropertyBlock.SetInt(triangleOffset, firstTriangle);
+                // Index of the submesh's first triangle in the sampled triangles. Submeshes that are not made of
+                // triangles were not sampled and get no block.
+                var firstTriangle = subMeshIdx < meshSamplerResult.SubMeshFirstTriangle.Length
+                    ? meshSamplerResult.SubMeshFirstTriangle[subMeshIdx]
+                    : 0;
+                if (firstTriangle < 0)
+                    continue;
+                newPropertyBlock.SetInteger(triangleOffset, firstTriangle);
                 newPropertyBlocks[subMeshIdx] = newPropertyBlock;
             }
 

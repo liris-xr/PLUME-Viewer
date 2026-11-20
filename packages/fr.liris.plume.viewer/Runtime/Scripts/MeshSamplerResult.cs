@@ -23,12 +23,21 @@ namespace PLUME
 
         public readonly ComputeBuffer SampleValuesBuffer;
 
+        /// <summary>
+        /// For each submesh of the sampled mesh, index of its first triangle in the sampled triangles, or -1 when the
+        /// submesh is not made of triangles and was not sampled.
+        /// </summary>
+        public readonly int[] SubMeshFirstTriangle;
+
+        // Readable copy the index and vertex buffers belong to: it must outlive them.
+        private readonly Mesh _sampledMesh;
+
         [CanBeNull] public string Name;
 
         public MeshSamplerResult(uint nTriangles, uint nVertices, uint nSamples, uint nSamplesMaxPerTriangle,
             GraphicsBuffer indexBuffer, int indexBufferStride, GraphicsBuffer vertexBuffer, int vertexBufferStride,
             int vertexBufferPositionOffset, ComputeBuffer sampleValuesBuffer, ComputeBuffer trianglesResolutionBuffer,
-            ComputeBuffer trianglesSamplesIndexOffsetBuffer)
+            ComputeBuffer trianglesSamplesIndexOffsetBuffer, int[] subMeshFirstTriangle, Mesh sampledMesh)
         {
             NTriangles = nTriangles;
             NVertices = nVertices;
@@ -42,6 +51,8 @@ namespace PLUME
             SampleValuesBuffer = sampleValuesBuffer;
             TrianglesResolutionBuffer = trianglesResolutionBuffer;
             TrianglesSamplesIndexOffsetBuffer = trianglesSamplesIndexOffsetBuffer;
+            SubMeshFirstTriangle = subMeshFirstTriangle;
+            _sampledMesh = sampledMesh;
         }
 
         /// <summary>
@@ -74,6 +85,9 @@ namespace PLUME
             TrianglesSamplesIndexOffsetBuffer?.Dispose();
             IndexBuffer?.Dispose();
             VertexBuffer?.Dispose();
+
+            if (_sampledMesh != null)
+                UnityEngine.Object.Destroy(_sampledMesh);
         }
     }
 }
