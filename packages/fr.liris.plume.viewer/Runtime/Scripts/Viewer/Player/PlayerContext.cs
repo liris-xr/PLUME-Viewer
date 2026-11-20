@@ -42,6 +42,10 @@ namespace PLUME.Viewer.Player
         private readonly HashSet<int> _unresolvableComponentInstanceIds = new();
 
         private readonly Dictionary<Guid, Scene> _scenesByGuid = new();
+
+        // GUID of the scene that was active in the recorded application (ChangeActiveScene samples). Unity's own
+        // active scene is not meaningful here: the player switches it to create objects in their scene.
+        private Guid _recordedActiveSceneGuid;
         private readonly Dictionary<Scene, List<GameObject>> _cachedSceneRootObjectsActive = new();
 
         private PlayerContext(RecordAssetBundle recordAssetBundle)
@@ -157,6 +161,7 @@ namespace PLUME.Viewer.Player
             }
 
             _scenesByGuid.Clear();
+            _recordedActiveSceneGuid = Guid.Empty;
 
             updatedHierarchy?.Invoke(new HierarchyForceRebuild());
 
@@ -346,6 +351,30 @@ namespace PLUME.Viewer.Player
             }
         }
         
+        public void SetRecordedActiveScene(SceneIdentifier sceneId)
+        {
+            _recordedActiveSceneGuid = Guid.TryParse(sceneId.Guid, out var sceneGuid) ? sceneGuid : Guid.Empty;
+        }
+
+        /// <summary>
+        /// The replay scene of the scene that was active in the recorded application, or an invalid scene when it is
+        /// unknown or not loaded.
+        /// </summary>
+        public Scene GetRecordedActiveScene()
+        {
+            if (_recordedActiveSceneGuid != Guid.Empty &&
+                _scenesByGuid.TryGetValue(_recordedActiveSceneGuid, out var scene) && scene.IsValid())
+                return scene;
+
+            return default;
+        }
+
+        /// <summary>Whether <paramref name="scene"/> is one of the replay scenes of this context.</summary>
+        public bool ContainsScene(Scene scene)
+        {
+            return scene.IsValid() && _scenesByGuid.ContainsValue(scene);
+        }
+
         public void DestroyScene(SceneIdentifier sceneId)
         {
             var sceneGuid = Guid.Parse(sceneId.Guid);
