@@ -5,7 +5,6 @@
 uint n_triangles;
 uint n_samples;
 float3 scale;
-RWStructuredBuffer<uint> total_samples_count_buffer;
 RWStructuredBuffer<uint> triangles_resolution_buffer;
 RWStructuredBuffer<uint> triangles_max_resolution_buffer;
 RWStructuredBuffer<uint> triangles_samples_index_offset_buffer;
@@ -50,7 +49,6 @@ void compute_triangles_resolution(const uint id : SV_DispatchThreadID)
 
     triangles_resolution_buffer[triangle_index] = resolution;
     InterlockedMax(triangles_max_resolution_buffer[0], resolution);
-    InterlockedAdd(total_samples_count_buffer[0], n_th_triangle_formula(resolution));
 }
 
 // #pragma kernel compute_triangles_samples_index_offset
