@@ -1,4 +1,6 @@
-﻿using System;
+﻿﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -11,11 +13,26 @@ namespace PLUME
 
         public static Mesh MakeReadableMeshCopy(Mesh nonReadableMesh)
         {
+            return MakeReadableMeshCopy(nonReadableMesh, out _);
+        }
+
+        /// <summary>
+        /// Copies <paramref name="nonReadableMesh"/> through its GPU buffers, so that meshes loaded from asset bundles
+        /// (not readable) can be sampled.
+        /// <para>
+        /// The copy has a single submesh holding the triangles of every triangle submesh of the source, in order, with
+        /// each submesh's baseVertex folded into its indices: the sampler and the projection read the index buffer as
+        /// one triangle list. Submeshes of another topology (lines, points, quads) are dropped.
+        /// </para>
+        /// </summary>
+        /// <param name="subMeshFirstTriangle">For each submesh of the source, the index of its first triangle in the
+        /// copy, or -1 when the submesh was dropped.</param>
+        public static Mesh MakeReadableMeshCopy(Mesh nonReadableMesh, out int[] subMeshFirstTriangle)
+        {
             // We were forced to do this because the Stanford Bunny model would disappear when changing the graphics buffer targets.
             // This is probably due to the fact that they are not readable when loading from the asset bundle.
             // TODO: find a way to make all mesh readable in the asset bundle
             var meshCopy = new Mesh();
-            meshCopy.indexFormat = nonReadableMesh.indexFormat;
 
             // Handle vertices
             var verticesBuffer = nonReadableMesh.GetVertexBuffer(0);
@@ -27,23 +44,41 @@ namespace PLUME
             verticesBuffer.Release();
 
             // Handle triangles
-            meshCopy.subMeshCount = nonReadableMesh.subMeshCount;
-            var indexesBuffer = nonReadableMesh.GetIndexBuffer();
-            var tot = indexesBuffer.stride * indexesBuffer.count;
-            var indexesData = new byte[tot];
-            indexesBuffer.GetData(indexesData);
-            meshCopy.SetIndexBufferParams(indexesBuffer.count, nonReadableMesh.indexFormat);
-            meshCopy.SetIndexBufferData(indexesData, 0, 0, tot);
-            indexesBuffer.Release();
+            var sourceIndices = ReadIndexBuffer(nonReadableMesh);
+            var subMeshCount = nonReadableMesh.subMeshCount;
+            var indices = new List<uint>(sourceIndices.Length);
+            subMeshFirstTriangle = new int[subMeshCount];
 
-            // Restore submesh structure
-            uint currentIndexOffset = 0;
-            for (var i = 0; i < meshCopy.subMeshCount; i++)
+            for (var i = 0; i < subMeshCount; i++)
             {
-                var subMeshIndexCount = nonReadableMesh.GetIndexCount(i);
-                meshCopy.SetSubMesh(i, new SubMeshDescriptor((int)currentIndexOffset, (int)subMeshIndexCount));
-                currentIndexOffset += subMeshIndexCount;
+                var subMesh = nonReadableMesh.GetSubMesh(i);
+
+                if (subMesh.topology != MeshTopology.Triangles)
+                {
+                    subMeshFirstTriangle[i] = -1;
+                    continue;
+                }
+
+                subMeshFirstTriangle[i] = indices.Count / 3;
+                var indexCount = subMesh.indexCount - subMesh.indexCount % 3;
+
+                for (var j = 0; j < indexCount; j++)
+                    indices.Add((uint)(sourceIndices[subMesh.indexStart + j] + subMesh.baseVertex));
             }
+
+            if (nonReadableMesh.vertexCount > ushort.MaxValue)
+            {
+                meshCopy.SetIndexBufferParams(indices.Count, IndexFormat.UInt32);
+                meshCopy.SetIndexBufferData(indices, 0, 0, indices.Count);
+            }
+            else
+            {
+                meshCopy.SetIndexBufferParams(indices.Count, IndexFormat.UInt16);
+                meshCopy.SetIndexBufferData(indices.Select(index => (ushort)index).ToArray(), 0, 0, indices.Count);
+            }
+
+            meshCopy.subMeshCount = 1;
+            meshCopy.SetSubMesh(0, new SubMeshDescriptor(0, indices.Count), MeshUpdateFlags.DontRecalculateBounds);
 
             // Recalculate normals and bounds
             meshCopy.RecalculateNormals();
@@ -52,112 +87,157 @@ namespace PLUME
             return meshCopy;
         }
 
+        private static uint[] ReadIndexBuffer(Mesh mesh)
+        {
+            var buffer = mesh.GetIndexBuffer();
+
+            if (buffer == null)
+                return Array.Empty<uint>();
+
+            try
+            {
+                var indices = new uint[buffer.count];
+
+                if (buffer.stride == 2)
+                {
+                    var shortIndices = new ushort[buffer.count];
+                    buffer.GetData(shortIndices);
+                    for (var i = 0; i < shortIndices.Length; ++i)
+                        indices[i] = shortIndices[i];
+                }
+                else
+                {
+                    buffer.GetData(indices);
+                }
+
+                return indices;
+            }
+            finally
+            {
+                buffer.Release();
+            }
+        }
+
         /// <summary>
         /// Generate quasi-uniform sampling for the given mesh <paramref name="mesh"/>.
         /// </summary>
-        /// 
+        ///
         /// <param name="mesh">The mesh to sample</param>
-        /// 
+        ///
         /// <param name="samplesPerSquareMeter">
         /// Number of samples per square meter the mesh sampler will try to generate. The reference is defined in object
         /// local space (based on vertices positions and calculated triangles' area).
         /// </param>
-        /// 
+        ///
         /// <param name="worldScale"> Lossy world scale of the object. This is used to take into account any stretching
         /// of meshes that would result in more samples to be generated.
         /// </param>
-        /// 
+        ///
         /// <returns>
         /// Return the generated <see cref="MeshSamplerResult"/>. The responsability for releasing the generating buffer
         /// is left to the calling method.
         /// </returns>
+        ///
+        /// <exception cref="MeshSamplingException">The mesh cannot be sampled. Nothing is left allocated.</exception>
         public MeshSamplerResult Sample(Mesh mesh, float samplesPerSquareMeter, Vector3 worldScale)
         {
-            using var totalSamplesCountBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
-            using var trianglesMaxResolutionBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
+            Mesh readableMeshCopy = null;
+            GraphicsBuffer vertexBuffer = null;
+            GraphicsBuffer indexBuffer = null;
+            ComputeBuffer trianglesResolutionBuffer = null;
+            ComputeBuffer trianglesSamplesIndexOffsetBuffer = null;
+            ComputeBuffer sampleValuesBuffer = null;
 
-            var readableMeshCopy = MakeReadableMeshCopy(mesh);
-            readableMeshCopy.indexBufferTarget |= GraphicsBuffer.Target.Raw;
-            readableMeshCopy.vertexBufferTarget |= GraphicsBuffer.Target.Raw;
-
-            var vertexBuffer = readableMeshCopy.GetVertexBuffer(0);
-            var vertexBufferStride = vertexBuffer.stride;
-            var vertexBufferPositionOffset = readableMeshCopy.GetVertexAttributeOffset(VertexAttribute.Position);
-            var indexBuffer = readableMeshCopy.GetIndexBuffer();
-            var indexBufferStride = indexBuffer.stride;
-
-            var nTriangles = (uint)(indexBuffer.count / 3);
-            var nVertices = (uint)vertexBuffer.count;
-
-            if (nTriangles == 0)
+            try
             {
-                indexBuffer.Release();
-                vertexBuffer.Release();
-                Destroy(readableMeshCopy);
-                throw new MeshSamplingException($"Mesh '{mesh.name}' has no triangles to sample.");
+                using var trianglesMaxResolutionBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(uint)));
+
+                readableMeshCopy = MakeReadableMeshCopy(mesh, out var subMeshFirstTriangle);
+                readableMeshCopy.indexBufferTarget |= GraphicsBuffer.Target.Raw;
+                readableMeshCopy.vertexBufferTarget |= GraphicsBuffer.Target.Raw;
+
+                vertexBuffer = readableMeshCopy.GetVertexBuffer(0);
+                var vertexBufferStride = vertexBuffer.stride;
+                var vertexBufferPositionOffset = readableMeshCopy.GetVertexAttributeOffset(VertexAttribute.Position);
+                indexBuffer = readableMeshCopy.GetIndexBuffer();
+                var indexBufferStride = indexBuffer.stride;
+
+                var nTriangles = (uint)(indexBuffer.count / 3);
+                var nVertices = (uint)vertexBuffer.count;
+
+                if (nTriangles == 0)
+                    throw new MeshSamplingException($"Mesh '{mesh.name}' has no triangles to sample.");
+
+                // Specifically set the initial value to 0 in the buffer to prevent undefined behaviour of InterlockedMax
+                trianglesMaxResolutionBuffer.SetData(new uint[] { 0 });
+
+                trianglesResolutionBuffer = new ComputeBuffer((int)nTriangles, Marshal.SizeOf(typeof(uint)));
+                trianglesSamplesIndexOffsetBuffer = new ComputeBuffer((int)nTriangles, Marshal.SizeOf(typeof(uint)));
+
+                ComputeTrianglesResolution(meshSamplingShader,
+                    worldScale,
+                    samplesPerSquareMeter,
+                    nTriangles,
+                    trianglesResolutionBuffer,
+                    trianglesMaxResolutionBuffer,
+                    indexBuffer,
+                    indexBufferStride,
+                    vertexBuffer,
+                    vertexBufferStride,
+                    vertexBufferPositionOffset);
+
+                // Counted on the CPU in 64 bits: a 32-bit total silently wraps on large meshes.
+                var totalSamples = ComputeTrianglesSamplesIndexOffsets(
+                    trianglesResolutionBuffer,
+                    trianglesSamplesIndexOffsetBuffer);
+
+                // Sample indices are 32-bit and the values buffer has a maximum size in bytes.
+                var maxSamples = Math.Min(SystemInfo.maxGraphicsBufferSize / Marshal.SizeOf(typeof(float)), int.MaxValue);
+
+                if (totalSamples > (ulong)maxSamples)
+                {
+                    throw new MeshSamplingException(
+                        $"Mesh '{mesh.name}' covers about {totalSamples / samplesPerSquareMeter:N0} m² in the world " +
+                        $"(scale {worldScale}), which needs {totalSamples:N0} samples at {samplesPerSquareMeter} " +
+                        $"samples/m². A GPU buffer holds at most {maxSamples:N0} samples here, about " +
+                        $"{maxSamples / samplesPerSquareMeter:N0} m² at this density.");
+                }
+
+                var nSamples = (uint)totalSamples;
+                sampleValuesBuffer = new ComputeBuffer((int)nSamples, Marshal.SizeOf(typeof(float)));
+
+                var triangleResolutionMaxArr = new uint[1];
+                trianglesMaxResolutionBuffer.GetData(triangleResolutionMaxArr);
+                var nSamplesMaxPerTriangle = (uint)NthTriangleFormula(triangleResolutionMaxArr[0]);
+
+                var sampledMesh = new MeshSamplerResult(nTriangles, nVertices, nSamples, nSamplesMaxPerTriangle,
+                    indexBuffer,
+                    indexBufferStride, vertexBuffer, vertexBufferStride,
+                    vertexBufferPositionOffset, sampleValuesBuffer,
+                    trianglesResolutionBuffer,
+                    trianglesSamplesIndexOffsetBuffer,
+                    subMeshFirstTriangle,
+                    readableMeshCopy);
+
+                ClearMeshSamplerResult(sampledMesh, meshSamplingShader);
+                return sampledMesh;
             }
-
-            // Specifically set the initial values to 0 in the buffer to prevent undefined behaviour of InterlockedMax and InterlockedAdd
-            var totalSamplesCountArr = new uint[] { 0 };
-            var trianglesMaxResolutionArr = new uint[] { 0 };
-            totalSamplesCountBuffer.SetData(totalSamplesCountArr);
-            trianglesMaxResolutionBuffer.SetData(trianglesMaxResolutionArr);
-
-            var trianglesResolutionBuffer = new ComputeBuffer((int)nTriangles, Marshal.SizeOf(typeof(uint)));
-            var trianglesSamplesIndexOffsetBuffer =
-                new ComputeBuffer((int)nTriangles, Marshal.SizeOf(typeof(uint)));
-
-            ComputeTrianglesResolution(meshSamplingShader,
-                worldScale,
-                samplesPerSquareMeter,
-                nTriangles,
-                totalSamplesCountBuffer,
-                trianglesResolutionBuffer,
-                trianglesMaxResolutionBuffer,
-                indexBuffer,
-                indexBufferStride,
-                vertexBuffer,
-                vertexBufferStride,
-                vertexBufferPositionOffset);
-
-            // Counted on the CPU in 64 bits: the GPU total is a 32-bit counter, which silently wraps on large meshes.
-            var totalSamples = ComputeTrianglesSamplesIndexOffsets(
-                trianglesResolutionBuffer,
-                trianglesSamplesIndexOffsetBuffer);
-
-            // Sample indices are 32-bit and the values buffer has a maximum size in bytes.
-            var maxSamples = Math.Min(SystemInfo.maxGraphicsBufferSize / Marshal.SizeOf(typeof(float)), int.MaxValue);
-
-            if (totalSamples > (ulong)maxSamples)
+            catch (Exception e)
             {
-                trianglesResolutionBuffer.Release();
-                trianglesSamplesIndexOffsetBuffer.Release();
-                indexBuffer.Release();
-                vertexBuffer.Release();
-                Destroy(readableMeshCopy);
-                throw new MeshSamplingException(
-                    $"Mesh '{mesh.name}' covers about {totalSamples / samplesPerSquareMeter:N0} m² in the world " +
-                    $"(scale {worldScale}), which needs {totalSamples:N0} samples at {samplesPerSquareMeter} " +
-                    $"samples/m². A GPU buffer holds at most {maxSamples:N0} samples here, about " +
-                    $"{maxSamples / samplesPerSquareMeter:N0} m² at this density.");
+                sampleValuesBuffer?.Release();
+                trianglesSamplesIndexOffsetBuffer?.Release();
+                trianglesResolutionBuffer?.Release();
+                indexBuffer?.Release();
+                vertexBuffer?.Release();
+                if (readableMeshCopy != null)
+                    Destroy(readableMeshCopy);
+
+                if (e is MeshSamplingException)
+                    throw;
+
+                // Any other failure (unexpected mesh layout, GPU allocation) only concerns this mesh.
+                throw new MeshSamplingException($"Mesh '{mesh.name}' could not be sampled: {e.Message}", e);
             }
-
-            var nSamples = (uint)totalSamples;
-            var sampleValuesBuffer = new ComputeBuffer((int)nSamples, Marshal.SizeOf(typeof(float)));
-
-            var triangleResolutionMaxArr = new uint[1];
-            trianglesMaxResolutionBuffer.GetData(triangleResolutionMaxArr);
-            var nSamplesMaxPerTriangle = (uint)NthTriangleFormula(triangleResolutionMaxArr[0]);
-
-            var sampledMesh = new MeshSamplerResult(nTriangles, nVertices, nSamples, nSamplesMaxPerTriangle,
-                indexBuffer,
-                indexBufferStride, vertexBuffer, vertexBufferStride,
-                vertexBufferPositionOffset, sampleValuesBuffer,
-                trianglesResolutionBuffer,
-                trianglesSamplesIndexOffsetBuffer);
-
-            ClearMeshSamplerResult(sampledMesh, meshSamplingShader);
-            return sampledMesh;
         }
 
         private static ulong NthTriangleFormula(uint r)
@@ -180,7 +260,6 @@ namespace PLUME
             Vector3 worldScale,
             float samplesPerSqMeter,
             uint nTriangles,
-            ComputeBuffer totalSamplesCountBuffer,
             ComputeBuffer trianglesResolutionBuffer,
             ComputeBuffer trianglesMaxResolutionBuffer,
             GraphicsBuffer indexBuffer,
@@ -198,7 +277,6 @@ namespace PLUME
             shader.SetBuffer(computeTrianglesResolutionsKernel, "vertex_buffer", vertexBuffer);
             shader.SetInt("vertex_buffer_stride", vertexBufferStride);
             shader.SetInt("vertex_buffer_position_offset", vertexBufferPositionOffset);
-            shader.SetBuffer(computeTrianglesResolutionsKernel, "total_samples_count_buffer", totalSamplesCountBuffer);
             shader.SetBuffer(computeTrianglesResolutionsKernel, "triangles_resolution_buffer",
                 trianglesResolutionBuffer);
             shader.SetBuffer(computeTrianglesResolutionsKernel, "triangles_max_resolution_buffer",
@@ -242,10 +320,14 @@ namespace PLUME
         }
     }
 
-    /// <summary>A mesh that cannot be sampled (no triangles, or more samples than one buffer holds).</summary>
+    /// <summary>A mesh that cannot be sampled (no triangles, more samples than one buffer holds, or another failure).</summary>
     public class MeshSamplingException : Exception
     {
         public MeshSamplingException(string message) : base(message)
+        {
+        }
+
+        public MeshSamplingException(string message, Exception innerException) : base(message, innerException)
         {
         }
     }
