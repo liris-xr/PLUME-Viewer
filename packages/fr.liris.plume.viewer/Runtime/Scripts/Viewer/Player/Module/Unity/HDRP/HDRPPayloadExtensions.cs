@@ -1,5 +1,4 @@
 #if HDRP_ENABLED
-using System;
 using UnityEngine.Rendering.HighDefinition;
 using HDClearColorMode = PLUME.Sample.Unity.HDRP.HDClearColorMode;
 using HDCameraAntialiasingMode = PLUME.Sample.Unity.HDRP.HDCameraAntialiasingMode;
@@ -17,7 +16,7 @@ namespace PLUME.Viewer.Player.Module.Unity.HDRP
                 HDClearColorMode.Sky => HDAdditionalCameraData.ClearColorMode.Sky,
                 HDClearColorMode.Color => HDAdditionalCameraData.ClearColorMode.Color,
                 HDClearColorMode.None => HDAdditionalCameraData.ClearColorMode.None,
-                _ => throw new ArgumentOutOfRangeException(nameof(clearColorMode), clearColorMode, null)
+                _ => PayloadExtensions.UnspecifiedEnumValue<HDAdditionalCameraData.ClearColorMode>(clearColorMode)
             };
         }
 
@@ -32,7 +31,7 @@ namespace PLUME.Viewer.Player.Module.Unity.HDRP
                 HDCameraAntialiasingMode.Temporal => HDAdditionalCameraData.AntialiasingMode.TemporalAntialiasing,
                 HDCameraAntialiasingMode.SubpixelMorphological => HDAdditionalCameraData.AntialiasingMode
                     .SubpixelMorphologicalAntiAliasing,
-                _ => throw new ArgumentOutOfRangeException(nameof(antialiasingMode), antialiasingMode, null)
+                _ => PayloadExtensions.UnspecifiedEnumValue<HDAdditionalCameraData.AntialiasingMode>(antialiasingMode)
             };
         }
 
@@ -43,7 +42,7 @@ namespace PLUME.Viewer.Player.Module.Unity.HDRP
                 HDSMAAQualityLevel.Low => HDAdditionalCameraData.SMAAQualityLevel.Low,
                 HDSMAAQualityLevel.Medium => HDAdditionalCameraData.SMAAQualityLevel.Medium,
                 HDSMAAQualityLevel.High => HDAdditionalCameraData.SMAAQualityLevel.High,
-                _ => throw new ArgumentOutOfRangeException(nameof(smaaQualityLevel), smaaQualityLevel, null)
+                _ => PayloadExtensions.UnspecifiedEnumValue<HDAdditionalCameraData.SMAAQualityLevel>(smaaQualityLevel)
             };
         }
 
@@ -54,7 +53,7 @@ namespace PLUME.Viewer.Player.Module.Unity.HDRP
                 HDTAAQualityLevel.Low => HDAdditionalCameraData.TAAQualityLevel.Low,
                 HDTAAQualityLevel.Medium => HDAdditionalCameraData.TAAQualityLevel.Medium,
                 HDTAAQualityLevel.High => HDAdditionalCameraData.TAAQualityLevel.High,
-                _ => throw new ArgumentOutOfRangeException(nameof(taaQualityLevel), taaQualityLevel, null)
+                _ => PayloadExtensions.UnspecifiedEnumValue<HDAdditionalCameraData.TAAQualityLevel>(taaQualityLevel)
             };
         }
     }
