@@ -18,6 +18,11 @@ namespace PLUME.Viewer.Player.Module.Unity
                     ctx.DestroyScene(unloadScene.Scene);
                     break;
                 }
+                case ChangeActiveScene changeActiveScene:
+                {
+                    ctx.SetRecordedActiveScene(changeActiveScene.Scene);
+                    break;
+                }
             }
         }
     }
