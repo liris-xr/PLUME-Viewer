@@ -137,8 +137,10 @@ namespace PLUME
 
         private FrameSample UnpackFrame(ISample<Frame> frame)
         {
+            // Samples of types this viewer does not know (e.g. from a newer recorder) unpack as null: skipped.
             var unpackedFrameData = frame.Payload.Data.Select(frameData =>
-                RawSampleUtils.UnpackAsRawSample(frame.Timestamp, frameData, _sampleTypeRegistry)).ToList();
+                    RawSampleUtils.UnpackAsRawSample(frame.Timestamp, frameData, _sampleTypeRegistry))
+                .Where(sample => sample != null).ToList();
             return new FrameSample(frame.Timestamp, frame.Payload.FrameNumber, unpackedFrameData);
         }
 
