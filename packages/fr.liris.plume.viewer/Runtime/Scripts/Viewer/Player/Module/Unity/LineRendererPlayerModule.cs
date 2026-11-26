@@ -23,6 +23,8 @@ namespace PLUME.Viewer.Player.Module.Unity
                 case LineRendererPositionsUpdate positionsUpdate:
                 {
                     var lineRenderer = ctx.GetOrCreateComponentByIdentifier<LineRenderer>(positionsUpdate.Component);
+                    if (lineRenderer == null)
+                        break;
 
                     // Packed x, y, z triplets.
                     var coordinates = positionsUpdate.Positions;
