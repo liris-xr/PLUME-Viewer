@@ -132,7 +132,7 @@ namespace PLUME.Viewer
                         {
                             if (!_currentItems.TryGetValue(parentGameObjectGuid, out parentItem))
                             {
-                                parentItem = new HierarchyTreeItemData(gameObjectGuid);
+                                parentItem = new HierarchyTreeItemData(parentGameObjectGuid);
                                 _createdOrUpdatedItems[parentGameObjectGuid] = parentItem;
                             }
                         }
@@ -161,7 +161,7 @@ namespace PLUME.Viewer
 
                         if (go.transform.parent != null)
                         {
-                            parentGuid = playerCtx.GetRecordIdentifier(go.transform.parent.GetInstanceID());
+                            parentGuid = playerCtx.GetRecordIdentifier(go.transform.parent.gameObject.GetInstanceID());
                         }
 
                         var item = new HierarchyTreeItemData(guid)
