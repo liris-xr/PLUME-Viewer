@@ -1,6 +1,7 @@
 #if HDRP_ENABLED
 using PLUME.Sample;
 using PLUME.Sample.Unity.HDRP;
+using UnityEngine;
 using UnityEngine.Rendering.HighDefinition;
 
 namespace PLUME.Viewer.Player.Module.Unity.HDRP
@@ -13,7 +14,10 @@ namespace PLUME.Viewer.Player.Module.Unity.HDRP
             {
                 case HDAdditionalLightDataCreate lightDataCreate:
                 {
-                    ctx.GetOrCreateComponentByIdentifier<HDAdditionalLightData>(lightDataCreate.Component);
+                    var lightData =
+                        ctx.GetOrCreateComponentByIdentifier<HDAdditionalLightData>(lightDataCreate.Component);
+                    if (lightData != null)
+                        SyncIntensity(lightData.GetComponent<Light>(), lightData);
                     break;
                 }
                 case HDAdditionalLightDataDestroy lightDataDestroy:
@@ -96,6 +100,29 @@ namespace PLUME.Viewer.Player.Module.Unity.HDRP
                     break;
                 }
             }
+        }
+
+        /// <summary>
+        /// HDRP 14 (Unity 2022) overwrites Light.intensity with its additional data's intensity, which is 0 for one
+        /// added at runtime: the additional data must hold the light's recorded intensity. Light.intensity is in the
+        /// light's native unit. HDRP 17 (Unity 6) reads Light.intensity itself.
+        /// </summary>
+        internal static void SyncIntensity(Light light, HDAdditionalLightData lightData)
+        {
+#if !UNITY_6000_0_OR_NEWER
+            if (light == null || lightData == null)
+                return;
+
+            var nativeUnit = light.type switch
+            {
+                LightType.Directional => LightUnit.Lux,
+                // A box spot lights like a directional light.
+                LightType.Spot when lightData.spotLightShape == SpotLightShape.Box => LightUnit.Lux,
+                LightType.Point or LightType.Spot => LightUnit.Candela,
+                _ => LightUnit.Nits
+            };
+            lightData.SetIntensity(light.intensity, nativeUnit);
+#endif
         }
     }
 }

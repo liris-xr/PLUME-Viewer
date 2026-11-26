@@ -18,6 +18,9 @@ namespace PLUME.Viewer.Player
 
         private static readonly List<PlayerContext> Contexts = new();
 
+        // (Module, sample type) pairs whose failure was logged: a failure repeats for every sample of that type.
+        private static readonly HashSet<(Type, Type)> ReportedPlaybackFailures = new();
+
         private readonly Guid _contextGuid = Guid.NewGuid();
 
         private readonly RecordAssetBundle _recordAssetBundle;
@@ -195,35 +198,30 @@ namespace PLUME.Viewer.Player
                 Activate(this);
             }
 
-            // The recorder writes a frame's scene loads and unloads after the samples creating the loaded scene's
-            // objects. Duplicated scene assets share their scene GUID, so played in that order the incoming scene's
-            // objects would be created in the outgoing replay scene and destroyed with it: scene samples go first.
-            foreach (var sample in frame.Data)
+            for (var pass = 0; pass < 3; pass++)
             {
-                if (!IsSceneLifecycleSample(sample))
-                    continue;
-
-                foreach (var playerModule in playerModules)
+                foreach (var sample in frame.Data)
                 {
-                    playerModule.PlaySample(this, sample);
-                }
-            }
-
-            foreach (var sample in frame.Data)
-            {
-                if (IsSceneLifecycleSample(sample))
-                    continue;
-
-                foreach (var playerModule in playerModules)
-                {
-                    playerModule.PlaySample(this, sample);
+                    if (GetPlayPass(sample) == pass)
+                        PlaySample(playerModules, sample);
                 }
             }
         }
 
-        private static bool IsSceneLifecycleSample(RawSample sample)
+        /// <summary>
+        /// The recorder writes a frame's scene loads and unloads after the samples creating the loaded scene's
+        /// objects. Duplicated scene assets share their scene GUID, so played in that order the incoming scene's
+        /// objects would be created in the outgoing replay scene and destroyed with it: scene samples go first.
+        /// Destroys go last: an object created and destroyed in the same frame also has update samples, written after
+        /// its destroy, which would recreate it.
+        /// </summary>
+        private static int GetPlayPass(RawSample sample)
         {
-            return sample.Payload is LoadScene or UnloadScene;
+            if (sample.Payload is LoadScene or UnloadScene)
+                return 0;
+
+            // Every destroy sample is named "<Type>Destroy" (the descriptor caches the name).
+            return sample.Payload.Descriptor.Name.EndsWith("Destroy", StringComparison.Ordinal) ? 2 : 1;
         }
 
         public void PlaySamples(PlayerModule[] playerModules, IEnumerable<RawSample> samples)
@@ -235,9 +233,27 @@ namespace PLUME.Viewer.Player
 
             foreach (var sample in samples)
             {
-                foreach (var playerModule in playerModules)
+                PlaySample(playerModules, sample);
+            }
+        }
+
+        /// <summary>
+        /// A module failing on a sample (unexpected data, an asset that cannot be used...) only loses that sample:
+        /// the other modules and samples are still played, and the failure is logged once per module and type.
+        /// </summary>
+        private void PlaySample(PlayerModule[] playerModules, RawSample sample)
+        {
+            foreach (var playerModule in playerModules)
+            {
+                try
                 {
                     playerModule.PlaySample(this, sample);
+                }
+                catch (Exception e)
+                {
+                    if (ReportedPlaybackFailures.Add((playerModule.GetType(), sample.Payload.GetType())))
+                        Debug.LogWarning($"{playerModule.GetType().Name} failed to replay a " +
+                                         $"{sample.Payload.Descriptor.Name} sample, which is skipped: {e}");
                 }
             }
         }

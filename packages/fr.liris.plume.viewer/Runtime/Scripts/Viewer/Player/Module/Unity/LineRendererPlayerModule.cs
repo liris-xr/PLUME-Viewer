@@ -20,6 +20,22 @@ namespace PLUME.Viewer.Player.Module.Unity
                     ctx.TryDestroyComponentByIdentifier(lineRendererDestroy.Component);
                     break;
                 }
+                case LineRendererPositionsUpdate positionsUpdate:
+                {
+                    var lineRenderer = ctx.GetOrCreateComponentByIdentifier<LineRenderer>(positionsUpdate.Component);
+                    if (lineRenderer == null)
+                        break;
+
+                    // Packed x, y, z triplets.
+                    var coordinates = positionsUpdate.Positions;
+                    var positions = new Vector3[coordinates.Count / 3];
+                    for (var i = 0; i < positions.Length; i++)
+                        positions[i] = new Vector3(coordinates[3 * i], coordinates[3 * i + 1], coordinates[3 * i + 2]);
+
+                    lineRenderer.positionCount = positions.Length;
+                    lineRenderer.SetPositions(positions);
+                    break;
+                }
                 case LineRendererUpdate lineRendererUpdate:
                 {
                     var lineRenderer = ctx.GetOrCreateComponentByIdentifier<LineRenderer>(lineRendererUpdate.Component);

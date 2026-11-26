@@ -59,6 +59,10 @@ namespace PLUME.Viewer.Player.Module.Unity
                     if (lightUpdate.HasIntensity)
                     {
                         replayLight.intensity = lightUpdate.Intensity;
+#if HDRP_ENABLED && !UNITY_6000_0_OR_NEWER
+                        HDRP.HDAdditionalLightDataPlayerModule.SyncIntensity(replayLight,
+                            replayLight.GetComponent<UnityEngine.Rendering.HighDefinition.HDAdditionalLightData>());
+#endif
                     }
 
                     if (lightUpdate.HasBounceIntensity)

@@ -7,6 +7,10 @@ namespace PLUME.Viewer.Player.Module.Unity
 {
     public class QualitySettingsPlayerModule : PlayerModule
     {
+        // Restored on destroy: in the editor, a render pipeline switched in play mode stays switched afterwards.
+        private RenderPipelineAsset _viewerRenderPipeline;
+        private bool _renderPipelineReplaced;
+
         public override void PlaySample(PlayerContext ctx, RawSample rawSample)
         {
             if (rawSample.Payload is QualitySettingsUpdate qualitySettingsUpdate)
@@ -16,9 +20,21 @@ namespace PLUME.Viewer.Player.Module.Unity
                 if (HeatmapPipelineSwitcher.IsActive)
                     return;
 
+                if (!_renderPipelineReplaced)
+                {
+                    _viewerRenderPipeline = QualitySettings.renderPipeline;
+                    _renderPipelineReplaced = true;
+                }
+
                 QualitySettings.renderPipeline =
                     ctx.GetOrDefaultAssetByIdentifier<RenderPipelineAsset>(qualitySettingsUpdate.RenderPipelineAsset);
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (_renderPipelineReplaced && !HeatmapPipelineSwitcher.IsActive)
+                QualitySettings.renderPipeline = _viewerRenderPipeline;
         }
     }
 }
