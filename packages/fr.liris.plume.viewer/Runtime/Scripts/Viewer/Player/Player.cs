@@ -32,6 +32,10 @@ namespace PLUME.Viewer.Player
         public bool IsRecordLoaded => Record != null;
 
         private BundleLoader _bundleLoader;
+
+        // Restored on destroy: in the editor, a render pipeline switched in play mode stays switched afterwards.
+        private RenderPipelineAsset _viewerRenderPipeline;
+        private bool _renderPipelineSwitched;
         public RecordAssetBundle RecordAssetBundle { get; private set; }
         public bool IsRecordAssetBundleLoaded => RecordAssetBundle != null;
 
@@ -103,12 +107,23 @@ namespace PLUME.Viewer.Player
 
             OnFinishLoading += () =>
             {
-                var renderPipelineAsset =
-                    RecordAssetBundle.GetOrDefaultAssetByIdentifier<RenderPipelineAsset>(Record.graphicsSettings
-                        .DefaultRenderPipelineAsset);
+                var renderPipelineAssetIdentifier = Record.graphicsSettings.DefaultRenderPipelineAsset;
 
-                if (renderPipelineAsset == null)
+                // A record without a default render pipeline asset was made with the built-in pipeline (or with a
+                // pipeline assigned per quality level only, replayed by the quality settings). A scriptable pipeline
+                // record whose asset is not in the bundle (e.g. only the quality level's asset was exported) keeps
+                // the viewer's pipeline: switching to the built-in one would render all its materials magenta.
+                if (string.IsNullOrEmpty(renderPipelineAssetIdentifier?.AssetBundlePath))
+                {
+                    _viewerRenderPipeline = GraphicsSettings.defaultRenderPipeline;
+                    _renderPipelineSwitched = true;
                     GraphicsSettings.defaultRenderPipeline = null;
+                }
+                else if (RecordAssetBundle.GetOrDefaultAssetByIdentifier<RenderPipelineAsset>(
+                             renderPipelineAssetIdentifier) == null)
+                    Debug.LogWarning("The record's render pipeline asset is not in its bundle " +
+                                     $"({renderPipelineAssetIdentifier.AssetBundlePath}): replaying with the " +
+                                     "viewer's render pipeline.");
 
                 RegisterRecordDiffusionProfiles();
             };
@@ -240,6 +255,15 @@ namespace PLUME.Viewer.Player
                 }
             }
 
+            // Lets scripts and tests open a record without the file dialog, e.g. in the editor.
+            var environmentPath = Environment.GetEnvironmentVariable("PLUME_RECORD_PATH");
+
+            if (!string.IsNullOrEmpty(environmentPath) && File.Exists(environmentPath))
+            {
+                Debug.Log($"Opening the record given by PLUME_RECORD_PATH: {environmentPath}");
+                return environmentPath;
+            }
+
 #if UNITY_EDITOR
             var filePath = EditorUtility.OpenFilePanel("Open record file", Application.dataPath, "plm");
 
@@ -346,6 +370,9 @@ namespace PLUME.Viewer.Player
                 PreviewRenderTexture.Release();
 
             _recordLoader?.Dispose();
+
+            if (_renderPipelineSwitched)
+                GraphicsSettings.defaultRenderPipeline = _viewerRenderPipeline;
 
             // The runtime volume profile is created via CreateInstance and is not destroyed with its GameObject.
             if (_diffusionProfileVolume != null && _diffusionProfileVolume.profile != null)
